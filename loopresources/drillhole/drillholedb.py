@@ -129,8 +129,9 @@ class DrillHoleDB:
                 continue
             for t in self.tables["interval"].values():
                 cols = list(set(list(t.columns)) & set(columns))
-                r = resample_point(r_, t.loc[t[DhConfig.holeid] == h], cols)
-                results.append(r)
+                r_ = resample_point(r_, t.loc[t[DhConfig.holeid] == h], cols)
+                r_[DhConfig.holeid] = h
+            results.append(r_)
             for t in self.tables["point"].values():
                 cols = list(set(list(t.columns)) & set(columns))
 
