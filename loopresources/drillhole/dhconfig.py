@@ -32,26 +32,30 @@ class DhConfig(object):
         cls.depth = config["depth"]
         cls.total_depth = config["total_depth"]
         return cls
-        
+
     @classmethod
     def from_file(cls, file):
         """
         Create a DhConfig from a json file
         """
         import json
+
         with open(file) as f:
             config = json.load(f)
         return cls.from_config(config)
+
     @classmethod
-    def to_json(cls,filename=None):
+    def to_json(cls, filename=None):
         """
         Write the config to a json file
         """
         import json
+
         if filename:
-            with open(filename,'w') as f:
-                json.dump(cls.as_dict(),f)
+            with open(filename, "w") as f:
+                json.dump(cls.as_dict(), f)
         return json.dumps(cls.as_dict())
+
     @classmethod
     def as_dict(cls):
         return {
@@ -67,6 +71,7 @@ class DhConfig(object):
             "depth": cls.depth,
             "total_depth": cls.total_depth,
         }
+
     def __repr__(self) -> str:
         return (
             f"DhConfig(holeid={self.holeid}, sample_to={self.sample_to}, "
@@ -74,8 +79,17 @@ class DhConfig(object):
             f"azimuth={self.azimuth}, dip={self.dip}, add_ninty={self.add_ninty}, "
             f"depth={self.depth}, total_depth={self.total_depth})"
         )
-    
+
     @classmethod
-    @property
     def fields(cls):
-        return [cls.sample_to, cls.sample_from, cls.x, cls.y, cls.z, cls.azimuth, cls.dip, cls.depth, cls.total_depth]
+        return [
+            cls.sample_to,
+            cls.sample_from,
+            cls.x,
+            cls.y,
+            cls.z,
+            cls.azimuth,
+            cls.dip,
+            cls.depth,
+            cls.total_depth,
+        ]

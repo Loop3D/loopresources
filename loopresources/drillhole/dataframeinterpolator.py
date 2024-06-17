@@ -20,9 +20,7 @@ class DataFrameInterpolator:
 
         self.dataframe = dataframe
         self.depth = depth
-        self.columns_to_interpolate = [
-            col for col in self.dataframe.columns if col != self.depth
-        ]
+        self.columns_to_interpolate = [col for col in self.dataframe.columns if col != self.depth]
         self.interpolators = {}
         for c in self.columns_to_interpolate:
             try:

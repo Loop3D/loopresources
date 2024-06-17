@@ -116,15 +116,9 @@ def desurvey(
     resampled_survey["x_from"] = resampled_survey["xm"] + collar[DhConfig.x].values[0]
     resampled_survey["y_from"] = resampled_survey["ym"] + collar[DhConfig.y].values[0]
     resampled_survey["z_from"] = -resampled_survey["zm"] + collar[DhConfig.z].values[0]
-    resampled_survey["x_to"] = (
-        resampled_survey["xm"] + collar[DhConfig.x].values[0] + newinterval
-    )
-    resampled_survey["y_to"] = (
-        resampled_survey["ym"] + collar[DhConfig.y].values[0] + newinterval
-    )
-    resampled_survey["z_to"] = (
-        -resampled_survey["zm"] + collar[DhConfig.z].values[0] - newinterval
-    )
+    resampled_survey["x_to"] = resampled_survey["xm"] + collar[DhConfig.x].values[0] + newinterval
+    resampled_survey["y_to"] = resampled_survey["ym"] + collar[DhConfig.y].values[0] + newinterval
+    resampled_survey["z_to"] = -resampled_survey["zm"] + collar[DhConfig.z].values[0] - newinterval
     resampled_survey["x_mid"] = (
         resampled_survey["xm"] + collar[DhConfig.x].values[0] + 0.5 * newinterval
     )

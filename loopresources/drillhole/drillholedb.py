@@ -43,9 +43,7 @@ class DrillHoleDB:
             if hole in self.survey[DhConfig.holeid].unique()
         ]
         self.columns = {}
-        if (
-            self.survey[DhConfig.azimuth].max() - self.survey[DhConfig.azimuth].min()
-        ) > 2 * np.pi:
+        if (self.survey[DhConfig.azimuth].max() - self.survey[DhConfig.azimuth].min()) > 2 * np.pi:
             logger.warn("azimuths are in degrees, converting to radians")
             self.survey[DhConfig.azimuth] = np.deg2rad(self.survey[DhConfig.azimuth])
         if (self.survey[DhConfig.dip].max() - self.survey[DhConfig.dip].min()) > np.pi:
