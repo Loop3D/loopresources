@@ -49,9 +49,24 @@ class DrillHoleDB:
         if (self.survey[DhConfig.dip].max() - self.survey[DhConfig.dip].min()) > np.pi:
             logger.warn("dips are in degrees, converting to radians")
             self.survey[DhConfig.dip] = np.deg2rad(self.survey[DhConfig.dip])
-        # if DhConfig.add_ninty:
-        #     logger.warn("adding 90 to azimuths")
-        #     self.survey[DhConfig.azimuth] += np.pi/2
+
+    def _check(self):
+        if self.collar is None:
+            raise Exception("No collar data")
+        if self.survey is None:
+            raise Exception("No survey data")
+        if DhConfig.total_depth not in self.collar.columns:
+            raise ValueError("No total depth column in collar")
+        if DhConfig.holeid not in self.collar.columns:
+            raise ValueError("No holeid column in collar")
+        if DhConfig.holeid not in self.survey.columns:
+            raise ValueError("No holeid column in survey")
+        if DhConfig.depth not in self.survey.columns:
+            raise ValueError("No depth column in survey")
+        if DhConfig.dip not in self.survey.columns:
+            raise ValueError("No dip column in survey")
+        if DhConfig.azimuth not in self.survey.columns:
+            raise ValueError("No azimuth column in survey")
 
     @property
     def collar(self) -> pd.DataFrame:
@@ -102,6 +117,7 @@ class DrillHoleDB:
         pd.DataFrame
             resulting table with the columns resampled
         """
+        self._check()
         results = []
         holes = []
         # find the holes which have logging related to the tables we are
@@ -114,16 +130,20 @@ class DrillHoleDB:
                 if c in t.columns:
                     holes += t[DhConfig.holeid].unique().tolist()
         holes = list(set(holes))
-
+        # sanity check
         for h in tqdm.tqdm(holes):
             try:
+                if self.survey.loc[self.survey[DhConfig.holeid] == h].shape[0] == 0:
+                    continue
                 r_ = desurvey(
                     self.collar.loc[self.collar[DhConfig.holeid] == h],
                     self.survey.loc[self.survey[DhConfig.holeid] == h],
                     interval,
                 )
             except Exception as e:
-                print(e)
+                if DhConfig.debug:
+                    raise e
+                print(e, h)
                 continue
             for t in self.tables["interval"].values():
                 cols = list(set(list(t.columns)) & set(columns))

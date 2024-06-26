@@ -14,6 +14,9 @@ class DhConfig(object):
     add_ninty = True
     depth = "DEPTH"
     total_depth = "DEPTH"
+    debug = False
+    positive_dips_down = True
+    dip_is_inclination = False
 
     @classmethod
     def from_config(cls, config):
