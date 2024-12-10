@@ -1,8 +1,25 @@
+import re
 import numpy as np
 import pandas as pd
 from scipy.interpolate import interp1d
 from . import DhConfig
 from typing import Optional, List, Union
+
+class DrillHole:
+    def __init__(self, collar, survey, database=None):
+        self.collar = collar
+        self.survey = survey
+        self.database = database
+
+    def trace(self, newinterval: Optional[Union[np.ndarray, float]] = 1.0):
+        return desurvey(self.collar, self.survey, newinterval)
+
+    def vtk(self, newinterval: Optional[Union[np.ndarray, float]] = 1.0,radius=0.1):
+        import pyvista as pv
+        trace = self.trace(newinterval)
+        line_connectivity = np.vstack([np.zeros(len(trace)-1).astype(int)+2,np.arange(0, len(trace)-1), np.arange(1, len(trace))]).T
+        trace = pv.PolyData(trace[['x', 'y','z']].values, lines=line_connectivity)
+        return trace.tube(radius=radius)
 
 
 def desurvey(
@@ -123,6 +140,7 @@ def desurvey(
     # find the set distance in vertical
     resampled_survey.loc[mask[:, 1], "zm"] = (np.cos(i1) + np.cos(i2)) * (CL / 2) * RF
     # create an array of cumulative distances to calculate the new coordinates
+
     resampled_survey["xm"] = resampled_survey["xm"].cumsum()
     resampled_survey["ym"] = resampled_survey["ym"].cumsum()
     resampled_survey["zm"] = resampled_survey["zm"].cumsum()
@@ -132,6 +150,7 @@ def desurvey(
     resampled_survey["x_to"] = resampled_survey["xm"] + collar[DhConfig.x].values[0] + newinterval
     resampled_survey["y_to"] = resampled_survey["ym"] + collar[DhConfig.y].values[0] + newinterval
     resampled_survey["z_to"] = -resampled_survey["zm"] + collar[DhConfig.z].values[0] - newinterval
+
     resampled_survey["x_mid"] = (
         resampled_survey["xm"] + collar[DhConfig.x].values[0] + 0.5 * newinterval
     )
@@ -141,7 +160,10 @@ def desurvey(
     resampled_survey["z_mid"] = (
         -resampled_survey["zm"] + collar[DhConfig.z].values[0] - 0.5 * newinterval
     )
+
     resampled_survey["x"] = resampled_survey["x_mid"]
     resampled_survey["y"] = resampled_survey["y_mid"]
     resampled_survey["z"] = resampled_survey["z_mid"]
-    return resampled_survey
+   
+
+    return resampled_survey.drop(columns=["xm", "ym", "zm"])
