@@ -70,15 +70,13 @@ def resample_point(
 def desurvey_point(
     r: pd.DataFrame,
     table: pd.DataFrame,
-    cols: list,
-    table_depth: str = "From",
+    cols: list
 ):
     interpolator = DataFrameInterpolator(r, DhConfig.depth)
-    desurvey = interpolator(table[table_depth], cols=cols).reset_index()
-    merged = table.reset_index().merge(desurvey)
-    merged = pd.concat([table.reset_index(), desurvey], axis=1)
+    desurvey = interpolator(table[DhConfig.depth], cols=cols)
+    # merged = table.merge(desurvey)
+    merged = pd.concat([table, desurvey], axis=1)
     # print(desurvey, table.reset_index())
-    print(merged.shape, desurvey.shape, table.shape)
     return merged
 
 
