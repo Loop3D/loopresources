@@ -4,7 +4,7 @@ from typing import Optional
 import tqdm
 import logging
 from . import DhConfig
-from . import desurvey
+from . import desurvey, DrillHole
 from . import resample_interval, resample_point, desurvey_point
 
 logger = logging.getLogger(__name__)
@@ -32,11 +32,12 @@ class DrillHoleDB:
         self.collar = collar
         self.survey = survey
         self.tables = {"point": {}, "interval": {}}
-        self.required_columns = [
+        self.required_columns_interval = [
             DhConfig.sample_from,
             DhConfig.sample_to,
             DhConfig.holeid,
         ]
+        self.required_columns_point = [DhConfig.depth, DhConfig.holeid]
         self.holes = [
             hole
             for hole in self.collar[DhConfig.holeid].unique()
@@ -75,8 +76,23 @@ class DrillHoleDB:
     @collar.setter
     def collar(self, collar: pd.DataFrame):
         self._collar = collar
+    def __getitem__(self, hole: str) -> pd.DataFrame:
+        """Get the drillhole data for a specific hole
 
-    def add_table(self, name: str, table: pd.DataFrame, type="interval"):
+        Parameters
+        ----------
+        hole : str
+            hole id
+
+        Returns
+        -------
+        pd.DataFrame
+            dataframe with the drillhole data
+        """
+        if hole not in self.holes:
+            raise ValueError(f"Hole {hole} not in database")
+        return DrillHole(collar=self.collar.loc[self.collar[DhConfig.holeid] == hole],survey=self.survey.loc[self.survey[DhConfig.holeid] == hole])
+    def add_table(self, name: str, table: pd.DataFrame, type="interval", depth_col=None, from_col=None, to_col=None):
         """Add samples along the drillhole, these could be lithology
         or assay data. Need to have a sample_from and sample_to column
         and a holeid column.
@@ -88,19 +104,75 @@ class DrillHoleDB:
         table : pd.DataFrame
             table form with required headings
         """
-        for col in self.required_columns:
+        if type == "interval":
+            if from_col is not None:
+                table = table.rename(columns={from_col: DhConfig.sample_from})
+            if to_col is not None:
+                table = table.rename(columns={to_col: DhConfig.sample_to})
+            required_columns = self.required_columns_interval
+        elif type == "point":
+            if depth_col is not None:
+                table = table.rename(columns={depth_col: DhConfig.depth})
+            required_columns = self.required_columns_point
+        else:
+            raise ValueError("Type must be either 'interval' or 'point'")
+        for col in required_columns:
             if col not in table.columns:
                 raise Exception(f"Column {col} not in table")
-        for col in [c for c in table.columns if c not in self.required_columns]:
+        for col in [c for c in table.columns if c not in required_columns]:
             if col in self.columns:
                 raise Exception(
                     f"Column {col} already assocaited with {self.columns[col]}. \n \
                     Rename this column and try again"
                 )
-            self.columns[col] = table
+            self.columns[col] = name
 
         self.tables[type][name] = table
+    def desurvey_points(self, columns: list) -> pd.DataFrame:
+        """Desurvey the point data in the tables along the drillholes
 
+
+        Parameters
+        ----------
+        columns : list
+            list of the columns to be desurveyed, these are searched in the table columns
+
+        Returns
+        -------
+        pd.DataFrame
+            resulting table with the columns desurveyed
+        """
+        self._check()
+        results = []
+        holes = []
+        for c in columns:
+            for t in self.tables["point"].values():
+                if c in t.columns:
+                    holes += t[DhConfig.holeid].unique().tolist()
+        holes = list(set(holes))
+        for h in tqdm.tqdm(holes):
+            try:
+                if self.survey.loc[self.survey[DhConfig.holeid] == h].shape[0] == 0:
+                    continue
+                r = desurvey(
+                    self.collar.loc[self.collar[DhConfig.holeid] == h],
+                    self.survey.loc[self.survey[DhConfig.holeid] == h],
+                )
+            except Exception as e:
+                if DhConfig.debug:
+                    raise e
+                print(e, h)
+                continue
+            for t in self.tables["point"].values():
+                cols = list(set(list(t.columns)) & set(columns))
+                r = desurvey_point(r, t.loc[t[DhConfig.holeid] == h], cols)
+                r[DhConfig.holeid] = h
+                results.append(r)
+        if len(results) > 0:
+            return pd.concat(results)
+        else:
+            raise Exception("No results found")
+        
     def resample_table(self, columns: list, interval: float = 1.0) -> pd.DataFrame:
         """Resample the data in the tables along the drillholes at specific intervals
 
@@ -149,17 +221,8 @@ class DrillHoleDB:
                 cols = list(set(list(t.columns)) & set(columns))
                 r_ = resample_point(r_, t.loc[t[DhConfig.holeid] == h], cols)
                 r_[DhConfig.holeid] = h
-            results.append(r_)
-            for t in self.tables["point"].values():
-                cols = list(set(list(t.columns)) & set(columns))
-
-                if len(r_) > 1 and t.loc[t[DhConfig.holeid] == h].shape[0] > 0:
-                    r = desurvey_point(r_, t.loc[t[DhConfig.holeid] == h], cols)
-                    r[DhConfig.holeid] = h
-                    results.append(r)
+                results.append(r_)
         if len(results) > 0:
-            return pd.concat(results, ignore_index=True)
+            return pd.concat(results)
         else:
             raise Exception("No results found")
-
-    # def desurvey(self, columns: list) -<
