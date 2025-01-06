@@ -1,16 +1,39 @@
-import re
 import numpy as np
 import pandas as pd
 from scipy.interpolate import interp1d
 from . import DhConfig
 from typing import Optional, List, Union
+from scipy.interpolate import interp1d
 
+class DrillHoleTrace:
+    def __init__(self, trace):
+        self.trace = trace
+        self.x_interpolator = interp1d(trace[DhConfig.depth], trace['x'], fill_value='extrapolate')
+        self.y_interpolator = interp1d(trace[DhConfig.depth], trace['y'], fill_value='extrapolate')
+        self.z_interpolator = interp1d(trace[DhConfig.depth], trace['z'], fill_value='extrapolate')
+        
+    def __call__(self, newinterval: Optional[Union[np.ndarray, float]] = 1.0):
+        if not hasattr(newinterval, "__len__"):  # is it an array?
+            newdepth = np.arange(
+                0,
+                self.trace[DhConfig.depth].max(),
+                newinterval,
+            )
+        else:
+            newdepth = newinterval
+
+        return pd.DataFrame({
+            DhConfig.depth: newdepth,
+            'x': self.x_interpolator(newdepth),
+            'y': self.y_interpolator(newdepth),
+            'z': self.z_interpolator(newdepth)
+        })
 class DrillHole:
-    def __init__(self, collar, survey, database=None):
+    def __init__(self, collar, survey, holeid, database=None):
         self.collar = collar
         self.survey = survey
         self.database = database
-
+        self.holeid = holeid
     def trace(self, newinterval: Optional[Union[np.ndarray, float]] = 1.0):
         return desurvey(self.collar, self.survey, newinterval)
 
@@ -19,6 +42,41 @@ class DrillHole:
         trace = self.trace(newinterval)
         line_connectivity = np.vstack([np.zeros(len(trace)-1).astype(int)+2,np.arange(0, len(trace)-1), np.arange(1, len(trace))]).T
         trace = pv.PolyData(trace[['x', 'y','z']].values, lines=line_connectivity)
+        return trace.tube(radius=radius)
+    def __getitem__(self, property):
+        return DrillHoleIntervals(self, property)
+
+class DrillHoleIntervals:
+    def __init__(self, drillhole, property):
+        self.drillhole = drillhole
+        self.property = property
+
+    def trace(self, newinterval: Optional[Union[np.ndarray, float]] = 1.0):
+        return desurvey(self.drillhole.collar, self.drillhole.survey, newinterval)
+
+    def vtk(self, radius=0.1):
+        import pyvista as pv
+        if self.drillhole.database is None:
+            raise ValueError("No database provided")
+        table = self.drillhole.database.columns[self.property]
+        if table not in self.drillhole.database.tables['interval']:
+            raise ValueError(f"Property {self.property} not found in interval database, is it point data?")
+        table = self.drillhole.database.tables['interval'][table]
+
+        hole_slice = table.loc[table[DhConfig.holeid] == self.drillhole.holeid]
+        # get the from and to points for each interval and then desurvey these points as the trace.
+        # this may duplicate the point at the end of one interval and the start of the next interval
+        # but it doesn't matter as we don't need connectivity between intervals
+        interval_points = hole_slice[[DhConfig.sample_from, DhConfig.sample_to]].values.flatten()
+        trace_interpolator = DrillHoleTrace(self.trace())
+        trace = trace_interpolator(interval_points)
+        # define line segments using the interval points. eg. from, to, from, to, from, to
+        segments = np.arange(len(interval_points)).reshape(-1, 2)
+        # add the vtk cell type for line segments
+        lines = np.hstack([np.ones((len(segments), 1)) * 2, segments]).astype(int)
+        trace = pv.PolyData(trace[['x', 'y', 'z']].values, lines=lines)
+        trace[self.property] = hole_slice[self.property].astype('category').cat.codes.values
+        trace.set_active_scalars(self.property)
         return trace.tube(radius=radius)
 
 
