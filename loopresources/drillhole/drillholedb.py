@@ -91,7 +91,7 @@ class DrillHoleDB:
         """
         if hole not in self.holes:
             raise ValueError(f"Hole {hole} not in database")
-        return DrillHole(collar=self.collar.loc[self.collar[DhConfig.holeid] == hole],survey=self.survey.loc[self.survey[DhConfig.holeid] == hole])
+        return DrillHole(collar=self.collar.loc[self.collar[DhConfig.holeid] == hole],survey=self.survey.loc[self.survey[DhConfig.holeid] == hole],holeid=hole,database=self)
     def add_table(self, name: str, table: pd.DataFrame, type="interval", depth_col=None, from_col=None, to_col=None):
         """Add samples along the drillhole, these could be lithology
         or assay data. Need to have a sample_from and sample_to column
