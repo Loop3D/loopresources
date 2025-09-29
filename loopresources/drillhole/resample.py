@@ -1,12 +1,9 @@
-from hmac import new
 from . import DhConfig
 from . import DataFrameInterpolator
 import numpy as np
 import pandas as pd
 import logging
-from scipy.interpolate import interp1d
 
-from .. import PRIVATE_DEPTH
 
 logger = logging.getLogger(__name__)
 
@@ -39,13 +36,11 @@ def resample_point(
                 > r[DhConfig.depth].to_numpy()[:, None],
             )
         )
-        exact_from = np.where(
-            table[DhConfig.sample_from].to_numpy()[None, :]
-            == r[DhConfig.depth].to_numpy()[:, None]
+        _exact_from = np.where(
+            table[DhConfig.sample_from].to_numpy()[None, :] == r[DhConfig.depth].to_numpy()[:, None]
         )
-        exact_to = np.where(
-            table[DhConfig.sample_to].to_numpy()[None, :]
-            == r[DhConfig.depth].to_numpy()[:, None]
+        _exact_to = np.where(
+            table[DhConfig.sample_to].to_numpy()[None, :] == r[DhConfig.depth].to_numpy()[:, None]
         )
         cols_in = [col for col in cols if col in table.columns]
         r[cols_in] = np.nan
@@ -67,11 +62,7 @@ def resample_point(
     return r
 
 
-def desurvey_point(
-    r: pd.DataFrame,
-    table: pd.DataFrame,
-    cols: list
-):
+def desurvey_point(r: pd.DataFrame, table: pd.DataFrame, cols: list):
     interpolator = DataFrameInterpolator(r, DhConfig.depth)
     desurvey = interpolator(table[DhConfig.depth], cols=cols)
     # merged = table.merge(desurvey)
@@ -109,12 +100,10 @@ def resample_interval(
             )
         )
         exact_from = np.where(
-            table[DhConfig.sample_from].to_numpy()[None, :]
-            == r[DhConfig.depth].to_numpy()[:, None]
+            table[DhConfig.sample_from].to_numpy()[None, :] == r[DhConfig.depth].to_numpy()[:, None]
         )
         exact_to = np.where(
-            table[DhConfig.sample_to].to_numpy()[None, :]
-            == r[DhConfig.depth].to_numpy()[:, None]
+            table[DhConfig.sample_to].to_numpy()[None, :] == r[DhConfig.depth].to_numpy()[:, None]
         )
         for col in cols:
             if col not in table.columns:
@@ -124,10 +113,6 @@ def resample_interval(
             r[col] = np.nan
             # find values in the intervals and assign them to the survey
             r.loc[r.index[i], col] = table.loc[table.index[j], col].to_numpy()
-            r.loc[exact_from[0], col] = table.loc[
-                table.index[exact_from[1], col]
-            ].to_numpy()
-            r.loc[exact_to[0], col] = table.loc[
-                table.index[exact_to[1], col]
-            ].to_numpy()
+            r.loc[exact_from[0], col] = table.loc[table.index[exact_from[1], col]].to_numpy()
+            r.loc[exact_to[0], col] = table.loc[table.index[exact_to[1], col]].to_numpy()
     return r

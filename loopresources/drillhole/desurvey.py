@@ -45,7 +45,7 @@ def desurvey(
         newdepth = newinterval
     survey = survey.sort_values(DhConfig.depth).reset_index()
     if len(survey) == 0:
-        raise ValueError('Survey table is empty')
+        raise ValueError("Survey table is empty")
     ## extrapolate using the bottom azimuth value.. its better than nothing
     # convert from dip to inclination
     # dip is measured from the horizontal, inclination is measured from the vertical
@@ -54,10 +54,10 @@ def desurvey(
     # if inclination is provided not dip do nothing
     incl = survey[DhConfig.dip].to_numpy() + np.deg2rad(90)
     if not DhConfig.positive_dips_down:
-        print('positive dips down')
+        print("positive dips down")
         incl = np.deg2rad(90) - survey[DhConfig.dip].to_numpy()
     if DhConfig.dip_is_inclination:
-        print('dip is inclination')
+        print("dip is inclination")
         incl = survey[DhConfig.dip].to_numpy()
     incl_fill_value = incl.tolist()[-1]
     azi_fill_value = survey[DhConfig.azimuth].to_list()[-1]

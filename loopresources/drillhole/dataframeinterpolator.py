@@ -1,4 +1,4 @@
-from typing import Union, Optional
+from typing import Optional
 import pandas as pd
 import numpy as np
 import numpy.typing as npt
@@ -36,7 +36,15 @@ class DataFrameInterpolator:
 
         self.dataframe = dataframe.dropna(how="any")
         self.depth = depth
-        self.columns_to_interpolate = columns if columns is not None else [col for col in self.dataframe.columns if col != self.depth and col != DhConfig.holeid]
+        self.columns_to_interpolate = (
+            columns
+            if columns is not None
+            else [
+                col
+                for col in self.dataframe.columns
+                if col != self.depth and col != DhConfig.holeid
+            ]
+        )
         self.interpolators = {}
         for c in self.columns_to_interpolate:
             try:
@@ -64,7 +72,7 @@ class DataFrameInterpolator:
         pd.DataFrame
             _description_
         """
-        if cols == None:
+        if cols is None:
             cols = self.columns_to_interpolate
         deptharr = np.array(depth)
         result = pd.DataFrame(
@@ -75,6 +83,6 @@ class DataFrameInterpolator:
         result[PRIVATE_DEPTH] = deptharr
         for c in self.columns_to_interpolate:
             result[c] = self.interpolators[c](depth)
-        if issubclass(type(depth), (pd.Series,pd.DataFrame)):
+        if issubclass(type(depth), (pd.Series, pd.DataFrame)):
             result = result.set_index(depth.index)
         return result.drop(columns=[PRIVATE_DEPTH])

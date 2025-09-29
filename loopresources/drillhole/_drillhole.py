@@ -1,8 +1,5 @@
-import dataclasses
-from typing import Optional, List, Union
 import numpy as np
 import pandas as pd
-from . import DhConfig
 
 
 class DrillHole:
@@ -15,4 +12,4 @@ class DrillHole:
 
     @property
     def trace(self):
-        desurvey(collar, survey)
+        pass

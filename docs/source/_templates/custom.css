@@ -1,12 +1,12 @@
 .toggle .header {
-    display: block;
-    clear: both;
+  display: block;
+  clear: both;
 }
 
 .toggle .header:after {
-    content: " ▶";
+  content: " ▶";
 }
 
 .toggle .header.open:after {
-    content: " ▼";
+  content: " ▼";
 }

@@ -1,0 +1,119 @@
+# Top-level configuration
+minimum_pre_commit_version: "3.6.0"
+default_install_hook_types: [pre-commit, commit-msg, pre-push]
+# default_language_version:
+#   python: python3.8 # Match project baseline and target version
+
+ci:
+  autoupdate_commit_msg: "chore: update pre-commit hooks"
+  autofix_commit_msg: "style: pre-commit fixes"
+  autoupdate_schedule: monthly
+
+# exclude: ^(notebooks/|\.cruft\.json|\.copier-answers\.yml)$ # add more patterns as needed
+
+repos:
+  # ── Ruff: lint + format (uses dev dep already in pyproject) ────────────────
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.12.10
+    hooks:
+      - id: ruff
+        args: ["--fix", "--show-fixes", "--exit-non-zero-on-fix"]
+        files: &python-files ^(loopresources)/.*\.py$
+      - id: ruff-format # code formatter (150 cols picked up from pyproject)
+        files: *python-files
+
+  # ── Docstring & README code-block formatter (needs Black internally) ───────
+  - repo: https://github.com/adamchainz/blacken-docs
+    rev: 1.19.1
+    hooks:
+      - id: blacken-docs
+        args: ["--line-length", "150"] # keep parity with Ruff config
+        additional_dependencies: ["black==24.*"]
+
+  # ── Generic hygiene suite (cheap safeguards) ──────────────────────────────
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: check-added-large-files
+        files: &src-dirs "^(loopresources|docs)/"
+      - id: check-merge-conflict
+        files: *src-dirs
+      - id: end-of-file-fixer
+        files: *src-dirs
+      - id: trailing-whitespace
+        files: *src-dirs
+      #      - id: no-commit-to-branch
+      #        args: ["--branch", "main"]
+      - id: mixed-line-ending
+        files: *src-dirs
+
+  # ── Prettier for Markdown / JSON / YAML / web assets ──────────────────────
+  - repo: https://github.com/rbubley/mirrors-prettier
+    rev: v3.6.2
+    hooks:
+      - id: prettier
+        types_or: [yaml, markdown, json, html, css, scss, javascript]
+        files: &all-src "^((loopresources|docs)/.*|[^/]+)$"
+        args: ["--prose-wrap", "always", "--ignore-unknown"]
+        additional_dependencies: ["prettier@3.3.3"]
+
+  # ── Workflow / schema validation – catches CI config errors early ─────────
+  - repo: https://github.com/abravalheri/validate-pyproject
+    rev: v0.24.1
+    hooks:
+      - id: validate-pyproject
+
+  - repo: https://github.com/tox-dev/pyproject-fmt
+    rev: v2.6.0
+    hooks:
+      - id: pyproject-fmt
+
+  # - repo: https://github.com/rhysd/actionlint
+  #   rev: v1.7.7
+  #   hooks:
+  #     - id: actionlint
+  #       files: "^\\.github/workflows/.*\\.ya?ml$"
+
+  - repo: https://github.com/adrienverge/yamllint
+    rev: v1.37.1
+    hooks:
+      - id: yamllint
+        files: "^\\.github/workflows/|.*\\.ya?ml$"
+        args:
+          [
+            "-d",
+            "{extends: default, rules: {line-length: disable, truthy: disable,
+            document-start: disable, comments: disable, trailing-spaces:
+            disable, new-line-at-end-of-file: disable, brackets: disable,
+            braces: disable, indentation: disable}}",
+          ]
+
+  # ── Meta hooks for pre-commit config validation ───────────────────────────
+  - repo: meta
+    hooks:
+      - id: check-hooks-apply
+      - id: check-useless-excludes
+
+  # ── Secret detection (runs at pre-push stage) ─────────────────────────────
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.28.0
+    hooks:
+      - id: gitleaks
+        stages: [pre-push]
+        args: ["detect", "--redact"]
+
+  # ── Commit message validation ──────────────────────────────────────────────
+  - repo: https://github.com/commitizen-tools/commitizen
+    rev: v4.8.3
+    hooks:
+      - id: commitizen
+        stages: [commit-msg]
+
+  # # ── Local custom checks ─────────────────────────────────────────────────────
+  # - repo: local
+  #   hooks:
+  #     - id: forbid-print-in-lib
+  #       name: "forbid print() in library code"
+  #       language: pygrep
+  #       entry: '^\s*print\('
+  #       files: '^loopresources/.*\.py$'

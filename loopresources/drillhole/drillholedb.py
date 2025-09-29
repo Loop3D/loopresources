@@ -1,11 +1,10 @@
 import pandas as pd
 import numpy as np
-from typing import Optional
 import tqdm
 import logging
 from . import DhConfig
 from . import desurvey, DrillHole
-from . import resample_interval, resample_point, desurvey_point
+from . import resample_point, desurvey_point
 
 logger = logging.getLogger(__name__)
 
@@ -76,6 +75,7 @@ class DrillHoleDB:
     @collar.setter
     def collar(self, collar: pd.DataFrame):
         self._collar = collar
+
     def __getitem__(self, hole: str) -> pd.DataFrame:
         """Get the drillhole data for a specific hole
 
@@ -91,8 +91,22 @@ class DrillHoleDB:
         """
         if hole not in self.holes:
             raise ValueError(f"Hole {hole} not in database")
-        return DrillHole(collar=self.collar.loc[self.collar[DhConfig.holeid] == hole],survey=self.survey.loc[self.survey[DhConfig.holeid] == hole],holeid=hole,database=self)
-    def add_table(self, name: str, table: pd.DataFrame, type="interval", depth_col=None, from_col=None, to_col=None):
+        return DrillHole(
+            collar=self.collar.loc[self.collar[DhConfig.holeid] == hole],
+            survey=self.survey.loc[self.survey[DhConfig.holeid] == hole],
+            holeid=hole,
+            database=self,
+        )
+
+    def add_table(
+        self,
+        name: str,
+        table: pd.DataFrame,
+        type="interval",
+        depth_col=None,
+        from_col=None,
+        to_col=None,
+    ):
         """Add samples along the drillhole, these could be lithology
         or assay data. Need to have a sample_from and sample_to column
         and a holeid column.
@@ -128,6 +142,7 @@ class DrillHoleDB:
             self.columns[col] = name
 
         self.tables[type][name] = table
+
     def desurvey_points(self, columns: list) -> pd.DataFrame:
         """Desurvey the point data in the tables along the drillholes
 
@@ -164,7 +179,7 @@ class DrillHoleDB:
                 print(e, h)
                 continue
             for t in self.tables["point"].values():
-                cols = list(set(list(t.columns)) & set(columns))
+                cols = list(set(t.columns) & set(columns))
                 r = desurvey_point(r, t.loc[t[DhConfig.holeid] == h], cols)
                 r[DhConfig.holeid] = h
                 results.append(r)
@@ -172,7 +187,7 @@ class DrillHoleDB:
             return pd.concat(results)
         else:
             raise Exception("No results found")
-        
+
     def resample_table(self, columns: list, interval: float = 1.0) -> pd.DataFrame:
         """Resample the data in the tables along the drillholes at specific intervals
 
@@ -218,7 +233,7 @@ class DrillHoleDB:
                 print(e, h)
                 continue
             for t in self.tables["interval"].values():
-                cols = list(set(list(t.columns)) & set(columns))
+                cols = list(set(t.columns) & set(columns))
                 r_ = resample_point(r_, t.loc[t[DhConfig.holeid] == h], cols)
                 r_[DhConfig.holeid] = h
                 results.append(r_)

@@ -25,7 +25,7 @@ def calculate_adjacency_ball_tree(data: pd.DataFrame, radius: float, col: str, k
     This function uses the ball tree algorithm to calculate the adjacency matrix
     """
 
-    locations = data[['x', 'y', 'z', col]].to_numpy()
+    locations = data[["x", "y", "z", col]].to_numpy()
     tree = BallTree(locations[:, 0:3], leaf_size=40)
     dist, ind = tree.query(locations[:, 0:3], k=k)
     adjacency_matrix = np.zeros((len(np.unique(locations[:, 3])), len(np.unique(locations[:, 3]))))
@@ -62,7 +62,7 @@ def calculate_adjacency_down_hole(
     This function calculates the adjacency matrix for downhole data
     """
 
-    locations = desurveyed_drillholes[['x', 'y', 'z', col, holeid]].to_numpy()
+    locations = desurveyed_drillholes[["x", "y", "z", col, holeid]].to_numpy()
     holes = np.unique(locations[:, 4])
     adjacency_matrix = np.zeros((len(np.unique(locations[:, 3])), len(np.unique(locations[:, 3]))))
     mask = np.array([0, 1], dtype=int)
