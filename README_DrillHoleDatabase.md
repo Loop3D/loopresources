@@ -7,6 +7,7 @@ A modern, clean implementation of the DrillHoleDatabase class following the AGEN
 - **Clean Architecture**: Follows AGENTS.md specifications with clear separation of concerns
 - **Pandas-Native**: Built on pandas DataFrames for efficient data manipulation
 - **Filtering API**: Powerful filtering by holes, bounding box, depth range, and expressions
+- **Preprocessing Tools**: Validate numerical data and filter by data quality thresholds
 - **Validation**: Comprehensive validation of data integrity
 - **Type Hints**: Full type annotations for better IDE support
 - **Comprehensive Tests**: Extensive test suite using pytest
@@ -134,6 +135,35 @@ subset = db.filter(
     expr="CU_PPM > 400"
 )
 ```
+
+### Preprocessing and Data Quality
+
+The database provides tools for validating and cleaning numerical data:
+
+```python
+# Validate numerical columns (converts strings, removes negatives/zeros)
+db.validate_numerical_columns(
+    'assay',
+    columns=['CU_PPM', 'AU_PPM', 'AG_PPM'],
+    allow_negative=False  # Replace values <= 0 with NaN
+)
+
+# Filter by data quality (remove rows with too many NaN values)
+filtered_db = db.filter_by_nan_threshold(
+    'assay',
+    columns=['CU_PPM', 'AU_PPM', 'AG_PPM'],
+    threshold=0.75  # Keep rows with ≥75% valid values
+)
+
+# Chain preprocessing operations
+clean_db = (db
+    .validate_numerical_columns('assay', ['CU_PPM', 'AU_PPM'], allow_negative=False)
+    .filter(holes=['DH001', 'DH002'])
+    .filter_by_nan_threshold('assay', ['CU_PPM', 'AU_PPM'], threshold=0.8)
+)
+```
+
+See `examples/example_preprocessing.py` for a complete example.
 
 ## Data Model
 
