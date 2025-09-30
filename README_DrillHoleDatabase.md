@@ -10,6 +10,25 @@ A modern, clean implementation of the DrillHoleDatabase class following the AGEN
 - **Validation**: Comprehensive validation of data integrity
 - **Type Hints**: Full type annotations for better IDE support
 - **Comprehensive Tests**: Extensive test suite using pytest
+- **File Backend**: Optional SQLite storage for large datasets (see [File Database Backend](README_FileDatabase.md))
+
+## Database Backend Options
+
+### Memory Backend (Default)
+Data is stored in pandas DataFrames in RAM - fast but limited by available memory.
+
+### File Backend (New!)
+Data is stored in SQLite database files - supports massive datasets and persistent storage.
+
+```python
+from loopresources.drillhole import DrillholeDatabase, DbConfig
+
+# File backend with project organization
+db_config = DbConfig(backend='file', db_path='drillholes.db', project_name='MyProject')
+db = DrillholeDatabase(collar, survey, db_config)
+```
+
+See [README_FileDatabase.md](README_FileDatabase.md) for complete documentation.
 
 ## Quick Start
 
