@@ -312,6 +312,138 @@ class DrillholeDatabase:
         # Convert angles if needed
         self._normalize_angles()
 
+    @classmethod
+    def from_csv(
+        cls,
+        collar_file: str,
+        survey_file: str,
+        collar_columns: Optional[Dict[str, str]] = None,
+        survey_columns: Optional[Dict[str, str]] = None,
+        **kwargs
+    ) -> "DrillholeDatabase":
+        """
+        Create a DrillholeDatabase from CSV files with column mapping.
+
+        Parameters
+        ----------
+        collar_file : str
+            Path to the collar CSV file
+        survey_file : str
+            Path to the survey CSV file
+        collar_columns : dict, optional
+            Mapping of CSV column names to required DrillholeDatabase columns.
+            Keys should be DhConfig field names (holeid, x, y, z, total_depth).
+            Values should be the actual column names in the CSV file.
+            Example: {
+                'holeid': 'HOLE_ID',
+                'x': 'X_MGA',
+                'y': 'Y_MGA',
+                'z': 'Z_MGA',
+                'total_depth': 'DEPTH'
+            }
+        survey_columns : dict, optional
+            Mapping of CSV column names to required DrillholeDatabase columns.
+            Keys should be DhConfig field names (holeid, depth, azimuth, dip).
+            Values should be the actual column names in the CSV file.
+            Example: {
+                'holeid': 'Drillhole ID',
+                'depth': 'Depth',
+                'azimuth': 'Azimuth',
+                'dip': 'Dip'
+            }
+        **kwargs
+            Additional keyword arguments passed to pd.read_csv()
+
+        Returns
+        -------
+        DrillholeDatabase
+            New DrillholeDatabase instance with data loaded from CSV files
+
+        Examples
+        --------
+        Load CSV files with column mapping:
+
+        >>> db = DrillholeDatabase.from_csv(
+        ...     collar_file='collar.csv',
+        ...     survey_file='survey.csv',
+        ...     collar_columns={
+        ...         'holeid': 'HOLE_ID',
+        ...         'x': 'X_MGA',
+        ...         'y': 'Y_MGA',
+        ...         'z': 'Z_MGA',
+        ...         'total_depth': 'DEPTH'
+        ...     },
+        ...     survey_columns={
+        ...         'holeid': 'Drillhole ID',
+        ...         'depth': 'Depth',
+        ...         'azimuth': 'Azimuth',
+        ...         'dip': 'Dip'
+        ...     }
+        ... )
+
+        Load CSV files without mapping (assumes columns match DhConfig names):
+
+        >>> db = DrillholeDatabase.from_csv(
+        ...     collar_file='collar.csv',
+        ...     survey_file='survey.csv'
+        ... )
+        """
+        # Read CSV files
+        collar_raw = pd.read_csv(collar_file, **kwargs)
+        survey_raw = pd.read_csv(survey_file, **kwargs)
+
+        # Map collar columns
+        if collar_columns is not None:
+            # Create mapping from config field names to actual column names
+            collar_df = pd.DataFrame()
+            for config_field, csv_column in collar_columns.items():
+                # Get the actual DhConfig attribute value
+                config_col_name = getattr(DhConfig, config_field, config_field)
+                if csv_column not in collar_raw.columns:
+                    raise ValueError(
+                        f"Column '{csv_column}' specified in collar_columns mapping not found in collar CSV. "
+                        f"Available columns: {list(collar_raw.columns)}"
+                    )
+                collar_df[config_col_name] = collar_raw[csv_column]
+            
+            # Add any remaining columns that weren't mapped
+            for col in collar_raw.columns:
+                if col not in collar_columns.values():
+                    collar_df[col] = collar_raw[col]
+        else:
+            collar_df = collar_raw.copy()
+
+        # Map survey columns
+        if survey_columns is not None:
+            # Create mapping from config field names to actual column names
+            survey_df = pd.DataFrame()
+            for config_field, csv_column in survey_columns.items():
+                # Get the actual DhConfig attribute value
+                config_col_name = getattr(DhConfig, config_field, config_field)
+                if csv_column not in survey_raw.columns:
+                    raise ValueError(
+                        f"Column '{csv_column}' specified in survey_columns mapping not found in survey CSV. "
+                        f"Available columns: {list(survey_raw.columns)}"
+                    )
+                survey_df[config_col_name] = survey_raw[csv_column]
+            
+            # Add any remaining columns that weren't mapped
+            for col in survey_raw.columns:
+                if col not in survey_columns.values():
+                    survey_df[col] = survey_raw[col]
+        else:
+            survey_df = survey_raw.copy()
+
+        # Remove rows with missing essential data
+        required_collar_cols = [DhConfig.holeid, DhConfig.x, DhConfig.y, DhConfig.z, DhConfig.total_depth]
+        collar_df = collar_df.dropna(subset=required_collar_cols)
+
+        required_survey_cols = [DhConfig.holeid, DhConfig.depth, DhConfig.azimuth, DhConfig.dip]
+        survey_df = survey_df.dropna(subset=required_survey_cols)
+
+        # Create and return DrillholeDatabase instance
+        return cls(collar=collar_df, survey=survey_df)
+
     def _validate_collar(self):
         """Validate collar DataFrame structure."""
         required_cols = [DhConfig.holeid, DhConfig.x, DhConfig.y, DhConfig.z, DhConfig.total_depth]
