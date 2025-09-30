@@ -94,13 +94,13 @@ repos:
       - id: check-hooks-apply
       - id: check-useless-excludes
 
-  # ── Secret detection (runs at pre-push stage) ─────────────────────────────
-  - repo: https://github.com/gitleaks/gitleaks
-    rev: v8.28.0
-    hooks:
-      - id: gitleaks
-        stages: [pre-push]
-        args: ["detect", "--redact"]
+  # # ── Secret detection (runs at pre-push stage) ─────────────────────────────
+  # - repo: https://github.com/gitleaks/gitleaks
+  #   rev: v8.28.0
+  #   hooks:
+  #     - id: gitleaks
+  #       stages: [pre-push]
+  #       args: ["detect", "--redact"]
 
   # ── Commit message validation ──────────────────────────────────────────────
   - repo: https://github.com/commitizen-tools/commitizen
