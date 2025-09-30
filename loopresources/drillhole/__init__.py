@@ -2,7 +2,9 @@ from .dhconfig import DhConfig
 from .dbconfig import DbConfig
 from .desurvey import desurvey
 from .drillhole_database import DrillHole, DrillholeDatabase
+
 from .dataframeinterpolator import DataFrameInterpolator
+from .drillhole_database import DrillholeDatabase, DrillHole
 
 from .resample import resample_interval, resample_point, desurvey_point
 try:
