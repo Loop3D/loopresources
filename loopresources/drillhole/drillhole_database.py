@@ -378,10 +378,14 @@ class DrillholeDatabase:
             
             # Apply expression filter
             if expr is not None and not filtered_table.empty:
-                if callable(expr):
-                    filtered_table = filtered_table[expr(filtered_table)].copy()
-                elif isinstance(expr, str):
-                    filtered_table = filtered_table.query(expr).copy()
+                try:
+                    if callable(expr):
+                        filtered_table = filtered_table[expr(filtered_table)].copy()
+                    elif isinstance(expr, str):
+                        filtered_table = filtered_table.query(expr).copy()
+                except (KeyError, pd.errors.UndefinedVariableError):
+                    # Expression doesn't apply to this table (e.g., LITHO column not present)
+                    pass
             
             if not filtered_table.empty:
                 new_db.intervals[name] = filtered_table
@@ -403,10 +407,14 @@ class DrillholeDatabase:
             
             # Apply expression filter
             if expr is not None and not filtered_table.empty:
-                if callable(expr):
-                    filtered_table = filtered_table[expr(filtered_table)].copy()
-                elif isinstance(expr, str):
-                    filtered_table = filtered_table.query(expr).copy()
+                try:
+                    if callable(expr):
+                        filtered_table = filtered_table[expr(filtered_table)].copy()
+                    elif isinstance(expr, str):
+                        filtered_table = filtered_table.query(expr).copy()
+                except (KeyError, pd.errors.UndefinedVariableError):
+                    # Expression doesn't apply to this table (e.g., column not present)
+                    pass
             
             if not filtered_table.empty:
                 new_db.points[name] = filtered_table
