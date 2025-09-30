@@ -9,6 +9,7 @@ def desurvey(
     collar: pd.DataFrame,
     survey: pd.DataFrame,
     newinterval: Union[np.ndarray, float] = 1.0,
+    drop_intermediate: bool = True,
 ):
     """Desurvey and resample a drillhole along a specific interval
 
@@ -20,6 +21,8 @@ def desurvey(
         survey table for a single drill hole
     newinterval : float, optional
         step size of interval, by default 1.0 meter
+    drop_intermediate : bool, optional
+        whether to drop intermediate columns (xm, ym, zm), by default True
 
     Returns
     -------
@@ -144,4 +147,8 @@ def desurvey(
     resampled_survey["x"] = resampled_survey["x_mid"]
     resampled_survey["y"] = resampled_survey["y_mid"]
     resampled_survey["z"] = resampled_survey["z_mid"]
-    return resampled_survey
+
+    if drop_intermediate:
+        return resampled_survey.drop(columns=["xm", "ym", "zm"])
+    else:
+        return resampled_survey
