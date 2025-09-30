@@ -70,6 +70,9 @@ instance/
 
 # Sphinx documentation
 docs/_build/
+docs/build/
+docs/source/auto_examples/
+docs/source/sg_execution_times.rst
 
 # PyBuilder
 .pybuilder/
@@ -160,3 +163,13 @@ cython_debug/
 #.idea/
 docs/source/_autosummary/*
 **/.DS_Store
+
+# Sphinx Gallery generated files
+*.py.md5
+**/sg_execution_times.rst
+**/auto_examples/
+**/images/sphx_glr_*
+
+# Documentation build artifacts
+docs/source/_build/
+docs/source/modules.rst
