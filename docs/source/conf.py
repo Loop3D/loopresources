@@ -40,13 +40,25 @@ extensions = [
     # The Napoleon extension allows for nicer argument formatting.
     "sphinx.ext.napoleon",
     # add sphinx gallery
-    # "sphinx_gallery.gen_gallery",
+    "sphinx_gallery.gen_gallery",
     # citations
     "myst_parser",
 ]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
+
+# Sphinx Gallery configuration
+sphinx_gallery_conf = {
+    "examples_dirs": "../../examples",  # path to your example scripts
+    "gallery_dirs": "auto_examples",    # path to where to save gallery generated output
+    "filename_pattern": "/plot_",       # pattern to match example files
+    "ignore_pattern": "__init__\.py",   # ignore __init__.py files
+    "download_all_examples": False,
+    "min_reported_time": 0,
+    "thumbnail_size": (200, 200),
+    "abort_on_example_error": False,
+}
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
