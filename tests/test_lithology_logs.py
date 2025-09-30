@@ -221,7 +221,7 @@ class TestLithologyLogs:
         """Test identification of pairs with storage."""
         litho_logs = LithologyLogs(database_with_geology, 'geology')
         
-        pairs = litho_logs.identify_lithological_pairs(store_as='litho_pairs')
+        litho_logs.identify_lithological_pairs(store_as='litho_pairs')
         
         # Note: The summary pairs table is not stored, but contacts are
         assert 'litho_pairs' in database_with_geology.points

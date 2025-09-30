@@ -6,8 +6,7 @@ and identify lithological pairs from drillhole interval data.
 """
 
 import pandas as pd
-import numpy as np
-from typing import List, Optional, Dict, Tuple
+from typing import List, Optional
 from scipy.ndimage import uniform_filter1d
 import logging
 
