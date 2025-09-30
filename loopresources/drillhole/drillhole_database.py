@@ -9,8 +9,12 @@ import pandas as pd
 import numpy as np
 from typing import Dict, List, Optional, Tuple, Union, Callable
 import logging
+import sqlite3
+import json
+from pathlib import Path
 
 from .dhconfig import DhConfig
+from .dbconfig import DbConfig
 
 logger = logging.getLogger(__name__)
 
@@ -287,7 +291,12 @@ class DrillholeDatabase:
     the specification in AGENTS.md.
     """
 
-    def __init__(self, collar: pd.DataFrame, survey: pd.DataFrame):
+    def __init__(
+        self,
+        collar: pd.DataFrame,
+        survey: pd.DataFrame,
+        db_config: Optional[DbConfig] = None
+    ):
         """
         Initialize DrillholeDatabase.
 
@@ -299,11 +308,27 @@ class DrillholeDatabase:
         survey : pd.DataFrame
             Survey data with one row per survey station
             Required columns: HOLE_ID, DEPTH, AZIMUTH, DIP
+        db_config : DbConfig, optional
+            Database backend configuration. If None, uses in-memory storage.
         """
-        self.collar = collar.copy()
-        self.survey = survey.copy()
-        self.intervals: Dict[str, pd.DataFrame] = {}
-        self.points: Dict[str, pd.DataFrame] = {}
+        self.db_config = db_config if db_config is not None else DbConfig(backend='memory')
+        self._conn = None
+        
+        # Store data based on backend configuration
+        if self.db_config.backend == 'memory':
+            self.collar = collar.copy()
+            self.survey = survey.copy()
+            self.intervals: Dict[str, pd.DataFrame] = {}
+            self.points: Dict[str, pd.DataFrame] = {}
+        else:
+            # File-based backend
+            self._initialize_database()
+            self._store_data_to_db(collar, survey)
+            # Keep references but data will be loaded from DB on demand
+            self._collar = None
+            self._survey = None
+            self.intervals: Dict[str, pd.DataFrame] = {}
+            self.points: Dict[str, pd.DataFrame] = {}
 
         # Validate input data
         self._validate_collar()
@@ -311,6 +336,313 @@ class DrillholeDatabase:
 
         # Convert angles if needed
         self._normalize_angles()
+    
+    @property
+    def collar(self) -> pd.DataFrame:
+        """Get collar data from memory or database."""
+        if self.db_config.backend == 'memory':
+            return self._collar if hasattr(self, '_collar') and self._collar is not None else getattr(self, '_memory_collar', pd.DataFrame())
+        else:
+            return self._load_table_from_db('collar')
+    
+    @collar.setter
+    def collar(self, value: pd.DataFrame):
+        """Set collar data."""
+        if self.db_config.backend == 'memory':
+            self._memory_collar = value
+        else:
+            self._collar = value
+    
+    @property
+    def survey(self) -> pd.DataFrame:
+        """Get survey data from memory or database."""
+        if self.db_config.backend == 'memory':
+            return self._survey if hasattr(self, '_survey') and self._survey is not None else getattr(self, '_memory_survey', pd.DataFrame())
+        else:
+            return self._load_table_from_db('survey')
+    
+    @survey.setter
+    def survey(self, value: pd.DataFrame):
+        """Set survey data."""
+        if self.db_config.backend == 'memory':
+            self._memory_survey = value
+        else:
+            self._survey = value
+    
+    def _initialize_database(self):
+        """Initialize SQLite database and create tables."""
+        db_path = Path(self.db_config.db_path)
+        db_path.parent.mkdir(parents=True, exist_ok=True)
+        
+        self._conn = sqlite3.connect(str(db_path))
+        cursor = self._conn.cursor()
+        
+        # Create projects table
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS projects (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT UNIQUE NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                metadata TEXT
+            )
+        ''')
+        
+        # Insert project if specified
+        if self.db_config.project_name:
+            cursor.execute(
+                'INSERT OR IGNORE INTO projects (name) VALUES (?)',
+                (self.db_config.project_name,)
+            )
+        
+        self._conn.commit()
+    
+    def _get_project_id(self) -> Optional[int]:
+        """Get project ID from database."""
+        if not self.db_config.project_name:
+            return None
+        
+        cursor = self._conn.cursor()
+        cursor.execute(
+            'SELECT id FROM projects WHERE name = ?',
+            (self.db_config.project_name,)
+        )
+        result = cursor.fetchone()
+        return result[0] if result else None
+    
+    def _store_data_to_db(self, collar: pd.DataFrame, survey: pd.DataFrame):
+        """Store collar and survey data to database."""
+        project_id = self._get_project_id()
+        
+        # Add project_id column if project is specified
+        if project_id is not None:
+            collar = collar.copy()
+            collar['project_id'] = project_id
+            survey = survey.copy()
+            survey['project_id'] = project_id
+        
+        # Store to SQLite
+        collar.to_sql('collar', self._conn, if_exists='append', index=False)
+        survey.to_sql('survey', self._conn, if_exists='append', index=False)
+    
+    def _load_table_from_db(self, table_name: str) -> pd.DataFrame:
+        """Load table from database."""
+        if self._conn is None:
+            return pd.DataFrame()
+        
+        project_id = self._get_project_id()
+        
+        if project_id is not None:
+            query = f"SELECT * FROM {table_name} WHERE project_id = ?"
+            df = pd.read_sql_query(query, self._conn, params=(project_id,))
+            # Remove project_id column from result
+            if 'project_id' in df.columns:
+                df = df.drop(columns=['project_id'])
+        else:
+            df = pd.read_sql_query(f"SELECT * FROM {table_name}", self._conn)
+        
+        return df
+    
+    @classmethod
+    def from_database(
+        cls,
+        db_path: str,
+        project_name: Optional[str] = None
+    ) -> "DrillholeDatabase":
+        """
+        Load DrillholeDatabase from an existing SQLite database.
+        
+        Parameters
+        ----------
+        db_path : str
+            Path to the SQLite database file
+        project_name : str, optional
+            Name of the project to load. If None, loads all data.
+        
+        Returns
+        -------
+        DrillholeDatabase
+            Database instance loaded from file
+        """
+        db_config = DbConfig(backend='file', db_path=db_path, project_name=project_name)
+        
+        # Connect to database and load collar/survey
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+        
+        # Check if projects table exists
+        cursor.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='projects'"
+        )
+        projects_table_exists = cursor.fetchone() is not None
+        
+        # Load collar and survey
+        if project_name:
+            if not projects_table_exists:
+                conn.close()
+                raise ValueError(f"Projects table not found in database")
+            
+            # Get project_id
+            cursor.execute('SELECT id FROM projects WHERE name = ?', (project_name,))
+            result = cursor.fetchone()
+            if result is None:
+                conn.close()
+                raise ValueError(f"Project '{project_name}' not found in database")
+            project_id = result[0]
+            
+            collar = pd.read_sql_query(
+                "SELECT * FROM collar WHERE project_id = ?",
+                conn,
+                params=(project_id,)
+            )
+            survey = pd.read_sql_query(
+                "SELECT * FROM survey WHERE project_id = ?",
+                conn,
+                params=(project_id,)
+            )
+            
+            # Remove project_id from dataframes
+            if 'project_id' in collar.columns:
+                collar = collar.drop(columns=['project_id'])
+            if 'project_id' in survey.columns:
+                survey = survey.drop(columns=['project_id'])
+        else:
+            collar = pd.read_sql_query("SELECT * FROM collar", conn)
+            survey = pd.read_sql_query("SELECT * FROM survey", conn)
+        
+        conn.close()
+        
+        # Create instance with loaded data
+        instance = cls.__new__(cls)
+        instance.db_config = db_config
+        instance._conn = None
+        instance._initialize_database()
+        
+        # Store data in memory for validation
+        instance._memory_collar = collar
+        instance._memory_survey = survey
+        instance.intervals = {}
+        instance.points = {}
+        
+        # Validate
+        instance._validate_collar()
+        instance._validate_survey()
+        instance._normalize_angles()
+        
+        return instance
+    
+    @classmethod
+    def link_to_database(
+        cls,
+        db_path: str,
+        project_name: Optional[str] = None
+    ) -> "DrillholeDatabase":
+        """
+        Create a DrillholeDatabase instance linked to an existing database.
+        
+        This method keeps a persistent connection to the database and loads
+        data on-demand rather than loading everything into memory.
+        
+        Parameters
+        ----------
+        db_path : str
+            Path to the SQLite database file
+        project_name : str, optional
+            Name of the project to link to. If None, links to all data.
+        
+        Returns
+        -------
+        DrillholeDatabase
+            Database instance linked to file
+        """
+        return cls.from_database(db_path, project_name)
+    
+    def save_to_database(
+        self,
+        db_path: str,
+        project_name: Optional[str] = None,
+        overwrite: bool = False
+    ):
+        """
+        Save the current database to a SQLite file.
+        
+        Parameters
+        ----------
+        db_path : str
+            Path to the SQLite database file
+        project_name : str, optional
+            Name of the project to save as
+        overwrite : bool, optional
+            If True, overwrite existing data for this project
+        """
+        db_config = DbConfig(backend='file', db_path=db_path, project_name=project_name)
+        
+        # Create connection
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+        
+        # Create tables
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS projects (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT UNIQUE NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                metadata TEXT
+            )
+        ''')
+        
+        # Handle project
+        project_id = None
+        if project_name:
+            if overwrite:
+                # Delete existing project data
+                cursor.execute('SELECT id FROM projects WHERE name = ?', (project_name,))
+                result = cursor.fetchone()
+                if result:
+                    project_id = result[0]
+                    cursor.execute('DELETE FROM collar WHERE project_id = ?', (project_id,))
+                    cursor.execute('DELETE FROM survey WHERE project_id = ?', (project_id,))
+                else:
+                    cursor.execute('INSERT INTO projects (name) VALUES (?)', (project_name,))
+                    project_id = cursor.lastrowid
+            else:
+                cursor.execute('INSERT OR IGNORE INTO projects (name) VALUES (?)', (project_name,))
+                cursor.execute('SELECT id FROM projects WHERE name = ?', (project_name,))
+                project_id = cursor.fetchone()[0]
+        
+        # Save collar and survey
+        collar_data = self.collar.copy()
+        survey_data = self.survey.copy()
+        
+        if project_id:
+            collar_data['project_id'] = project_id
+            survey_data['project_id'] = project_id
+        
+        collar_data.to_sql('collar', conn, if_exists='append', index=False)
+        survey_data.to_sql('survey', conn, if_exists='append', index=False)
+        
+        # Save interval and point tables
+        for name, df in self.intervals.items():
+            table_data = df.copy()
+            if project_id:
+                table_data['project_id'] = project_id
+            table_data.to_sql(f'interval_{name}', conn, if_exists='append', index=False)
+        
+        for name, df in self.points.items():
+            table_data = df.copy()
+            if project_id:
+                table_data['project_id'] = project_id
+            table_data.to_sql(f'point_{name}', conn, if_exists='append', index=False)
+        
+        conn.commit()
+        conn.close()
+    
+    def __del__(self):
+        """Clean up database connection."""
+        if hasattr(self, '_conn') and self._conn is not None:
+            try:
+                self._conn.close()
+            except:
+                pass
 
     def _validate_collar(self):
         """Validate collar DataFrame structure."""

@@ -1,4 +1,5 @@
 from .dhconfig import DhConfig
+from .dbconfig import DbConfig
 from .desurvey import desurvey
 from .drillhole_database import DrillHole, DrillholeDatabase
 from .dataframeinterpolator import DataFrameInterpolator
