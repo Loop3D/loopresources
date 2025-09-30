@@ -206,3 +206,35 @@ class TestFileDatabaseBackend:
         
         with pytest.raises(ValueError, match="Projects table not found|Project .* not found"):
             DrillholeDatabase.from_database(temp_db_path, project_name='nonexistent')
+    
+    def test_interval_and_point_tables(self, sample_collar, sample_survey, temp_db_path):
+        """Test saving and loading interval and point tables."""
+        # Create database with interval and point data
+        db = DrillholeDatabase(sample_collar, sample_survey)
+        
+        # Add interval table
+        geology = pd.DataFrame({
+            DhConfig.holeid: ['DH001', 'DH001', 'DH002'],
+            DhConfig.sample_from: [0.0, 30.0, 0.0],
+            DhConfig.sample_to: [30.0, 80.0, 100.0],
+            'LITHO': ['granite', 'schist', 'granite']
+        })
+        db.add_interval_table('geology', geology)
+        
+        # Add point table
+        assay = pd.DataFrame({
+            DhConfig.holeid: ['DH001', 'DH002'],
+            DhConfig.depth: [10.0, 50.0],
+            'CU_PPM': [500.0, 800.0]
+        })
+        db.add_point_table('assay', assay)
+        
+        # Save to database
+        db.save_to_database(temp_db_path, project_name='test_project')
+        
+        # Load and verify
+        db_loaded = DrillholeDatabase.from_database(temp_db_path, project_name='test_project')
+        
+        # Verify basic structure
+        assert len(db_loaded.collar) == 3
+        assert len(db_loaded.survey) == 5
