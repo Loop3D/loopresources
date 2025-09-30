@@ -8,7 +8,63 @@ This document describes the file-based database backend feature added to Drillho
 - **Project organization**: Support multiple projects in a single database file
 - **Persistence**: Save and load databases from disk
 - **Memory efficiency**: Large datasets don't fill up RAM when using file backend
+- **Optimized queries**: Database queries fetch only the data needed for specific holes
 - **Backward compatible**: Default behavior remains unchanged (memory backend)
+
+## Optimized Database Queries
+
+When using the file backend, the DrillholeDatabase now uses optimized SQL queries to fetch only the data needed for specific holes, rather than loading entire tables into memory and filtering in Python.
+
+### Key Benefits
+
+1. **Memory Efficiency**: Only loads data for the requested hole
+2. **Performance**: Database does the filtering (faster than Python)
+3. **Scalability**: Works efficiently even with massive datasets
+4. **Automatic**: The `DrillHole` class uses optimized queries automatically
+
+### Optimized Methods
+
+```python
+# Get collar data for a specific hole
+collar_data = db.get_collar_for_hole('DH001')
+
+# Get survey data for a specific hole
+survey_data = db.get_survey_for_hole('DH001')
+
+# Get interval table data for a specific hole
+geology_data = db.get_interval_data_for_hole('geology', 'DH001')
+
+# Get point table data for a specific hole
+assay_data = db.get_point_data_for_hole('assay', 'DH001')
+```
+
+### Automatic Optimization
+
+The `DrillHole` class automatically uses these optimized methods:
+
+```python
+# When using file backend, this queries the database directly
+# for only the data needed for DH001
+drillhole = db['DH001']
+
+# No loading of entire collar/survey tables!
+print(drillhole.collar)  # Only DH001 collar data
+print(drillhole.survey)  # Only DH001 survey data
+```
+
+### SQL Queries Executed
+
+For file backend, when you access a specific hole:
+
+```sql
+-- Instead of loading everything:
+SELECT * FROM collar WHERE project_id = ?
+
+-- We now execute:
+SELECT * FROM collar WHERE project_id = ? AND HOLEID = ?
+```
+
+This dramatically reduces memory usage and improves performance for large datasets.
 
 ## Configuration
 

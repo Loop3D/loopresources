@@ -39,12 +39,10 @@ class DrillHole:
         self.database = database
         self.hole_id = hole_id
 
-        # Filter collar and survey for this hole
-        collar_mask = self.database.collar[DhConfig.holeid] == hole_id
-        survey_mask = self.database.survey[DhConfig.holeid] == hole_id
-
-        self.collar = self.database.collar[collar_mask].copy()
-        self.survey = self.database.survey[survey_mask].copy()
+        # Use optimized methods to get data for this hole
+        # For file backend, this queries the database directly
+        self.collar = self.database.get_collar_for_hole(hole_id)
+        self.survey = self.database.get_survey_for_hole(hole_id)
 
         if self.collar.empty:
             raise ValueError(f"Hole {hole_id} not found in collar data")
@@ -67,24 +65,19 @@ class DrillHole:
         """
         # Check intervals first
         if propertyname in self.database.intervals:
-            table = self.database.intervals[propertyname]
-            mask = table[DhConfig.holeid] == self.hole_id
-            return table[mask].copy()
+            return self.database.get_interval_data_for_hole(propertyname, self.hole_id)
 
         # Check points
         if propertyname in self.database.points:
-            table = self.database.points[propertyname]
-            mask = table[DhConfig.holeid] == self.hole_id
-            return table[mask].copy()
+            return self.database.get_point_data_for_hole(propertyname, self.hole_id)
 
         raise KeyError(f"Table '{propertyname}' not found in intervals or points")
 
     def interval_tables(self) -> Dict[str, pd.DataFrame]:
         """Return all interval tables for this hole."""
         result = {}
-        for name, table in self.database.intervals.items():
-            mask = table[DhConfig.holeid] == self.hole_id
-            filtered = table[mask].copy()
+        for name in self.database.intervals.keys():
+            filtered = self.database.get_interval_data_for_hole(name, self.hole_id)
             if not filtered.empty:
                 result[name] = filtered
         return result
@@ -92,9 +85,8 @@ class DrillHole:
     def point_tables(self) -> Dict[str, pd.DataFrame]:
         """Return all point tables for this hole."""
         result = {}
-        for name, table in self.database.points.items():
-            mask = table[DhConfig.holeid] == self.hole_id
-            filtered = table[mask].copy()
+        for name in self.database.points.keys():
+            filtered = self.database.get_point_data_for_hole(name, self.hole_id)
             if not filtered.empty:
                 result[name] = filtered
         return result
@@ -369,6 +361,106 @@ class DrillholeDatabase:
         else:
             self._survey = value
     
+    def get_collar_for_hole(self, hole_id: str) -> pd.DataFrame:
+        """
+        Get collar data for a specific hole.
+        
+        For file backend, this queries the database directly rather than
+        loading all collar data and filtering in Python.
+        
+        Parameters
+        ----------
+        hole_id : str
+            The hole identifier
+        
+        Returns
+        -------
+        pd.DataFrame
+            Collar data for the specified hole
+        """
+        if self.db_config.backend == 'memory':
+            collar_data = self.collar
+            mask = collar_data[DhConfig.holeid] == hole_id
+            return collar_data[mask].copy()
+        else:
+            return self._load_table_from_db('collar', hole_id=hole_id)
+    
+    def get_survey_for_hole(self, hole_id: str) -> pd.DataFrame:
+        """
+        Get survey data for a specific hole.
+        
+        For file backend, this queries the database directly rather than
+        loading all survey data and filtering in Python.
+        
+        Parameters
+        ----------
+        hole_id : str
+            The hole identifier
+        
+        Returns
+        -------
+        pd.DataFrame
+            Survey data for the specified hole
+        """
+        if self.db_config.backend == 'memory':
+            survey_data = self.survey
+            mask = survey_data[DhConfig.holeid] == hole_id
+            return survey_data[mask].copy()
+        else:
+            return self._load_table_from_db('survey', hole_id=hole_id)
+    
+    def get_interval_data_for_hole(self, table_name: str, hole_id: str) -> pd.DataFrame:
+        """
+        Get interval table data for a specific hole.
+        
+        For file backend with saved tables, this could query the database directly.
+        Currently filters in-memory data.
+        
+        Parameters
+        ----------
+        table_name : str
+            Name of the interval table
+        hole_id : str
+            The hole identifier
+        
+        Returns
+        -------
+        pd.DataFrame
+            Interval data for the specified hole
+        """
+        if table_name not in self.intervals:
+            return pd.DataFrame()
+        
+        table = self.intervals[table_name]
+        mask = table[DhConfig.holeid] == hole_id
+        return table[mask].copy()
+    
+    def get_point_data_for_hole(self, table_name: str, hole_id: str) -> pd.DataFrame:
+        """
+        Get point table data for a specific hole.
+        
+        For file backend with saved tables, this could query the database directly.
+        Currently filters in-memory data.
+        
+        Parameters
+        ----------
+        table_name : str
+            Name of the point table
+        hole_id : str
+            The hole identifier
+        
+        Returns
+        -------
+        pd.DataFrame
+            Point data for the specified hole
+        """
+        if table_name not in self.points:
+            return pd.DataFrame()
+        
+        table = self.points[table_name]
+        mask = table[DhConfig.holeid] == hole_id
+        return table[mask].copy()
+    
     def _initialize_database(self):
         """Initialize SQLite database and create tables."""
         db_path = Path(self.db_config.db_path)
@@ -424,21 +516,49 @@ class DrillholeDatabase:
         collar.to_sql('collar', self._conn, if_exists='append', index=False)
         survey.to_sql('survey', self._conn, if_exists='append', index=False)
     
-    def _load_table_from_db(self, table_name: str) -> pd.DataFrame:
-        """Load table from database."""
+    def _load_table_from_db(self, table_name: str, hole_id: Optional[str] = None) -> pd.DataFrame:
+        """
+        Load table from database.
+        
+        Parameters
+        ----------
+        table_name : str
+            Name of the table to load
+        hole_id : str, optional
+            If provided, only load data for this specific hole
+        
+        Returns
+        -------
+        pd.DataFrame
+            Loaded data
+        """
         if self._conn is None:
             return pd.DataFrame()
         
         project_id = self._get_project_id()
         
+        # Build query with optional filters
+        conditions = []
+        params = []
+        
         if project_id is not None:
-            query = f"SELECT * FROM {table_name} WHERE project_id = ?"
-            df = pd.read_sql_query(query, self._conn, params=(project_id,))
-            # Remove project_id column from result
-            if 'project_id' in df.columns:
-                df = df.drop(columns=['project_id'])
+            conditions.append("project_id = ?")
+            params.append(project_id)
+        
+        if hole_id is not None:
+            conditions.append(f"{DhConfig.holeid} = ?")
+            params.append(hole_id)
+        
+        if conditions:
+            where_clause = " WHERE " + " AND ".join(conditions)
+            query = f"SELECT * FROM {table_name}{where_clause}"
+            df = pd.read_sql_query(query, self._conn, params=tuple(params))
         else:
             df = pd.read_sql_query(f"SELECT * FROM {table_name}", self._conn)
+        
+        # Remove project_id column from result
+        if 'project_id' in df.columns:
+            df = df.drop(columns=['project_id'])
         
         return df
     
