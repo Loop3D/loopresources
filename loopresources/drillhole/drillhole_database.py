@@ -1285,6 +1285,167 @@ class DrillholeDatabase:
 
         return new_db
 
+    def validate_numerical_columns(
+        self,
+        table_name: str,
+        columns: List[str],
+        table_type: str = 'point',
+        allow_negative: bool = False
+    ) -> "DrillholeDatabase":
+        """
+        Validate and clean numerical columns in a table.
+        
+        This method:
+        - Validates that specified columns are numerical
+        - Replaces non-positive values (or negative values if allow_negative=False) with NaN
+        - Ensures columns are converted to numerical type
+        
+        Parameters
+        ----------
+        table_name : str
+            Name of the interval or point table to validate
+        columns : list[str]
+            List of column names to validate
+        table_type : str, default 'point'
+            Type of table ('point' or 'interval')
+        allow_negative : bool, default False
+            If False, replaces values <= 0 with NaN. If True, only replaces negative values with NaN.
+        
+        Returns
+        -------
+        DrillholeDatabase
+            Self, to allow method chaining
+        """
+        # Determine which table dictionary to use
+        if table_type == 'point':
+            tables = self.points
+        elif table_type == 'interval':
+            tables = self.intervals
+        else:
+            raise ValueError(f"table_type must be 'point' or 'interval', got '{table_type}'")
+        
+        if table_name not in tables:
+            raise KeyError(f"Table '{table_name}' not found in {table_type} tables")
+        
+        table = tables[table_name]
+        
+        # Process each column
+        for col in columns:
+            if col not in table.columns:
+                logger.warning(f"Column '{col}' not found in table '{table_name}', skipping")
+                continue
+            
+            # Convert to numeric, coercing errors to NaN
+            table[col] = pd.to_numeric(table[col], errors='coerce')
+            
+            # Replace non-positive or negative values with NaN
+            if allow_negative:
+                # Only replace negative values
+                table.loc[table[col] < 0, col] = np.nan
+            else:
+                # Replace values <= 0
+                table.loc[table[col] <= 0, col] = np.nan
+        
+        return self
+
+    def filter_by_nan_threshold(
+        self,
+        table_name: str,
+        columns: List[str],
+        threshold: float,
+        table_type: str = 'point'
+    ) -> "DrillholeDatabase":
+        """
+        Filter rows based on the proportion of non-NaN values in specified columns.
+        
+        This method removes rows where the proportion of valid (non-NaN) values
+        in the specified columns is below the threshold.
+        
+        Parameters
+        ----------
+        table_name : str
+            Name of the interval or point table to filter
+        columns : list[str]
+            List of column names to check for NaN values
+        threshold : float
+            Minimum proportion of non-NaN values required (0.0 to 1.0).
+            For example, 0.5 means at least 50% of the columns must have valid values.
+        table_type : str, default 'point'
+            Type of table ('point' or 'interval')
+        
+        Returns
+        -------
+        DrillholeDatabase
+            New filtered database instance with rows removed based on threshold
+        
+        Examples
+        --------
+        >>> # Keep only rows where at least 80% of assay columns have valid values
+        >>> db_filtered = db.filter_by_nan_threshold('assay', ['CU_PPM', 'AU_PPM', 'AG_PPM'], 0.8)
+        
+        >>> # Can be chained with other filters
+        >>> db_filtered = db.filter(holes=['DH001', 'DH002']).filter_by_nan_threshold('assay', ['CU_PPM'], 0.5)
+        """
+        # Validate threshold
+        if not 0.0 <= threshold <= 1.0:
+            raise ValueError(f"threshold must be between 0.0 and 1.0, got {threshold}")
+        
+        # Determine which table dictionary to use
+        if table_type == 'point':
+            tables = self.points
+        elif table_type == 'interval':
+            tables = self.intervals
+        else:
+            raise ValueError(f"table_type must be 'point' or 'interval', got '{table_type}'")
+        
+        if table_name not in tables:
+            raise KeyError(f"Table '{table_name}' not found in {table_type} tables")
+        
+        table = tables[table_name].copy()
+        
+        # Check which columns exist
+        existing_columns = [col for col in columns if col in table.columns]
+        missing_columns = [col for col in columns if col not in table.columns]
+        
+        if missing_columns:
+            logger.warning(f"Columns not found in table '{table_name}': {missing_columns}")
+        
+        if not existing_columns:
+            raise ValueError(f"None of the specified columns found in table '{table_name}'")
+        
+        # Calculate proportion of non-NaN values for each row
+        non_nan_count = table[existing_columns].notna().sum(axis=1)
+        total_columns = len(existing_columns)
+        non_nan_proportion = non_nan_count / total_columns
+        
+        # Create mask for rows that meet the threshold
+        mask = non_nan_proportion >= threshold
+        
+        # Get the hole IDs that have data meeting the threshold
+        filtered_table = table[mask].copy()
+        
+        # If the filtered table is empty, return an empty database
+        if filtered_table.empty:
+            # Create an empty database with the same structure
+            empty_collar = self.collar.iloc[0:0].copy()
+            empty_survey = self.survey.iloc[0:0].copy()
+            new_db = DrillholeDatabase(empty_collar, empty_survey)
+            return new_db
+        
+        # Get unique hole IDs from the filtered table
+        hole_ids_to_keep = set(filtered_table[DhConfig.holeid].unique())
+        
+        # Use the existing filter method to filter by these holes
+        new_db = self.filter(holes=list(hole_ids_to_keep))
+        
+        # Update the specific table in the new database
+        if table_type == 'point':
+            new_db.points[table_name] = filtered_table
+        else:
+            new_db.intervals[table_name] = filtered_table
+        
+        return new_db
+
     def validate(self) -> bool:
         """
         Perform schema and consistency checks.
