@@ -187,12 +187,45 @@ class DrillHole:
                 try:
                     # Get the interval table
                     prop_table = self[prop_name]
+                    
+                    # If the property table is empty for this hole, create a dummy interval with NaN values
                     if prop_table.empty:
-                        logger.warning(
-                            f"Property table '{prop_name}' is empty for hole '{self.hole_id}', skipping. "
-                            f"Check if interval data exists for this hole."
-                        )
-                        continue
+                        # Check if the table exists in the database at all
+                        if prop_name in self.database.intervals:
+                            # Get column names from the global table to maintain consistency
+                            global_table = self.database.intervals[prop_name]
+                            cols_to_resample = [col for col in global_table.columns 
+                                               if col not in [DhConfig.holeid, DhConfig.sample_from, 
+                                                             DhConfig.sample_to, DhConfig.depth]]
+                            
+                            if cols_to_resample:
+                                # Get the hole's total depth from collar
+                                total_depth = self.collar[DhConfig.total_depth].values[0]
+                                
+                                # Create a dummy interval spanning the entire hole with NaN values
+                                prop_table = pd.DataFrame({
+                                    DhConfig.holeid: [self.hole_id],
+                                    DhConfig.sample_from: [0.0],
+                                    DhConfig.sample_to: [total_depth]
+                                })
+                                
+                                # Add NaN columns for each property
+                                for col in cols_to_resample:
+                                    prop_table[col] = np.nan
+                                
+                                logger.debug(
+                                    f"Property table '{prop_name}' is empty for hole '{self.hole_id}', "
+                                    f"using NaN values for entire hole depth (0-{total_depth}m)."
+                                )
+                            else:
+                                logger.warning(f"No data columns found in property table '{prop_name}', skipping")
+                                continue
+                        else:
+                            logger.warning(
+                                f"Property table '{prop_name}' not found in database. "
+                                f"Available tables: {list(self.database.intervals.keys())}"
+                            )
+                            continue
                     
                     # Get all columns except the standard ones
                     cols_to_resample = [col for col in prop_table.columns 
