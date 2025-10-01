@@ -336,3 +336,171 @@ class LithologyLogs:
                 logger.info(f"Stored lithological contacts as point table '{store_as}'")
         
         return result
+    
+    def calculate_contact_orientations(
+        self,
+        radius: Optional[float] = None,
+        min_neighbors: int = 3,
+        store_as: Optional[str] = None
+    ) -> pd.DataFrame:
+        """
+        Calculate the orientation of lithological contacts using nearest neighbors.
+        
+        This method:
+        1. Extracts contacts and desurveys them to get 3D coordinates
+        2. Uses a ball tree algorithm to find nearest neighbor contacts
+        3. Fits a plane to the nearest neighbors to determine orientation
+        4. Returns the normal vector of the fitted plane
+        
+        Parameters
+        ----------
+        radius : float, optional
+            Search radius for nearest neighbors in 3D space.
+            If None, uses the average spacing between drillhole collars.
+        min_neighbors : int, default 3
+            Minimum number of neighbors required to fit a plane.
+            Must be at least 3.
+        store_as : str, optional
+            If provided, store the result as a point table with this name
+        
+        Returns
+        -------
+        pd.DataFrame
+            DataFrame with columns: HOLEID, DEPTH, LITHO_ABOVE, LITHO_BELOW,
+            x, y, z (contact location), nx, ny, nz (normal vector components),
+            dip, azimuth (orientation in geological convention),
+            n_neighbors (number of neighbors used)
+        
+        Notes
+        -----
+        The normal vector points in the direction perpendicular to the contact surface.
+        Dip is measured from horizontal (0-90 degrees).
+        Azimuth is the strike direction (0-360 degrees, North = 0).
+        """
+        if min_neighbors < 3:
+            raise ValueError("min_neighbors must be at least 3 to fit a plane")
+        
+        # Extract contacts
+        contacts = self.extract_contacts(store_as=None)
+        
+        if contacts.empty:
+            logger.warning("No contacts found to calculate orientations")
+            return pd.DataFrame()
+        
+        # Store contacts as a temporary point table for desurveying
+        temp_table_name = '_temp_contacts_for_orientation'
+        self.database.add_point_table(temp_table_name, contacts)
+        
+        try:
+            # Desurvey contacts to get 3D coordinates
+            desurveyed_contacts = self.database.desurvey_points(temp_table_name)
+            
+            if desurveyed_contacts.empty:
+                logger.warning("No contacts could be desurveyed")
+                return pd.DataFrame()
+            
+            # Calculate default radius if not provided
+            if radius is None:
+                # Calculate average spacing between drillhole collars
+                collar_coords = self.database.collar[[DhConfig.x, DhConfig.y]].values
+                if len(collar_coords) > 1:
+                    from sklearn.neighbors import NearestNeighbors
+                    nbrs = NearestNeighbors(n_neighbors=min(2, len(collar_coords)))
+                    nbrs.fit(collar_coords)
+                    distances, _ = nbrs.kneighbors(collar_coords)
+                    # Use average of nearest neighbor distances, multiplied by factor for larger search
+                    radius = float(distances[:, -1].mean() * 2.0)
+                    logger.info(f"Using calculated radius: {radius:.2f}")
+                else:
+                    # Single hole, use a default
+                    radius = 100.0
+                    logger.info(f"Single hole detected, using default radius: {radius}")
+            
+            # Extract 3D coordinates
+            coords = desurveyed_contacts[['x', 'y', 'z']].values
+            
+            # Build ball tree for nearest neighbor search
+            from sklearn.neighbors import BallTree
+            tree = BallTree(coords, leaf_size=40)
+            
+            # Find neighbors within radius for each contact
+            indices = tree.query_radius(coords, r=radius)
+            
+            # Calculate orientations
+            import numpy as np
+            orientations = []
+            
+            for i, neighbor_indices in enumerate(indices):
+                # Need at least min_neighbors points (including self)
+                if len(neighbor_indices) < min_neighbors:
+                    continue
+                
+                # Get neighbor coordinates
+                neighbor_coords = coords[neighbor_indices]
+                
+                # Fit plane using PCA
+                # Center the points
+                centroid = neighbor_coords.mean(axis=0)
+                centered = neighbor_coords - centroid
+                
+                # Compute covariance matrix
+                cov = np.cov(centered.T)
+                
+                # Eigenvalue decomposition
+                eigenvalues, eigenvectors = np.linalg.eigh(cov)
+                
+                # Normal vector is the eigenvector with smallest eigenvalue
+                normal = eigenvectors[:, 0]
+                
+                # Ensure consistent orientation (normal points upward)
+                if normal[2] < 0:
+                    normal = -normal
+                
+                # Normalize
+                normal = normal / np.linalg.norm(normal)
+                
+                # Calculate dip and azimuth from normal vector
+                # Dip: angle from horizontal
+                dip = np.degrees(np.arcsin(abs(normal[2])))
+                
+                # Azimuth: strike direction (perpendicular to dip direction)
+                # Calculate dip direction first
+                dip_azimuth = np.degrees(np.arctan2(normal[0], normal[1]))
+                if dip_azimuth < 0:
+                    dip_azimuth += 360
+                
+                # Strike is perpendicular to dip direction
+                azimuth = (dip_azimuth + 90) % 360
+                
+                # Store result
+                orientations.append({
+                    DhConfig.holeid: desurveyed_contacts.iloc[i][DhConfig.holeid],
+                    DhConfig.depth: desurveyed_contacts.iloc[i][DhConfig.depth],
+                    'LITHO_ABOVE': desurveyed_contacts.iloc[i]['LITHO_ABOVE'],
+                    'LITHO_BELOW': desurveyed_contacts.iloc[i]['LITHO_BELOW'],
+                    'x': coords[i, 0],
+                    'y': coords[i, 1],
+                    'z': coords[i, 2],
+                    'nx': normal[0],
+                    'ny': normal[1],
+                    'nz': normal[2],
+                    'dip': dip,
+                    'azimuth': azimuth,
+                    'n_neighbors': len(neighbor_indices)
+                })
+            
+            result = pd.DataFrame(orientations)
+            
+            # Store if requested
+            if store_as is not None and not result.empty:
+                self.database.add_point_table(store_as, result)
+                logger.info(
+                    f"Stored {len(result)} contact orientations as point table '{store_as}'"
+                )
+            
+            return result
+            
+        finally:
+            # Clean up temporary table
+            if temp_table_name in self.database.points:
+                del self.database.points[temp_table_name]

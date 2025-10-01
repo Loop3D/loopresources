@@ -112,8 +112,22 @@ def main():
         print(pairs.head().to_string(index=False))
     print()
     
+    # Calculate contact orientations
+    print("7. Calculating contact orientations...")
+    orientations = litho_logs.calculate_contact_orientations(
+        radius=2000.0,
+        store_as='contact_orientations'
+    )
+    print(f"   Calculated orientations for {len(orientations)} contacts")
+    if len(orientations) > 0:
+        print("\n   Sample orientations:")
+        print(orientations[['HOLEID', 'DEPTH', 'dip', 'azimuth', 'n_neighbors']].head().to_string(index=False))
+        print(f"\n   Average dip: {orientations['dip'].mean():.1f}°")
+        print(f"   Average azimuth: {orientations['azimuth'].mean():.1f}°")
+    print()
+    
     # Show stored tables
-    print("7. Stored tables in database...")
+    print("8. Stored tables in database...")
     print(f"   Point tables: {list(db.points.keys())}")
     print(f"   Interval tables: {list(db.intervals.keys())}")
     print()

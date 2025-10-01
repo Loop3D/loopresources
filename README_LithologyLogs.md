@@ -47,6 +47,9 @@ smoothed = litho_logs.apply_smoothing_filter(window_size=3, store_as='geology_sm
 
 # Identify lithological pairs
 pairs = litho_logs.identify_lithological_pairs()
+
+# Calculate contact orientations
+orientations = litho_logs.calculate_contact_orientations(store_as='contact_orientations')
 ```
 
 ## Methods
@@ -160,6 +163,54 @@ schist       granite      3      DH001,DH002
 **Use Case:**
 Understanding which lithological transitions are common helps validate geological models and identify important contacts for structural modelling.
 
+### calculate_contact_orientations()
+
+Calculate the orientation of lithological contacts using nearest neighbor analysis.
+
+```python
+orientations = litho_logs.calculate_contact_orientations(
+    radius=500.0,
+    min_neighbors=3,
+    store_as='contact_orientations'
+)
+```
+
+**Parameters:**
+- `radius`: Search radius for nearest neighbors in 3D space (optional). If None, uses 2x the average spacing between drillhole collars.
+- `min_neighbors`: Minimum number of neighbors required to fit a plane (default: 3)
+- `store_as`: Optional name to store result as a point table
+
+**Returns:**
+DataFrame with columns:
+- `HOLEID`: Drillhole identifier
+- `DEPTH`: Depth of the contact
+- `LITHO_ABOVE`, `LITHO_BELOW`: Lithologies on either side
+- `x`, `y`, `z`: 3D coordinates of the contact (desurveyed)
+- `nx`, `ny`, `nz`: Normal vector components (unit vector)
+- `dip`: Dip angle from horizontal in degrees (0-90)
+- `azimuth`: Strike azimuth in degrees (0-360, North = 0)
+- `n_neighbors`: Number of neighbors used for plane fitting
+
+**Algorithm:**
+1. Extracts all lithology contacts
+2. Desurveys contacts to 3D coordinates
+3. Uses BallTree to find nearest neighbor contacts within radius
+4. Fits a plane to neighbor points using Principal Component Analysis (PCA)
+5. Extracts normal vector (perpendicular to contact surface)
+6. Converts to geological dip and azimuth conventions
+
+**Use Case:**
+Contact orientations are essential for 3D geological modelling. By analyzing multiple contact points from different drillholes, this method estimates the spatial orientation of lithological boundaries. The normal vector points perpendicular to the contact surface and can be used as structural data for implicit modelling methods.
+
+**Example:**
+```
+HOLEID  DEPTH  dip    azimuth  n_neighbors
+DH001   30.0   45.2   125.3    5
+DH002   40.0   43.8   128.7    7
+```
+
+In this example, both contacts dip at approximately 45° with a strike azimuth around 125-130°, suggesting a consistent geological structure.
+
 ## Storage of Results
 
 All methods support an optional `store_as` parameter. When provided:
@@ -186,7 +237,8 @@ See `demo_lithology_logs.py` for a complete example showing:
 2. Extracting all types of contacts
 3. Applying smoothing filters
 4. Identifying lithological patterns
-5. Storing and accessing results
+5. Calculating contact orientations
+6. Storing and accessing results
 
 ## Integration with Drillhole Database
 
@@ -210,4 +262,5 @@ The `LithologyLogs` class is designed to work seamlessly with the `DrillholeData
 - pandas
 - numpy
 - scipy (for smoothing filters)
+- scikit-learn (for BallTree nearest neighbor search)
 - loopresources (drillhole module)

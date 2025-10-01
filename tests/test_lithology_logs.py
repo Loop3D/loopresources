@@ -265,3 +265,89 @@ class TestLithologyLogs:
         
         # Should not have contacts (same lithology throughout)
         assert len(contacts) == 0
+    
+    def test_calculate_contact_orientations(self, database_with_geology):
+        """Test calculation of contact orientations."""
+        litho_logs = LithologyLogs(database_with_geology, 'geology')
+        
+        # Calculate orientations with large radius to include multiple contacts
+        # (test data has contacts ~1000-2000 units apart)
+        orientations = litho_logs.calculate_contact_orientations(radius=2500.0)
+        
+        assert not orientations.empty
+        assert DhConfig.holeid in orientations.columns
+        assert DhConfig.depth in orientations.columns
+        assert 'x' in orientations.columns
+        assert 'y' in orientations.columns
+        assert 'z' in orientations.columns
+        assert 'nx' in orientations.columns
+        assert 'ny' in orientations.columns
+        assert 'nz' in orientations.columns
+        assert 'dip' in orientations.columns
+        assert 'azimuth' in orientations.columns
+        assert 'n_neighbors' in orientations.columns
+        
+        # Check that normal vectors are normalized
+        for _, row in orientations.iterrows():
+            normal_mag = np.sqrt(row['nx']**2 + row['ny']**2 + row['nz']**2)
+            assert np.isclose(normal_mag, 1.0, atol=1e-6)
+        
+        # Check that dip is in valid range [0, 90]
+        assert all(orientations['dip'] >= 0)
+        assert all(orientations['dip'] <= 90)
+        
+        # Check that azimuth is in valid range [0, 360)
+        assert all(orientations['azimuth'] >= 0)
+        assert all(orientations['azimuth'] < 360)
+    
+    def test_calculate_contact_orientations_auto_radius(self, database_with_geology):
+        """Test calculation of orientations with automatic radius."""
+        litho_logs = LithologyLogs(database_with_geology, 'geology')
+        
+        # Should calculate radius automatically
+        orientations = litho_logs.calculate_contact_orientations()
+        
+        # Should have some orientations
+        assert not orientations.empty
+        assert 'n_neighbors' in orientations.columns
+    
+    def test_calculate_contact_orientations_store(self, database_with_geology):
+        """Test calculation of orientations with storage."""
+        litho_logs = LithologyLogs(database_with_geology, 'geology')
+        
+        orientations = litho_logs.calculate_contact_orientations(
+            radius=2500.0,
+            store_as='contact_orientations'
+        )
+        
+        # Check that table was stored
+        assert 'contact_orientations' in database_with_geology.points
+        stored = database_with_geology.points['contact_orientations']
+        assert len(stored) == len(orientations)
+    
+    def test_calculate_contact_orientations_min_neighbors(self, database_with_geology):
+        """Test that min_neighbors parameter is validated."""
+        litho_logs = LithologyLogs(database_with_geology, 'geology')
+        
+        # Should raise error for min_neighbors < 3
+        with pytest.raises(ValueError, match="min_neighbors must be at least 3"):
+            litho_logs.calculate_contact_orientations(min_neighbors=2)
+    
+    def test_calculate_contact_orientations_no_contacts(self, sample_collar, sample_survey):
+        """Test handling when no contacts exist."""
+        db = DrillholeDatabase(sample_collar, sample_survey)
+        
+        # Add geology with single lithology (no contacts)
+        geology = pd.DataFrame({
+            DhConfig.holeid: ['DH001'],
+            DhConfig.sample_from: [0.0],
+            DhConfig.sample_to: [30.0],
+            'LITHO': ['granite']
+        })
+        db.add_interval_table('geology', geology)
+        
+        litho_logs = LithologyLogs(db, 'geology')
+        orientations = litho_logs.calculate_contact_orientations()
+        
+        # Should return empty dataframe
+        assert orientations.empty
