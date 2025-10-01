@@ -238,3 +238,24 @@ class TestFileDatabaseBackend:
         # Verify basic structure
         assert len(db_loaded.collar) == 3
         assert len(db_loaded.survey) == 5
+    
+    def test_iteration_with_file_backend(self, sample_collar, sample_survey, temp_db_path):
+        """Test iteration over drillholes with file backend."""
+        from loopresources.drillhole.drillhole_database import DrillHole
+        
+        # Create database with file backend
+        db_config = DbConfig(backend='file', db_path=temp_db_path)
+        db = DrillholeDatabase(sample_collar, sample_survey, db_config=db_config)
+        
+        # Test iteration returns DrillHole objects
+        hole_ids = []
+        for drillhole in db:
+            assert isinstance(drillhole, DrillHole)
+            hole_ids.append(drillhole.hole_id)
+        
+        # Check all holes were iterated
+        assert hole_ids == ['DH001', 'DH002', 'DH003']
+        
+        # Test iteration twice to ensure it's reusable
+        hole_ids_second = [h.hole_id for h in db]
+        assert hole_ids_second == ['DH001', 'DH002', 'DH003']
