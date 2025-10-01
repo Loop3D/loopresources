@@ -1096,6 +1096,85 @@ class DrillholeDatabase:
         """
         for hole_id in self.list_holes():
             yield self[hole_id]
+    
+    def sorted_by(
+        self,
+        key: Optional[Union[str, Callable[[DrillHole], float]]] = None,
+        reverse: bool = False
+    ):
+        """
+        Iterate over DrillHole objects in sorted order.
+
+        Parameters
+        ----------
+        key : str or callable, optional
+            Sorting key. Can be:
+            - A string: column name from collar table (e.g., 'EAST', 'NORTH', 'DEPTH')
+            - A callable: function that takes a DrillHole and returns a sortable value
+            - None: sort by hole_id (default)
+        reverse : bool, default False
+            If True, sort in descending order
+
+        Yields
+        ------
+        DrillHole
+            A view of this database for each hole, in sorted order
+
+        Examples
+        --------
+        Sort by collar column:
+        
+        >>> for h in db.sorted_by('DEPTH', reverse=True):
+        ...     print(f"{h.hole_id}: {h.collar['DEPTH'].iloc[0]}m")
+        
+        Sort by maximum assay value:
+        
+        >>> def max_cu(hole):
+        ...     assay = hole['assay']
+        ...     return assay['CU_PPM'].max() if not assay.empty else 0
+        >>> for h in db.sorted_by(max_cu, reverse=True):
+        ...     print(f"{h.hole_id}: max Cu = {max_cu(h)}")
+        
+        Sort by meters where assay exceeds threshold:
+        
+        >>> def high_grade_meters(hole):
+        ...     assay = hole['assay']
+        ...     if assay.empty:
+        ...         return 0
+        ...     high_grade = assay[assay['CU_PPM'] > 1000]
+        ...     return (high_grade[DhConfig.sample_to] - high_grade[DhConfig.sample_from]).sum()
+        >>> for h in db.sorted_by(high_grade_meters, reverse=True):
+        ...     print(f"{h.hole_id}: {high_grade_meters(h)}m of high grade")
+        """
+        # Get all holes
+        holes = [self[hole_id] for hole_id in self.list_holes()]
+        
+        # Define sort key function
+        if key is None:
+            # Sort by hole_id (default)
+            sort_key = lambda h: h.hole_id
+        elif isinstance(key, str):
+            # Sort by collar column
+            def sort_key(h):
+                try:
+                    return h.collar[key].iloc[0]
+                except (KeyError, IndexError):
+                    logger.warning(f"Column '{key}' not found in collar for hole {h.hole_id}, using 0")
+                    return 0
+        elif callable(key):
+            # Use custom function
+            sort_key = key
+        else:
+            raise TypeError(f"key must be str, callable, or None, got {type(key)}")
+        
+        # Sort and yield
+        try:
+            sorted_holes = sorted(holes, key=sort_key, reverse=reverse)
+            for hole in sorted_holes:
+                yield hole
+        except Exception as e:
+            logger.error(f"Error sorting holes: {e}")
+            raise
 
     def add_interval_table(self, name: str, df: pd.DataFrame):
         """
