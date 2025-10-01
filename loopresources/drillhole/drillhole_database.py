@@ -1080,6 +1080,23 @@ class DrillholeDatabase:
         """
         return DrillHole(self, hole_id)
 
+    def __iter__(self):
+        """
+        Iterate over all DrillHole objects in the database.
+
+        Yields
+        ------
+        DrillHole
+            A view of this database for each hole
+
+        Examples
+        --------
+        >>> for drillhole in database:
+        ...     print(drillhole.hole_id)
+        """
+        for hole_id in self.list_holes():
+            yield self[hole_id]
+
     def add_interval_table(self, name: str, df: pd.DataFrame):
         """
         Register a new interval table.

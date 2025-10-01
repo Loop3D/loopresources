@@ -78,6 +78,23 @@ class TestDrillholeDatabase:
         xmin, xmax, ymin, ymax, zmin, zmax = db.extent()
         assert xmin == 100.0
         assert xmax == 300.0
+    
+    def test_iteration(self, sample_collar, sample_survey):
+        """Test iteration over drillholes in database."""
+        db = DrillholeDatabase(sample_collar, sample_survey)
+        
+        # Test iteration returns DrillHole objects
+        hole_ids = []
+        for drillhole in db:
+            assert isinstance(drillhole, DrillHole)
+            hole_ids.append(drillhole.hole_id)
+        
+        # Check all holes were iterated
+        assert hole_ids == ['DH001', 'DH002', 'DH003']
+        
+        # Test iteration twice to ensure it's reusable
+        hole_ids_second = [h.hole_id for h in db]
+        assert hole_ids_second == ['DH001', 'DH002', 'DH003']
 
 
 class TestIntervalResampling:
