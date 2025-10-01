@@ -78,6 +78,109 @@ class TestDrillholeDatabase:
         xmin, xmax, ymin, ymax, zmin, zmax = db.extent()
         assert xmin == 100.0
         assert xmax == 300.0
+    
+    def test_iteration(self, sample_collar, sample_survey):
+        """Test iteration over drillholes in database."""
+        db = DrillholeDatabase(sample_collar, sample_survey)
+        
+        # Test iteration returns DrillHole objects
+        hole_ids = []
+        for drillhole in db:
+            assert isinstance(drillhole, DrillHole)
+            hole_ids.append(drillhole.hole_id)
+        
+        # Check all holes were iterated
+        assert hole_ids == ['DH001', 'DH002', 'DH003']
+        
+        # Test iteration twice to ensure it's reusable
+        hole_ids_second = [h.hole_id for h in db]
+        assert hole_ids_second == ['DH001', 'DH002', 'DH003']
+    
+    def test_sorted_by_collar_column(self, sample_collar, sample_survey):
+        """Test sorting by collar column."""
+        db = DrillholeDatabase(sample_collar, sample_survey)
+        
+        # Sort by EAST coordinate (ascending)
+        hole_ids = [h.hole_id for h in db.sorted_by('EAST')]
+        assert hole_ids == ['DH001', 'DH002', 'DH003']
+        
+        # Sort by EAST coordinate (descending)
+        hole_ids = [h.hole_id for h in db.sorted_by('EAST', reverse=True)]
+        assert hole_ids == ['DH003', 'DH002', 'DH001']
+        
+        # Sort by DEPTH (descending) - should be ['DH003', 'DH002', 'DH001']
+        hole_ids = [h.hole_id for h in db.sorted_by('DEPTH', reverse=True)]
+        assert hole_ids == ['DH003', 'DH002', 'DH001']
+    
+    def test_sorted_by_custom_function(self, sample_collar, sample_survey):
+        """Test sorting by custom function."""
+        db = DrillholeDatabase(sample_collar, sample_survey)
+        
+        # Add assay data
+        assay = pd.DataFrame({
+            DhConfig.holeid: ['DH001', 'DH001', 'DH002', 'DH002', 'DH003'],
+            DhConfig.depth: [10.0, 50.0, 20.0, 80.0, 30.0],
+            'CU_PPM': [500.0, 800.0, 1200.0, 300.0, 600.0]
+        })
+        db.add_point_table('assay', assay)
+        
+        # Sort by maximum Cu value (descending)
+        def max_cu(hole):
+            try:
+                assay_data = hole['assay']
+                return assay_data['CU_PPM'].max() if not assay_data.empty else 0
+            except KeyError:
+                return 0
+        
+        hole_ids = [h.hole_id for h in db.sorted_by(max_cu, reverse=True)]
+        assert hole_ids == ['DH002', 'DH001', 'DH003']  # DH002 has 1200, DH001 has 800, DH003 has 600
+    
+    def test_sorted_by_meters_above_threshold(self, sample_collar, sample_survey):
+        """Test sorting by computed metric (meters where value > threshold)."""
+        db = DrillholeDatabase(sample_collar, sample_survey)
+        
+        # Add geology interval data with grades
+        geology = pd.DataFrame({
+            DhConfig.holeid: ['DH001', 'DH001', 'DH002', 'DH003', 'DH003'],
+            DhConfig.sample_from: [0.0, 30.0, 0.0, 0.0, 50.0],
+            DhConfig.sample_to: [30.0, 80.0, 100.0, 50.0, 150.0],
+            'GRADE': [0.5, 1.5, 2.0, 0.3, 1.8]
+        })
+        db.add_interval_table('geology', geology)
+        
+        # Function to calculate meters with grade > 1.0
+        def high_grade_meters(hole):
+            try:
+                geol = hole['geology']
+                if geol.empty:
+                    return 0
+                high_grade = geol[geol['GRADE'] > 1.0]
+                return (high_grade[DhConfig.sample_to] - high_grade[DhConfig.sample_from]).sum()
+            except KeyError:
+                return 0
+        
+        hole_ids = [h.hole_id for h in db.sorted_by(high_grade_meters, reverse=True)]
+        # DH002: 100m at 2.0 = 100m
+        # DH003: 100m at 1.8 = 100m
+        # DH001: 50m at 1.5 = 50m
+        # Order should be DH002 or DH003 (both 100m), then DH001 (50m)
+        assert hole_ids[2] == 'DH001'  # DH001 should be last (50m)
+        assert hole_ids[0] in ['DH002', 'DH003']  # Both have 100m
+    
+    def test_sorted_by_none_default(self, sample_collar, sample_survey):
+        """Test default sorting by hole_id."""
+        db = DrillholeDatabase(sample_collar, sample_survey)
+        
+        # Default sort should be by hole_id
+        hole_ids = [h.hole_id for h in db.sorted_by()]
+        assert hole_ids == ['DH001', 'DH002', 'DH003']
+        
+        # Same as sorted_by(None)
+        hole_ids = [h.hole_id for h in db.sorted_by(None)]
+        assert hole_ids == ['DH001', 'DH002', 'DH003']
+
+
+
 
 
 class TestIntervalResampling:
