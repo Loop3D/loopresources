@@ -188,7 +188,10 @@ class DrillHole:
                     # Get the interval table
                     prop_table = self[prop_name]
                     if prop_table.empty:
-                        logger.warning(f"Property table '{prop_name}' is empty, skipping")
+                        logger.warning(
+                            f"Property table '{prop_name}' is empty for hole '{self.hole_id}', skipping. "
+                            f"Check if interval data exists for this hole."
+                        )
                         continue
                     
                     # Get all columns except the standard ones
@@ -213,8 +216,11 @@ class DrillHole:
                             cell_values = trace_with_props[col].values[:-1]
                             polydata.cell_data[f"{prop_name}_{col}"] = cell_values
                 
-                except KeyError:
-                    logger.warning(f"Property table '{prop_name}' not found, skipping")
+                except KeyError as e:
+                    logger.warning(
+                        f"Property table '{prop_name}' not found for hole '{self.hole_id}'. "
+                        f"Available tables: {list(self.database.intervals.keys())}. Error: {e}"
+                    )
                 except Exception as e:
                     logger.warning(f"Failed to add property '{prop_name}': {e}")
 
@@ -1177,8 +1183,8 @@ class DrillholeDatabase:
             )
             filtered_survey = filtered_survey[depth_mask].copy()
 
-        # Create new database instance
-        new_db = DrillholeDatabase(filtered_collar, filtered_survey)
+        # Create new database instance with same db_config
+        new_db = DrillholeDatabase(filtered_collar, filtered_survey, db_config=self.db_config)
 
         # Filter interval tables
         for name, table in self.intervals.items():
