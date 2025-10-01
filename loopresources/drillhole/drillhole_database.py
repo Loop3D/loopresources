@@ -128,7 +128,12 @@ class DrillHole:
         closest_idx = distances.idxmin()
         return trace.loc[closest_idx, "depth"]
 
-    def vtk(self, newinterval: Union[float, np.ndarray] = 1.0, radius: float = 0.1):
+    def vtk(
+        self, 
+        newinterval: Union[float, np.ndarray] = 1.0, 
+        radius: float = 0.1,
+        properties: Optional[List[str]] = None
+    ):
         """
         Return a PyVista tube object representing the drillhole trace.
 
@@ -138,11 +143,20 @@ class DrillHole:
             Step size for interpolation along hole depth, or specific depths to sample
         radius : float, default 0.1
             Radius of the tube representation
+        properties : list of str, optional
+            List of property names (interval table names) to attach as cell data.
+            Properties will be resampled to match the trace intervals.
 
         Returns
         -------
         pyvista.PolyData
-            PyVista tube object of the drillhole trace
+            PyVista tube object of the drillhole trace with optional cell properties
+
+        Examples
+        --------
+        >>> hole = db['DH001']
+        >>> # Create VTK with lithology as cell property
+        >>> tube = hole.vtk(newinterval=1.0, properties=['lithology'])
         """
         try:
             import pyvista as pv
@@ -164,6 +178,45 @@ class DrillHole:
 
         # Create PolyData with points and line connectivity
         polydata = pv.PolyData(trace[["x", "y", "z"]].values, lines=line_connectivity)
+        
+        # Add properties as cell data if requested
+        if properties is not None:
+            from .resample import resample_interval
+            
+            for prop_name in properties:
+                try:
+                    # Get the interval table
+                    prop_table = self[prop_name]
+                    if prop_table.empty:
+                        logger.warning(f"Property table '{prop_name}' is empty, skipping")
+                        continue
+                    
+                    # Get all columns except the standard ones
+                    cols_to_resample = [col for col in prop_table.columns 
+                                       if col not in [DhConfig.holeid, DhConfig.sample_from, 
+                                                     DhConfig.sample_to, DhConfig.depth]]
+                    
+                    if not cols_to_resample:
+                        logger.warning(f"No data columns found in property table '{prop_name}', skipping")
+                        continue
+                    
+                    # Resample the property to the trace points
+                    trace_with_props = resample_interval(
+                        trace, prop_table, cols_to_resample, method="direct"
+                    )
+                    
+                    # Add each column as cell data (for line segments, not points)
+                    # Cell data should have n-1 values for n points
+                    for col in cols_to_resample:
+                        if col in trace_with_props.columns:
+                            # Use values from trace points, excluding the last one for cell data
+                            cell_values = trace_with_props[col].values[:-1]
+                            polydata.cell_data[f"{prop_name}_{col}"] = cell_values
+                
+                except KeyError:
+                    logger.warning(f"Property table '{prop_name}' not found, skipping")
+                except Exception as e:
+                    logger.warning(f"Failed to add property '{prop_name}': {e}")
 
         # Return as tube
         return polydata.tube(radius=radius)
@@ -273,6 +326,44 @@ class DrillHole:
         result["z"] = trace["z"].values
 
         return result
+
+    def resample(self, interval_table_name: str, cols: List[str], new_interval: float = 1.0) -> pd.DataFrame:
+        """
+        Resample interval data onto a new regular interval.
+        
+        For each new interval, finds all overlapping original intervals and 
+        assigns the value that has the biggest occurrence (mode).
+        
+        Parameters
+        ----------
+        interval_table_name : str
+            Name of the interval table to resample
+        cols : list of str
+            List of column names to resample
+        new_interval : float, default 1.0
+            Size of new regular intervals in meters
+        
+        Returns
+        -------
+        pd.DataFrame
+            Resampled interval data with regular intervals
+        
+        Examples
+        --------
+        >>> hole = db['DH001']
+        >>> # Resample lithology to 1m intervals
+        >>> resampled = hole.resample('lithology', ['LITHO'], new_interval=1.0)
+        """
+        from .resample import resample_interval_to_new_interval
+        
+        # Get the interval table for this hole
+        intervals = self[interval_table_name]
+        
+        if intervals.empty:
+            return intervals
+        
+        # Resample the intervals
+        return resample_interval_to_new_interval(intervals, cols, new_interval)
 
 
 class DrillholeDatabase:
@@ -1221,7 +1312,12 @@ class DrillholeDatabase:
 
         return True
 
-    def vtk(self, newinterval: Union[float, np.ndarray] = 1.0, radius: float = 0.1):
+    def vtk(
+        self, 
+        newinterval: Union[float, np.ndarray] = 1.0, 
+        radius: float = 0.1,
+        properties: Optional[List[str]] = None
+    ):
         """
         Return a PyVista MultiBlock object containing all drillholes as tubes.
 
@@ -1231,11 +1327,19 @@ class DrillholeDatabase:
             Step size for interpolation along hole depth, or specific depths to sample
         radius : float, default 0.1
             Radius of the tube representation for each drillhole
+        properties : list of str, optional
+            List of property names (interval table names) to attach as cell data.
+            Properties will be resampled to match the trace intervals.
 
         Returns
         -------
         pyvista.MultiBlock
-            PyVista MultiBlock object containing all drillhole tubes
+            PyVista MultiBlock object containing all drillhole tubes with optional cell properties
+
+        Examples
+        --------
+        >>> # Create VTK with lithology as cell property
+        >>> multiblock = db.vtk(newinterval=1.0, properties=['lithology'])
         """
         try:
             import pyvista as pv
@@ -1251,7 +1355,7 @@ class DrillholeDatabase:
         for hole_id in self.list_holes():
             try:
                 drillhole = self[hole_id]
-                tube = drillhole.vtk(newinterval=newinterval, radius=radius)
+                tube = drillhole.vtk(newinterval=newinterval, radius=radius, properties=properties)
                 multiblock[hole_id] = tube
             except Exception as e:
                 logger.warning(f"Failed to create VTK tube for hole {hole_id}: {e}")
