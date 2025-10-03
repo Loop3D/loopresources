@@ -49,6 +49,110 @@ class DrillHole:
         if self.survey.empty:
             raise ValueError(f"Hole {hole_id} not found in survey data")
 
+    def __repr__(self) -> str:
+        """Return a concise representation of the DrillHole."""
+        total_depth = self.collar[DhConfig.total_depth].values[0]
+        return f"DrillHole(hole_id='{self.hole_id}', depth={total_depth:.2f}m)"
+
+    def __str__(self) -> str:
+        """Return a detailed string representation of the DrillHole."""
+        # Get basic hole information
+        total_depth = self.collar[DhConfig.total_depth].values[0]
+        collar_x = self.collar[DhConfig.x].values[0]
+        collar_y = self.collar[DhConfig.y].values[0]
+        collar_z = self.collar[DhConfig.z].values[0]
+        
+        # Calculate average azimuth and dip from survey data
+        avg_azimuth = self.survey[DhConfig.azimuth].mean()
+        avg_dip = self.survey[DhConfig.dip].mean()
+        
+        # Convert to degrees if values are in radians (small values suggest radians)
+        if abs(avg_azimuth) < 2 * np.pi and abs(avg_dip) < np.pi:
+            # Likely in radians, convert to degrees
+            avg_azimuth_deg = np.rad2deg(avg_azimuth)
+            avg_dip_deg = np.rad2deg(avg_dip)
+        else:
+            avg_azimuth_deg = avg_azimuth
+            avg_dip_deg = avg_dip
+        
+        # Get attached tables
+        interval_tables = list(self.interval_tables().keys())
+        point_tables = list(self.point_tables().keys())
+        
+        # Build the string representation
+        lines = [
+            f"DrillHole: {self.hole_id}",
+            f"{'=' * (11 + len(self.hole_id))}",
+            f"Location: X={collar_x:.2f}, Y={collar_y:.2f}, Z={collar_z:.2f}",
+            f"Total Depth: {total_depth:.2f}m",
+            f"Average Azimuth: {avg_azimuth_deg:.2f}°",
+            f"Average Dip: {avg_dip_deg:.2f}°",
+        ]
+        
+        # Add interval tables information
+        if interval_tables:
+            lines.append(f"\nInterval Tables ({len(interval_tables)}):")
+            for table_name in interval_tables:
+                table = self[table_name]
+                num_intervals = len(table)
+                # Get non-standard columns (exclude HOLEID, SAMPFROM, SAMPTO, DEPTH)
+                data_cols = [col for col in table.columns 
+                           if col not in [DhConfig.holeid, DhConfig.sample_from, 
+                                         DhConfig.sample_to, DhConfig.depth]]
+                
+                lines.append(f"  - {table_name}: {num_intervals} intervals")
+                
+                # Add statistics for numerical columns
+                for col in data_cols:
+                    if pd.api.types.is_numeric_dtype(table[col]):
+                        non_null = table[col].notna().sum()
+                        if non_null > 0:
+                            mean_val = table[col].mean()
+                            min_val = table[col].min()
+                            max_val = table[col].max()
+                            lines.append(f"    • {col}: mean={mean_val:.2f}, min={min_val:.2f}, max={max_val:.2f} (n={non_null})")
+                        else:
+                            lines.append(f"    • {col}: all null")
+                    else:
+                        # For categorical data, show unique values
+                        unique_vals = table[col].nunique()
+                        non_null = table[col].notna().sum()
+                        lines.append(f"    • {col}: {unique_vals} unique values (n={non_null})")
+        else:
+            lines.append("\nInterval Tables: None")
+        
+        # Add point tables information
+        if point_tables:
+            lines.append(f"\nPoint Tables ({len(point_tables)}):")
+            for table_name in point_tables:
+                table = self[table_name]
+                num_points = len(table)
+                # Get non-standard columns
+                data_cols = [col for col in table.columns 
+                           if col not in [DhConfig.holeid, DhConfig.depth]]
+                
+                lines.append(f"  - {table_name}: {num_points} points")
+                
+                # Add statistics for numerical columns
+                for col in data_cols:
+                    if pd.api.types.is_numeric_dtype(table[col]):
+                        non_null = table[col].notna().sum()
+                        if non_null > 0:
+                            mean_val = table[col].mean()
+                            min_val = table[col].min()
+                            max_val = table[col].max()
+                            lines.append(f"    • {col}: mean={mean_val:.2f}, min={min_val:.2f}, max={max_val:.2f} (n={non_null})")
+                        else:
+                            lines.append(f"    • {col}: all null")
+                    else:
+                        unique_vals = table[col].nunique()
+                        non_null = table[col].notna().sum()
+                        lines.append(f"    • {col}: {unique_vals} unique values (n={non_null})")
+        else:
+            lines.append("\nPoint Tables: None")
+        
+        return "\n".join(lines)
+
     def __getitem__(self, propertyname: str) -> pd.DataFrame:
         """
         Return a single interval or point table for this hole.
@@ -1096,6 +1200,77 @@ class DrillholeDatabase:
         """
         for hole_id in self.list_holes():
             yield self[hole_id]
+
+    def __repr__(self) -> str:
+        """Return a concise representation of the DrillholeDatabase."""
+        num_holes = len(self.list_holes())
+        num_intervals = len(self.intervals)
+        num_points = len(self.points)
+        return f"DrillholeDatabase(holes={num_holes}, interval_tables={num_intervals}, point_tables={num_points})"
+
+    def __str__(self) -> str:
+        """Return a detailed string representation of the DrillholeDatabase."""
+        num_holes = len(self.list_holes())
+        
+        # Get spatial extent
+        xmin, xmax, ymin, ymax, zmin, zmax = self.extent()
+        
+        lines = [
+            f"DrillholeDatabase",
+            f"=================",
+            f"Number of Drillholes: {num_holes}",
+            f"Spatial Extent:",
+            f"  X: {xmin:.2f} to {xmax:.2f} (range: {xmax-xmin:.2f})",
+            f"  Y: {ymin:.2f} to {ymax:.2f} (range: {ymax-ymin:.2f})",
+            f"  Z: {zmin:.2f} to {zmax:.2f} (range: {zmax-zmin:.2f})",
+        ]
+        
+        # Add interval tables information
+        if self.intervals:
+            lines.append(f"\nInterval Tables ({len(self.intervals)}):")
+            for table_name, table_df in self.intervals.items():
+                num_rows = len(table_df)
+                # Get columns excluding standard ones
+                data_cols = [col for col in table_df.columns 
+                           if col not in [DhConfig.holeid, DhConfig.sample_from, 
+                                         DhConfig.sample_to, DhConfig.depth]]
+                
+                lines.append(f"  - {table_name}:")
+                lines.append(f"    Rows: {num_rows}")
+                if data_cols:
+                    lines.append(f"    Columns: {', '.join(data_cols)}")
+                else:
+                    lines.append(f"    Columns: (none)")
+                
+                # Count how many holes have data in this table
+                holes_with_data = table_df[DhConfig.holeid].nunique()
+                lines.append(f"    Holes with data: {holes_with_data}/{num_holes}")
+        else:
+            lines.append("\nInterval Tables: None")
+        
+        # Add point tables information
+        if self.points:
+            lines.append(f"\nPoint Tables ({len(self.points)}):")
+            for table_name, table_df in self.points.items():
+                num_rows = len(table_df)
+                # Get columns excluding standard ones
+                data_cols = [col for col in table_df.columns 
+                           if col not in [DhConfig.holeid, DhConfig.depth]]
+                
+                lines.append(f"  - {table_name}:")
+                lines.append(f"    Rows: {num_rows}")
+                if data_cols:
+                    lines.append(f"    Columns: {', '.join(data_cols)}")
+                else:
+                    lines.append(f"    Columns: (none)")
+                
+                # Count how many holes have data in this table
+                holes_with_data = table_df[DhConfig.holeid].nunique()
+                lines.append(f"    Holes with data: {holes_with_data}/{num_holes}")
+        else:
+            lines.append("\nPoint Tables: None")
+        
+        return "\n".join(lines)
     
     def sorted_by(
         self,

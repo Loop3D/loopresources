@@ -83,6 +83,26 @@ class DhConfig(object):
             f"depth={self.depth}, total_depth={self.total_depth})"
         )
 
+    def __str__(self) -> str:
+        """Return a formatted string representation of the DhConfig."""
+        return (
+            "DhConfig - Column Mapping\n"
+            "==========================\n"
+            f"Hole ID:         {self.holeid}\n"
+            f"Sample From:     {self.sample_from}\n"
+            f"Sample To:       {self.sample_to}\n"
+            f"X Coordinate:    {self.x}\n"
+            f"Y Coordinate:    {self.y}\n"
+            f"Z Coordinate:    {self.z}\n"
+            f"Azimuth:         {self.azimuth}\n"
+            f"Dip:             {self.dip}\n"
+            f"Depth:           {self.depth}\n"
+            f"Total Depth:     {self.total_depth}\n"
+            f"Add 90°:         {self.add_ninty}\n"
+            f"Positive Dips Down: {self.positive_dips_down}\n"
+            f"Dip is Inclination: {self.dip_is_inclination}"
+        )
+
     @classmethod
     def fields(cls):
         return [
