@@ -10,7 +10,6 @@ import numpy as np
 from typing import Dict, List, Optional, Tuple, Union, Callable
 import logging
 import sqlite3
-import json
 from pathlib import Path
 
 from .dhconfig import DhConfig
@@ -61,11 +60,11 @@ class DrillHole:
         collar_x = self.collar[DhConfig.x].values[0]
         collar_y = self.collar[DhConfig.y].values[0]
         collar_z = self.collar[DhConfig.z].values[0]
-        
+
         # Calculate average azimuth and dip from survey data
         avg_azimuth = self.survey[DhConfig.azimuth].mean()
         avg_dip = self.survey[DhConfig.dip].mean()
-        
+
         # Convert to degrees if values are in radians (small values suggest radians)
         if abs(avg_azimuth) < 2 * np.pi and abs(avg_dip) < np.pi:
             # Likely in radians, convert to degrees
@@ -74,11 +73,11 @@ class DrillHole:
         else:
             avg_azimuth_deg = avg_azimuth
             avg_dip_deg = avg_dip
-        
+
         # Get attached tables
         interval_tables = list(self.interval_tables().keys())
         point_tables = list(self.point_tables().keys())
-        
+
         # Build the string representation
         lines = [
             f"DrillHole: {self.hole_id}",
@@ -88,7 +87,7 @@ class DrillHole:
             f"Average Azimuth: {avg_azimuth_deg:.2f}°",
             f"Average Dip: {avg_dip_deg:.2f}°",
         ]
-        
+
         # Add interval tables information
         if interval_tables:
             lines.append(f"\nInterval Tables ({len(interval_tables)}):")
@@ -96,12 +95,20 @@ class DrillHole:
                 table = self[table_name]
                 num_intervals = len(table)
                 # Get non-standard columns (exclude HOLEID, SAMPFROM, SAMPTO, DEPTH)
-                data_cols = [col for col in table.columns 
-                           if col not in [DhConfig.holeid, DhConfig.sample_from, 
-                                         DhConfig.sample_to, DhConfig.depth]]
-                
+                data_cols = [
+                    col
+                    for col in table.columns
+                    if col
+                    not in [
+                        DhConfig.holeid,
+                        DhConfig.sample_from,
+                        DhConfig.sample_to,
+                        DhConfig.depth,
+                    ]
+                ]
+
                 lines.append(f"  - {table_name}: {num_intervals} intervals")
-                
+
                 # Add statistics for numerical columns
                 for col in data_cols:
                     if pd.api.types.is_numeric_dtype(table[col]):
@@ -110,7 +117,9 @@ class DrillHole:
                             mean_val = table[col].mean()
                             min_val = table[col].min()
                             max_val = table[col].max()
-                            lines.append(f"    • {col}: mean={mean_val:.2f}, min={min_val:.2f}, max={max_val:.2f} (n={non_null})")
+                            lines.append(
+                                f"    • {col}: mean={mean_val:.2f}, min={min_val:.2f}, max={max_val:.2f} (n={non_null})"
+                            )
                         else:
                             lines.append(f"    • {col}: all null")
                     else:
@@ -120,7 +129,7 @@ class DrillHole:
                         lines.append(f"    • {col}: {unique_vals} unique values (n={non_null})")
         else:
             lines.append("\nInterval Tables: None")
-        
+
         # Add point tables information
         if point_tables:
             lines.append(f"\nPoint Tables ({len(point_tables)}):")
@@ -128,11 +137,12 @@ class DrillHole:
                 table = self[table_name]
                 num_points = len(table)
                 # Get non-standard columns
-                data_cols = [col for col in table.columns 
-                           if col not in [DhConfig.holeid, DhConfig.depth]]
-                
+                data_cols = [
+                    col for col in table.columns if col not in [DhConfig.holeid, DhConfig.depth]
+                ]
+
                 lines.append(f"  - {table_name}: {num_points} points")
-                
+
                 # Add statistics for numerical columns
                 for col in data_cols:
                     if pd.api.types.is_numeric_dtype(table[col]):
@@ -141,7 +151,9 @@ class DrillHole:
                             mean_val = table[col].mean()
                             min_val = table[col].min()
                             max_val = table[col].max()
-                            lines.append(f"    • {col}: mean={mean_val:.2f}, min={min_val:.2f}, max={max_val:.2f} (n={non_null})")
+                            lines.append(
+                                f"    • {col}: mean={mean_val:.2f}, min={min_val:.2f}, max={max_val:.2f} (n={non_null})"
+                            )
                         else:
                             lines.append(f"    • {col}: all null")
                     else:
@@ -150,7 +162,7 @@ class DrillHole:
                         lines.append(f"    • {col}: {unique_vals} unique values (n={non_null})")
         else:
             lines.append("\nPoint Tables: None")
-        
+
         return "\n".join(lines)
 
     def __getitem__(self, propertyname: str) -> pd.DataFrame:
@@ -233,10 +245,10 @@ class DrillHole:
         return trace.loc[closest_idx, "depth"]
 
     def vtk(
-        self, 
-        newinterval: Union[float, np.ndarray] = 1.0, 
+        self,
+        newinterval: Union[float, np.ndarray] = 1.0,
         radius: float = 0.1,
-        properties: Optional[List[str]] = None
+        properties: Optional[List[str]] = None,
     ):
         """
         Return a PyVista tube object representing the drillhole trace.
@@ -282,47 +294,59 @@ class DrillHole:
 
         # Create PolyData with points and line connectivity
         polydata = pv.PolyData(trace[["x", "y", "z"]].values, lines=line_connectivity)
-        
+
         # Add properties as cell data if requested
         if properties is not None:
             from .resample import resample_interval
-            
+
             for prop_name in properties:
                 try:
                     # Get the interval table
                     prop_table = self[prop_name]
-                    
+
                     # If the property table is empty for this hole, create a dummy interval with NaN values
                     if prop_table.empty:
                         # Check if the table exists in the database at all
                         if prop_name in self.database.intervals:
                             # Get column names from the global table to maintain consistency
                             global_table = self.database.intervals[prop_name]
-                            cols_to_resample = [col for col in global_table.columns 
-                                               if col not in [DhConfig.holeid, DhConfig.sample_from, 
-                                                             DhConfig.sample_to, DhConfig.depth]]
-                            
+                            cols_to_resample = [
+                                col
+                                for col in global_table.columns
+                                if col
+                                not in [
+                                    DhConfig.holeid,
+                                    DhConfig.sample_from,
+                                    DhConfig.sample_to,
+                                    DhConfig.depth,
+                                ]
+                            ]
+
                             if cols_to_resample:
                                 # Get the hole's total depth from collar
                                 total_depth = self.collar[DhConfig.total_depth].values[0]
-                                
+
                                 # Create a dummy interval spanning the entire hole with NaN values
-                                prop_table = pd.DataFrame({
-                                    DhConfig.holeid: [self.hole_id],
-                                    DhConfig.sample_from: [0.0],
-                                    DhConfig.sample_to: [total_depth]
-                                })
-                                
+                                prop_table = pd.DataFrame(
+                                    {
+                                        DhConfig.holeid: [self.hole_id],
+                                        DhConfig.sample_from: [0.0],
+                                        DhConfig.sample_to: [total_depth],
+                                    }
+                                )
+
                                 # Add NaN columns for each property
                                 for col in cols_to_resample:
                                     prop_table[col] = np.nan
-                                
+
                                 logger.debug(
                                     f"Property table '{prop_name}' is empty for hole '{self.hole_id}', "
                                     f"using NaN values for entire hole depth (0-{total_depth}m)."
                                 )
                             else:
-                                logger.warning(f"No data columns found in property table '{prop_name}', skipping")
+                                logger.warning(
+                                    f"No data columns found in property table '{prop_name}', skipping"
+                                )
                                 continue
                         else:
                             logger.warning(
@@ -330,21 +354,31 @@ class DrillHole:
                                 f"Available tables: {list(self.database.intervals.keys())}"
                             )
                             continue
-                    
+
                     # Get all columns except the standard ones
-                    cols_to_resample = [col for col in prop_table.columns 
-                                       if col not in [DhConfig.holeid, DhConfig.sample_from, 
-                                                     DhConfig.sample_to, DhConfig.depth]]
-                    
+                    cols_to_resample = [
+                        col
+                        for col in prop_table.columns
+                        if col
+                        not in [
+                            DhConfig.holeid,
+                            DhConfig.sample_from,
+                            DhConfig.sample_to,
+                            DhConfig.depth,
+                        ]
+                    ]
+
                     if not cols_to_resample:
-                        logger.warning(f"No data columns found in property table '{prop_name}', skipping")
+                        logger.warning(
+                            f"No data columns found in property table '{prop_name}', skipping"
+                        )
                         continue
-                    
+
                     # Resample the property to the trace points
                     trace_with_props = resample_interval(
                         trace, prop_table, cols_to_resample, method="direct"
                     )
-                    
+
                     # Add each column as cell data (for line segments, not points)
                     # Cell data should have n-1 values for n points
                     for col in cols_to_resample:
@@ -352,7 +386,7 @@ class DrillHole:
                             # Use values from trace points, excluding the last one for cell data
                             cell_values = trace_with_props[col].values[:-1]
                             polydata.cell_data[f"{prop_name}_{col}"] = cell_values
-                
+
                 except KeyError as e:
                     logger.warning(
                         f"Property table '{prop_name}' not found for hole '{self.hole_id}'. "
@@ -470,13 +504,15 @@ class DrillHole:
 
         return result
 
-    def resample(self, interval_table_name: str, cols: List[str], new_interval: float = 1.0) -> pd.DataFrame:
+    def resample(
+        self, interval_table_name: str, cols: List[str], new_interval: float = 1.0
+    ) -> pd.DataFrame:
         """
         Resample interval data onto a new regular interval.
-        
-        For each new interval, finds all overlapping original intervals and 
+
+        For each new interval, finds all overlapping original intervals and
         assigns the value that has the biggest occurrence (mode).
-        
+
         Parameters
         ----------
         interval_table_name : str
@@ -485,12 +521,12 @@ class DrillHole:
             List of column names to resample
         new_interval : float, default 1.0
             Size of new regular intervals in meters
-        
+
         Returns
         -------
         pd.DataFrame
             Resampled interval data with regular intervals
-        
+
         Examples
         --------
         >>> hole = db['DH001']
@@ -498,13 +534,13 @@ class DrillHole:
         >>> resampled = hole.resample('lithology', ['LITHO'], new_interval=1.0)
         """
         from .resample import resample_interval_to_new_interval
-        
+
         # Get the interval table for this hole
         intervals = self[interval_table_name]
-        
+
         if intervals.empty:
             return intervals
-        
+
         # Resample the intervals
         return resample_interval_to_new_interval(intervals, cols, new_interval)
 
@@ -518,10 +554,7 @@ class DrillholeDatabase:
     """
 
     def __init__(
-        self,
-        collar: pd.DataFrame,
-        survey: pd.DataFrame,
-        db_config: Optional[DbConfig] = None
+        self, collar: pd.DataFrame, survey: pd.DataFrame, db_config: Optional[DbConfig] = None
     ):
         """
         Initialize DrillholeDatabase.
@@ -537,11 +570,11 @@ class DrillholeDatabase:
         db_config : DbConfig, optional
             Database backend configuration. If None, uses in-memory storage.
         """
-        self.db_config = db_config if db_config is not None else DbConfig(backend='memory')
+        self.db_config = db_config if db_config is not None else DbConfig(backend="memory")
         self._conn = None
-        
+
         # Store data based on backend configuration
-        if self.db_config.backend == 'memory':
+        if self.db_config.backend == "memory":
             self.collar = collar.copy()
             self.survey = survey.copy()
             self.intervals: Dict[str, pd.DataFrame] = {}
@@ -562,101 +595,109 @@ class DrillholeDatabase:
 
         # Convert angles if needed
         self._normalize_angles()
-    
+
     @property
     def collar(self) -> pd.DataFrame:
         """Get collar data from memory or database."""
-        if self.db_config.backend == 'memory':
-            return self._collar if hasattr(self, '_collar') and self._collar is not None else getattr(self, '_memory_collar', pd.DataFrame())
+        if self.db_config.backend == "memory":
+            return (
+                self._collar
+                if hasattr(self, "_collar") and self._collar is not None
+                else getattr(self, "_memory_collar", pd.DataFrame())
+            )
         else:
-            return self._load_table_from_db('collar')
-    
+            return self._load_table_from_db("collar")
+
     @collar.setter
     def collar(self, value: pd.DataFrame):
         """Set collar data."""
-        if self.db_config.backend == 'memory':
+        if self.db_config.backend == "memory":
             self._memory_collar = value
         else:
             self._collar = value
-    
+
     @property
     def survey(self) -> pd.DataFrame:
         """Get survey data from memory or database."""
-        if self.db_config.backend == 'memory':
-            return self._survey if hasattr(self, '_survey') and self._survey is not None else getattr(self, '_memory_survey', pd.DataFrame())
+        if self.db_config.backend == "memory":
+            return (
+                self._survey
+                if hasattr(self, "_survey") and self._survey is not None
+                else getattr(self, "_memory_survey", pd.DataFrame())
+            )
         else:
-            return self._load_table_from_db('survey')
-    
+            return self._load_table_from_db("survey")
+
     @survey.setter
     def survey(self, value: pd.DataFrame):
         """Set survey data."""
-        if self.db_config.backend == 'memory':
+        if self.db_config.backend == "memory":
             self._memory_survey = value
         else:
             self._survey = value
-    
+
     def get_collar_for_hole(self, hole_id: str) -> pd.DataFrame:
         """
         Get collar data for a specific hole.
-        
+
         For file backend, this queries the database directly rather than
         loading all collar data and filtering in Python.
-        
+
         Parameters
         ----------
         hole_id : str
             The hole identifier
-        
+
         Returns
         -------
         pd.DataFrame
             Collar data for the specified hole
         """
-        if self.db_config.backend == 'memory':
+        if self.db_config.backend == "memory":
             collar_data = self.collar
             mask = collar_data[DhConfig.holeid] == hole_id
             return collar_data[mask].copy()
         else:
-            return self._load_table_from_db('collar', hole_id=hole_id)
-    
+            return self._load_table_from_db("collar", hole_id=hole_id)
+
     def get_survey_for_hole(self, hole_id: str) -> pd.DataFrame:
         """
         Get survey data for a specific hole.
-        
+
         For file backend, this queries the database directly rather than
         loading all survey data and filtering in Python.
-        
+
         Parameters
         ----------
         hole_id : str
             The hole identifier
-        
+
         Returns
         -------
         pd.DataFrame
             Survey data for the specified hole
         """
-        if self.db_config.backend == 'memory':
+        if self.db_config.backend == "memory":
             survey_data = self.survey
             mask = survey_data[DhConfig.holeid] == hole_id
             return survey_data[mask].copy()
         else:
-            return self._load_table_from_db('survey', hole_id=hole_id)
-    
+            return self._load_table_from_db("survey", hole_id=hole_id)
+
     def get_interval_data_for_hole(self, table_name: str, hole_id: str) -> pd.DataFrame:
         """
         Get interval table data for a specific hole.
-        
+
         For file backend with saved tables, this could query the database directly.
         Currently filters in-memory data.
-        
+
         Parameters
         ----------
         table_name : str
             Name of the interval table
         hole_id : str
             The hole identifier
-        
+
         Returns
         -------
         pd.DataFrame
@@ -664,25 +705,25 @@ class DrillholeDatabase:
         """
         if table_name not in self.intervals:
             return pd.DataFrame()
-        
+
         table = self.intervals[table_name]
         mask = table[DhConfig.holeid] == hole_id
         return table[mask].copy()
-    
+
     def get_point_data_for_hole(self, table_name: str, hole_id: str) -> pd.DataFrame:
         """
         Get point table data for a specific hole.
-        
+
         For file backend with saved tables, this could query the database directly.
         Currently filters in-memory data.
-        
+
         Parameters
         ----------
         table_name : str
             Name of the point table
         hole_id : str
             The hole identifier
-        
+
         Returns
         -------
         pd.DataFrame
@@ -690,77 +731,73 @@ class DrillholeDatabase:
         """
         if table_name not in self.points:
             return pd.DataFrame()
-        
+
         table = self.points[table_name]
         mask = table[DhConfig.holeid] == hole_id
         return table[mask].copy()
-    
+
     def _initialize_database(self):
         """Initialize SQLite database and create tables."""
         db_path = Path(self.db_config.db_path)
         db_path.parent.mkdir(parents=True, exist_ok=True)
-        
+
         self._conn = sqlite3.connect(str(db_path))
         cursor = self._conn.cursor()
-        
+
         # Create projects table
-        cursor.execute('''
+        cursor.execute("""
             CREATE TABLE IF NOT EXISTS projects (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 name TEXT UNIQUE NOT NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 metadata TEXT
             )
-        ''')
-        
+        """)
+
         # Insert project if specified
         if self.db_config.project_name:
             cursor.execute(
-                'INSERT OR IGNORE INTO projects (name) VALUES (?)',
-                (self.db_config.project_name,)
+                "INSERT OR IGNORE INTO projects (name) VALUES (?)", (self.db_config.project_name,)
             )
-        
+
         self._conn.commit()
-    
+
     def _get_project_id(self) -> Optional[int]:
         """Get project ID from database."""
         if not self.db_config.project_name:
             return None
-        
+
         cursor = self._conn.cursor()
-        cursor.execute(
-            'SELECT id FROM projects WHERE name = ?',
-            (self.db_config.project_name,)
-        )
+        cursor.execute("SELECT id FROM projects WHERE name = ?", (self.db_config.project_name,))
         result = cursor.fetchone()
         return result[0] if result else None
-    
+
     def _store_data_to_db(self, collar: pd.DataFrame, survey: pd.DataFrame):
         """Store collar and survey data to database."""
         project_id = self._get_project_id()
-        
+
         # Add project_id column if project is specified
         if project_id is not None:
             collar = collar.copy()
-            collar['project_id'] = project_id
+            collar["project_id"] = project_id
             survey = survey.copy()
-            survey['project_id'] = project_id
-        
+            survey["project_id"] = project_id
+
         # Store to SQLite
-        collar.to_sql('collar', self._conn, if_exists='append', index=False)
-        survey.to_sql('survey', self._conn, if_exists='append', index=False)
-    
+        collar.to_sql("collar", self._conn, if_exists="append", index=False)
+        survey.to_sql("survey", self._conn, if_exists="append", index=False)
+
     def _load_table_from_db(self, table_name: str, hole_id: Optional[str] = None) -> pd.DataFrame:
         """
         Load table from database.
-        
+
         Parameters
         ----------
         table_name : str
             Name of the table to load
         hole_id : str, optional
             If provided, only load data for this specific hole
-        
+
         Returns
         -------
         pd.DataFrame
@@ -768,157 +805,142 @@ class DrillholeDatabase:
         """
         if self._conn is None:
             return pd.DataFrame()
-        
+
         project_id = self._get_project_id()
-        
+
         # Build query with optional filters
         conditions = []
         params = []
-        
+
         if project_id is not None:
             conditions.append("project_id = ?")
             params.append(project_id)
-        
+
         if hole_id is not None:
             conditions.append(f"{DhConfig.holeid} = ?")
             params.append(hole_id)
-        
+
         if conditions:
             where_clause = " WHERE " + " AND ".join(conditions)
             query = f"SELECT * FROM {table_name}{where_clause}"
             df = pd.read_sql_query(query, self._conn, params=tuple(params))
         else:
             df = pd.read_sql_query(f"SELECT * FROM {table_name}", self._conn)
-        
+
         # Remove project_id column from result
-        if 'project_id' in df.columns:
-            df = df.drop(columns=['project_id'])
-        
+        if "project_id" in df.columns:
+            df = df.drop(columns=["project_id"])
+
         return df
-    
+
     @classmethod
-    def from_database(
-        cls,
-        db_path: str,
-        project_name: Optional[str] = None
-    ) -> "DrillholeDatabase":
+    def from_database(cls, db_path: str, project_name: Optional[str] = None) -> "DrillholeDatabase":
         """
         Load DrillholeDatabase from an existing SQLite database.
-        
+
         Parameters
         ----------
         db_path : str
             Path to the SQLite database file
         project_name : str, optional
             Name of the project to load. If None, loads all data.
-        
+
         Returns
         -------
         DrillholeDatabase
             Database instance loaded from file
         """
-        db_config = DbConfig(backend='file', db_path=db_path, project_name=project_name)
-        
+        db_config = DbConfig(backend="file", db_path=db_path, project_name=project_name)
+
         # Connect to database and load collar/survey
         conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
-        
+
         # Check if projects table exists
-        cursor.execute(
-            "SELECT name FROM sqlite_master WHERE type='table' AND name='projects'"
-        )
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='projects'")
         projects_table_exists = cursor.fetchone() is not None
-        
+
         # Load collar and survey
         if project_name:
             if not projects_table_exists:
                 conn.close()
-                raise ValueError(f"Projects table not found in database")
-            
+                raise ValueError("Projects table not found in database")
+
             # Get project_id
-            cursor.execute('SELECT id FROM projects WHERE name = ?', (project_name,))
+            cursor.execute("SELECT id FROM projects WHERE name = ?", (project_name,))
             result = cursor.fetchone()
             if result is None:
                 conn.close()
                 raise ValueError(f"Project '{project_name}' not found in database")
             project_id = result[0]
-            
+
             collar = pd.read_sql_query(
-                "SELECT * FROM collar WHERE project_id = ?",
-                conn,
-                params=(project_id,)
+                "SELECT * FROM collar WHERE project_id = ?", conn, params=(project_id,)
             )
             survey = pd.read_sql_query(
-                "SELECT * FROM survey WHERE project_id = ?",
-                conn,
-                params=(project_id,)
+                "SELECT * FROM survey WHERE project_id = ?", conn, params=(project_id,)
             )
-            
+
             # Remove project_id from dataframes
-            if 'project_id' in collar.columns:
-                collar = collar.drop(columns=['project_id'])
-            if 'project_id' in survey.columns:
-                survey = survey.drop(columns=['project_id'])
+            if "project_id" in collar.columns:
+                collar = collar.drop(columns=["project_id"])
+            if "project_id" in survey.columns:
+                survey = survey.drop(columns=["project_id"])
         else:
             collar = pd.read_sql_query("SELECT * FROM collar", conn)
             survey = pd.read_sql_query("SELECT * FROM survey", conn)
-        
+
         conn.close()
-        
+
         # Create instance with loaded data
         instance = cls.__new__(cls)
         instance.db_config = db_config
         instance._conn = None
         instance._initialize_database()
-        
+
         # Store data in memory for validation
         instance._memory_collar = collar
         instance._memory_survey = survey
         instance.intervals = {}
         instance.points = {}
-        
+
         # Validate
         instance._validate_collar()
         instance._validate_survey()
         instance._normalize_angles()
-        
+
         return instance
-    
+
     @classmethod
     def link_to_database(
-        cls,
-        db_path: str,
-        project_name: Optional[str] = None
+        cls, db_path: str, project_name: Optional[str] = None
     ) -> "DrillholeDatabase":
         """
         Create a DrillholeDatabase instance linked to an existing database.
-        
+
         This method keeps a persistent connection to the database and loads
         data on-demand rather than loading everything into memory.
-        
+
         Parameters
         ----------
         db_path : str
             Path to the SQLite database file
         project_name : str, optional
             Name of the project to link to. If None, links to all data.
-        
+
         Returns
         -------
         DrillholeDatabase
             Database instance linked to file
         """
         return cls.from_database(db_path, project_name)
-    
+
     def save_to_database(
-        self,
-        db_path: str,
-        project_name: Optional[str] = None,
-        overwrite: bool = False
+        self, db_path: str, project_name: Optional[str] = None, overwrite: bool = False
     ):
         """
         Save the current database to a SQLite file.
-        
+
         Parameters
         ----------
         db_path : str
@@ -928,71 +950,71 @@ class DrillholeDatabase:
         overwrite : bool, optional
             If True, overwrite existing data for this project
         """
-        db_config = DbConfig(backend='file', db_path=db_path, project_name=project_name)
-        
+        db_config = DbConfig(backend="file", db_path=db_path, project_name=project_name)
+
         # Create connection
-        conn = sqlite3.connect(db_path)
+        conn = sqlite3.connect(db_config.db_path)
         cursor = conn.cursor()
-        
+
         # Create tables
-        cursor.execute('''
+        cursor.execute("""
             CREATE TABLE IF NOT EXISTS projects (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 name TEXT UNIQUE NOT NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 metadata TEXT
             )
-        ''')
-        
+        """)
+
         # Handle project
         project_id = None
         if project_name:
             if overwrite:
                 # Delete existing project data
-                cursor.execute('SELECT id FROM projects WHERE name = ?', (project_name,))
+                cursor.execute("SELECT id FROM projects WHERE name = ?", (project_name,))
                 result = cursor.fetchone()
                 if result:
                     project_id = result[0]
-                    cursor.execute('DELETE FROM collar WHERE project_id = ?', (project_id,))
-                    cursor.execute('DELETE FROM survey WHERE project_id = ?', (project_id,))
+                    cursor.execute("DELETE FROM collar WHERE project_id = ?", (project_id,))
+                    cursor.execute("DELETE FROM survey WHERE project_id = ?", (project_id,))
                 else:
-                    cursor.execute('INSERT INTO projects (name) VALUES (?)', (project_name,))
+                    cursor.execute("INSERT INTO projects (name) VALUES (?)", (project_name,))
                     project_id = cursor.lastrowid
             else:
-                cursor.execute('INSERT OR IGNORE INTO projects (name) VALUES (?)', (project_name,))
-                cursor.execute('SELECT id FROM projects WHERE name = ?', (project_name,))
+                cursor.execute("INSERT OR IGNORE INTO projects (name) VALUES (?)", (project_name,))
+                cursor.execute("SELECT id FROM projects WHERE name = ?", (project_name,))
                 project_id = cursor.fetchone()[0]
-        
+
         # Save collar and survey
         collar_data = self.collar.copy()
         survey_data = self.survey.copy()
-        
+
         if project_id:
-            collar_data['project_id'] = project_id
-            survey_data['project_id'] = project_id
-        
-        collar_data.to_sql('collar', conn, if_exists='append', index=False)
-        survey_data.to_sql('survey', conn, if_exists='append', index=False)
-        
+            collar_data["project_id"] = project_id
+            survey_data["project_id"] = project_id
+
+        collar_data.to_sql("collar", conn, if_exists="append", index=False)
+        survey_data.to_sql("survey", conn, if_exists="append", index=False)
+
         # Save interval and point tables
         for name, df in self.intervals.items():
             table_data = df.copy()
             if project_id:
-                table_data['project_id'] = project_id
-            table_data.to_sql(f'interval_{name}', conn, if_exists='append', index=False)
-        
+                table_data["project_id"] = project_id
+            table_data.to_sql(f"interval_{name}", conn, if_exists="append", index=False)
+
         for name, df in self.points.items():
             table_data = df.copy()
             if project_id:
-                table_data['project_id'] = project_id
-            table_data.to_sql(f'point_{name}', conn, if_exists='append', index=False)
-        
+                table_data["project_id"] = project_id
+            table_data.to_sql(f"point_{name}", conn, if_exists="append", index=False)
+
         conn.commit()
         conn.close()
-    
+
     def __del__(self):
         """Clean up database connection."""
-        if hasattr(self, '_conn') and self._conn is not None:
+        if hasattr(self, "_conn") and self._conn is not None:
             try:
                 self._conn.close()
             except:
@@ -1005,7 +1027,7 @@ class DrillholeDatabase:
         survey_file: str,
         collar_columns: Optional[Dict[str, str]] = None,
         survey_columns: Optional[Dict[str, str]] = None,
-        **kwargs
+        **kwargs,
     ) -> "DrillholeDatabase":
         """
         Create a DrillholeDatabase from CSV files with column mapping.
@@ -1091,7 +1113,7 @@ class DrillholeDatabase:
                         f"Available columns: {list(collar_raw.columns)}"
                     )
                 collar_df[config_col_name] = collar_raw[csv_column]
-            
+
             # Add any remaining columns that weren't mapped
             for col in collar_raw.columns:
                 if col not in collar_columns.values():
@@ -1112,7 +1134,7 @@ class DrillholeDatabase:
                         f"Available columns: {list(survey_raw.columns)}"
                     )
                 survey_df[config_col_name] = survey_raw[csv_column]
-            
+
             # Add any remaining columns that weren't mapped
             for col in survey_raw.columns:
                 if col not in survey_columns.values():
@@ -1121,7 +1143,13 @@ class DrillholeDatabase:
             survey_df = survey_raw.copy()
 
         # Remove rows with missing essential data
-        required_collar_cols = [DhConfig.holeid, DhConfig.x, DhConfig.y, DhConfig.z, DhConfig.total_depth]
+        required_collar_cols = [
+            DhConfig.holeid,
+            DhConfig.x,
+            DhConfig.y,
+            DhConfig.z,
+            DhConfig.total_depth,
+        ]
         collar_df = collar_df.dropna(subset=required_collar_cols)
 
         required_survey_cols = [DhConfig.holeid, DhConfig.depth, DhConfig.azimuth, DhConfig.dip]
@@ -1211,71 +1239,78 @@ class DrillholeDatabase:
     def __str__(self) -> str:
         """Return a detailed string representation of the DrillholeDatabase."""
         num_holes = len(self.list_holes())
-        
+
         # Get spatial extent
         xmin, xmax, ymin, ymax, zmin, zmax = self.extent()
-        
+
         lines = [
-            f"DrillholeDatabase",
-            f"=================",
+            "DrillholeDatabase",
+            "=================",
             f"Number of Drillholes: {num_holes}",
-            f"Spatial Extent:",
-            f"  X: {xmin:.2f} to {xmax:.2f} (range: {xmax-xmin:.2f})",
-            f"  Y: {ymin:.2f} to {ymax:.2f} (range: {ymax-ymin:.2f})",
-            f"  Z: {zmin:.2f} to {zmax:.2f} (range: {zmax-zmin:.2f})",
+            "Spatial Extent:",
+            f"  X: {xmin:.2f} to {xmax:.2f} (range: {xmax - xmin:.2f})",
+            f"  Y: {ymin:.2f} to {ymax:.2f} (range: {ymax - ymin:.2f})",
+            f"  Z: {zmin:.2f} to {zmax:.2f} (range: {zmax - zmin:.2f})",
         ]
-        
+
         # Add interval tables information
         if self.intervals:
             lines.append(f"\nInterval Tables ({len(self.intervals)}):")
             for table_name, table_df in self.intervals.items():
                 num_rows = len(table_df)
                 # Get columns excluding standard ones
-                data_cols = [col for col in table_df.columns 
-                           if col not in [DhConfig.holeid, DhConfig.sample_from, 
-                                         DhConfig.sample_to, DhConfig.depth]]
-                
+                data_cols = [
+                    col
+                    for col in table_df.columns
+                    if col
+                    not in [
+                        DhConfig.holeid,
+                        DhConfig.sample_from,
+                        DhConfig.sample_to,
+                        DhConfig.depth,
+                    ]
+                ]
+
                 lines.append(f"  - {table_name}:")
                 lines.append(f"    Rows: {num_rows}")
                 if data_cols:
                     lines.append(f"    Columns: {', '.join(data_cols)}")
                 else:
-                    lines.append(f"    Columns: (none)")
-                
+                    lines.append("    Columns: (none)")
+
                 # Count how many holes have data in this table
                 holes_with_data = table_df[DhConfig.holeid].nunique()
                 lines.append(f"    Holes with data: {holes_with_data}/{num_holes}")
         else:
             lines.append("\nInterval Tables: None")
-        
+
         # Add point tables information
         if self.points:
             lines.append(f"\nPoint Tables ({len(self.points)}):")
             for table_name, table_df in self.points.items():
                 num_rows = len(table_df)
                 # Get columns excluding standard ones
-                data_cols = [col for col in table_df.columns 
-                           if col not in [DhConfig.holeid, DhConfig.depth]]
-                
+                data_cols = [
+                    col for col in table_df.columns if col not in [DhConfig.holeid, DhConfig.depth]
+                ]
+
                 lines.append(f"  - {table_name}:")
                 lines.append(f"    Rows: {num_rows}")
                 if data_cols:
                     lines.append(f"    Columns: {', '.join(data_cols)}")
                 else:
-                    lines.append(f"    Columns: (none)")
-                
+                    lines.append("    Columns: (none)")
+
                 # Count how many holes have data in this table
                 holes_with_data = table_df[DhConfig.holeid].nunique()
                 lines.append(f"    Holes with data: {holes_with_data}/{num_holes}")
         else:
             lines.append("\nPoint Tables: None")
-        
+
         return "\n".join(lines)
-    
+
     def sorted_by(
-        self,
-        key: Optional[Union[str, Callable[[DrillHole], float]]] = None,
-        reverse: bool = False
+        self, key: Optional[Union[str, Callable[[DrillHole], float]]] = None, reverse: bool = False
     ):
         """
         Iterate over DrillHole objects in sorted order.
@@ -1298,20 +1333,20 @@ class DrillholeDatabase:
         Examples
         --------
         Sort by collar column:
-        
+
         >>> for h in db.sorted_by('DEPTH', reverse=True):
         ...     print(f"{h.hole_id}: {h.collar['DEPTH'].iloc[0]}m")
-        
+
         Sort by maximum assay value:
-        
+
         >>> def max_cu(hole):
         ...     assay = hole['assay']
         ...     return assay['CU_PPM'].max() if not assay.empty else 0
         >>> for h in db.sorted_by(max_cu, reverse=True):
         ...     print(f"{h.hole_id}: max Cu = {max_cu(h)}")
-        
+
         Sort by meters where assay exceeds threshold:
-        
+
         >>> def high_grade_meters(hole):
         ...     assay = hole['assay']
         ...     if assay.empty:
@@ -1323,7 +1358,7 @@ class DrillholeDatabase:
         """
         # Get all holes
         holes = [self[hole_id] for hole_id in self.list_holes()]
-        
+
         # Define sort key function
         if key is None:
             # Sort by hole_id (default)
@@ -1334,14 +1369,16 @@ class DrillholeDatabase:
                 try:
                     return h.collar[key].iloc[0]
                 except (KeyError, IndexError):
-                    logger.warning(f"Column '{key}' not found in collar for hole {h.hole_id}, using 0")
+                    logger.warning(
+                        f"Column '{key}' not found in collar for hole {h.hole_id}, using 0"
+                    )
                     return 0
         elif callable(key):
             # Use custom function
             sort_key = key
         else:
             raise TypeError(f"key must be str, callable, or None, got {type(key)}")
-        
+
         # Sort and yield
         try:
             sorted_holes = sorted(holes, key=sort_key, reverse=reverse)
@@ -1409,7 +1446,13 @@ class DrillholeDatabase:
 
     def list_holes(self) -> List[str]:
         """Return all HOLE_IDs."""
-        return sorted(self.collar[DhConfig.holeid].tolist())
+        merged_hole_ids = pd.merge(
+            self.collar[[DhConfig.holeid]],
+            self.survey[[DhConfig.holeid]].drop_duplicates(),
+            on=DhConfig.holeid,
+            how="inner",
+        )
+        return sorted(merged_hole_ids[DhConfig.holeid].tolist())
 
     def extent(self) -> Tuple[float, float, float, float, float, float]:
         """
@@ -1560,17 +1603,17 @@ class DrillholeDatabase:
         self,
         table_name: str,
         columns: List[str],
-        table_type: str = 'point',
-        allow_negative: bool = False
+        table_type: str = "point",
+        allow_negative: bool = False,
     ) -> "DrillholeDatabase":
         """
         Validate and clean numerical columns in a table.
-        
+
         This method:
         - Validates that specified columns are numerical
         - Replaces non-positive values (or negative values if allow_negative=False) with NaN
         - Ensures columns are converted to numerical type
-        
+
         Parameters
         ----------
         table_name : str
@@ -1581,34 +1624,34 @@ class DrillholeDatabase:
             Type of table ('point' or 'interval')
         allow_negative : bool, default False
             If False, replaces values <= 0 with NaN. If True, only replaces negative values with NaN.
-        
+
         Returns
         -------
         DrillholeDatabase
             Self, to allow method chaining
         """
         # Determine which table dictionary to use
-        if table_type == 'point':
+        if table_type == "point":
             tables = self.points
-        elif table_type == 'interval':
+        elif table_type == "interval":
             tables = self.intervals
         else:
             raise ValueError(f"table_type must be 'point' or 'interval', got '{table_type}'")
-        
+
         if table_name not in tables:
             raise KeyError(f"Table '{table_name}' not found in {table_type} tables")
-        
+
         table = tables[table_name]
-        
+
         # Process each column
         for col in columns:
             if col not in table.columns:
                 logger.warning(f"Column '{col}' not found in table '{table_name}', skipping")
                 continue
-            
+
             # Convert to numeric, coercing errors to NaN
-            table[col] = pd.to_numeric(table[col], errors='coerce')
-            
+            table[col] = pd.to_numeric(table[col], errors="coerce")
+
             # Replace non-positive or negative values with NaN
             if allow_negative:
                 # Only replace negative values
@@ -1616,22 +1659,18 @@ class DrillholeDatabase:
             else:
                 # Replace values <= 0
                 table.loc[table[col] <= 0, col] = np.nan
-        
+
         return self
 
     def filter_by_nan_threshold(
-        self,
-        table_name: str,
-        columns: List[str],
-        threshold: float,
-        table_type: str = 'point'
+        self, table_name: str, columns: List[str], threshold: float, table_type: str = "point"
     ) -> "DrillholeDatabase":
         """
         Filter rows based on the proportion of non-NaN values in specified columns.
-        
+
         This method removes rows where the proportion of valid (non-NaN) values
         in the specified columns is below the threshold.
-        
+
         Parameters
         ----------
         table_name : str
@@ -1643,58 +1682,58 @@ class DrillholeDatabase:
             For example, 0.5 means at least 50% of the columns must have valid values.
         table_type : str, default 'point'
             Type of table ('point' or 'interval')
-        
+
         Returns
         -------
         DrillholeDatabase
             New filtered database instance with rows removed based on threshold
-        
+
         Examples
         --------
         >>> # Keep only rows where at least 80% of assay columns have valid values
         >>> db_filtered = db.filter_by_nan_threshold('assay', ['CU_PPM', 'AU_PPM', 'AG_PPM'], 0.8)
-        
+
         >>> # Can be chained with other filters
         >>> db_filtered = db.filter(holes=['DH001', 'DH002']).filter_by_nan_threshold('assay', ['CU_PPM'], 0.5)
         """
         # Validate threshold
         if not 0.0 <= threshold <= 1.0:
             raise ValueError(f"threshold must be between 0.0 and 1.0, got {threshold}")
-        
+
         # Determine which table dictionary to use
-        if table_type == 'point':
+        if table_type == "point":
             tables = self.points
-        elif table_type == 'interval':
+        elif table_type == "interval":
             tables = self.intervals
         else:
             raise ValueError(f"table_type must be 'point' or 'interval', got '{table_type}'")
-        
+
         if table_name not in tables:
             raise KeyError(f"Table '{table_name}' not found in {table_type} tables")
-        
+
         table = tables[table_name].copy()
-        
+
         # Check which columns exist
         existing_columns = [col for col in columns if col in table.columns]
         missing_columns = [col for col in columns if col not in table.columns]
-        
+
         if missing_columns:
             logger.warning(f"Columns not found in table '{table_name}': {missing_columns}")
-        
+
         if not existing_columns:
             raise ValueError(f"None of the specified columns found in table '{table_name}'")
-        
+
         # Calculate proportion of non-NaN values for each row
         non_nan_count = table[existing_columns].notna().sum(axis=1)
         total_columns = len(existing_columns)
         non_nan_proportion = non_nan_count / total_columns
-        
+
         # Create mask for rows that meet the threshold
         mask = non_nan_proportion >= threshold
-        
+
         # Get the hole IDs that have data meeting the threshold
         filtered_table = table[mask].copy()
-        
+
         # If the filtered table is empty, return an empty database
         if filtered_table.empty:
             # Create an empty database with the same structure
@@ -1702,19 +1741,19 @@ class DrillholeDatabase:
             empty_survey = self.survey.iloc[0:0].copy()
             new_db = DrillholeDatabase(empty_collar, empty_survey)
             return new_db
-        
+
         # Get unique hole IDs from the filtered table
         hole_ids_to_keep = set(filtered_table[DhConfig.holeid].unique())
-        
+
         # Use the existing filter method to filter by these holes
         new_db = self.filter(holes=list(hole_ids_to_keep))
-        
+
         # Update the specific table in the new database
-        if table_type == 'point':
+        if table_type == "point":
             new_db.points[table_name] = filtered_table
         else:
             new_db.intervals[table_name] = filtered_table
-        
+
         return new_db
 
     def validate(self) -> bool:
@@ -1784,10 +1823,10 @@ class DrillholeDatabase:
         return True
 
     def vtk(
-        self, 
-        newinterval: Union[float, np.ndarray] = 1.0, 
+        self,
+        newinterval: Union[float, np.ndarray] = 1.0,
         radius: float = 0.1,
-        properties: Optional[List[str]] = None
+        properties: Optional[List[str]] = None,
     ):
         """
         Return a PyVista MultiBlock object containing all drillholes as tubes.
