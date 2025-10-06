@@ -293,7 +293,7 @@ class TestDrillHoleComprehensive:
     def test_trace(self, database_with_data):
         """Test trace method."""
         hole = database_with_data['DH001']
-        trace = hole.trace(step=10.0)
+        trace = hole.trace(step=10.0).trace_points
         
         assert 'DEPTH' in trace.columns  # The desurvey function uses uppercase
         assert 'x' in trace.columns
