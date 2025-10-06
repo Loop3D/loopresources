@@ -20,7 +20,7 @@ from loopresources.drillhole import DrillholeDatabase, DhConfig
 # DrillholeDatabase columns.
 
 # Get the path to the thalanga data folder
-data_folder = os.path.join(os.path.dirname(__file__), 'thalanga')
+data_folder = os.path.join('.', 'thalanga')
 collar_file = os.path.join(data_folder, 'ThalangaML_collar.csv')
 survey_file = os.path.join(data_folder, 'ThalangaML_survey.csv')
 

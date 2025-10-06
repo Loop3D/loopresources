@@ -17,7 +17,7 @@ from loopresources.drillhole import DrillholeDatabase, DhConfig
 # Load the collar and survey data from the CSV files in the thalanga folder.
 
 # Get the path to the thalanga data folder
-data_folder = os.path.join(os.path.dirname(__file__), 'thalanga')
+data_folder = os.path.join('.', 'thalanga')
 
 # Load collar data
 collar_file = os.path.join(data_folder, 'ThalangaML_collar.csv')

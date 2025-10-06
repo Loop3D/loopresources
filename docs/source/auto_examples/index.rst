@@ -24,6 +24,74 @@ Example naming convention:
 
 .. raw:: html
 
+    <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates how to use the DrillholeDatabase.from_csv() method to load drilling data directly from CSV files with column mapping.">
+
+.. only:: html
+
+  .. image:: /auto_examples/images/thumb/sphx_glr_plot_from_csv_example_thumb.png
+    :alt:
+
+  :ref:`sphx_glr_auto_examples_plot_from_csv_example.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">DrillholeDatabase.from_csv() Example</div>
+    </div>
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates how the new __str__ and __repr__ methods make it easy to explore and understand drillhole data interactively.">
+
+.. only:: html
+
+  .. image:: /auto_examples/images/thumb/sphx_glr_example_string_representations_thumb.png
+    :alt:
+
+  :ref:`sphx_glr_auto_examples_example_string_representations.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Example: Using String Representations for Drillhole Data Exploration</div>
+    </div>
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates how to:">
+
+.. only:: html
+
+  .. image:: /auto_examples/images/thumb/sphx_glr_plot_interval_resampling_thumb.png
+    :alt:
+
+  :ref:`sphx_glr_auto_examples_plot_interval_resampling.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Interval Resampling and VTK Properties</div>
+    </div>
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates how to load collar and survey data from the Thalanga dataset and create a drillhole database using loopresources.">
+
+.. only:: html
+
+  .. image:: /auto_examples/images/thumb/sphx_glr_plot_thalanga_example_thumb.png
+    :alt:
+
+  :ref:`sphx_glr_auto_examples_plot_thalanga_example.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Thalanga Drillhole Database Example</div>
+    </div>
+
+
+.. raw:: html
+
     <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates the basic usage of the DrillholeDatabase class for managing drillhole data with modern pandas-based operations.">
 
 .. only:: html
@@ -39,6 +107,23 @@ Example naming convention:
     </div>
 
 
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="This example shows how to: 1. Validate numerical columns in assay data 2. Filter rows based on NaN thresholds 3. Chain preprocessing operations">
+
+.. only:: html
+
+  .. image:: /auto_examples/images/thumb/sphx_glr_example_preprocessing_thumb.png
+    :alt:
+
+  :ref:`sphx_glr_auto_examples_example_preprocessing.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Example demonstrating preprocessing and imputation tools for DrillholeDatabase.</div>
+    </div>
+
+
 .. thumbnail-parent-div-close
 
 .. raw:: html
@@ -49,7 +134,12 @@ Example naming convention:
 .. toctree::
    :hidden:
 
+   /auto_examples/plot_from_csv_example
+   /auto_examples/example_string_representations
+   /auto_examples/plot_interval_resampling
+   /auto_examples/plot_thalanga_example
    /auto_examples/plot_basic_drillhole_usage
+   /auto_examples/example_preprocessing
 
 
 
