@@ -384,12 +384,9 @@ class DrillHole:
                                         DhConfig.holeid: [self.hole_id],
                                         DhConfig.sample_from: [0.0],
                                         DhConfig.sample_to: [total_depth],
+                                        **{col: [np.nan] * 1 for col in cols_to_resample},
                                     }
                                 )
-
-                                # Add NaN columns for each property
-                                for col in cols_to_resample:
-                                    prop_table[col] = np.nan
 
                                 logger.debug(
                                     f"Property table '{prop_name}' is empty for hole '{self.hole_id}', "

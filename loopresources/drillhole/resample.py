@@ -161,6 +161,7 @@ def resample_interval(
         exact_to = np.where(
             table[DhConfig.sample_to].to_numpy()[None, :] == r[DhConfig.depth].to_numpy()[:, None]
         )
+        new_columns = {}
         for col in cols:
             if col not in table.columns:
                 # warn the user
@@ -169,20 +170,21 @@ def resample_interval(
 
             # Initialize column with appropriate type
             if table[col].dtype == "object" or pd.api.types.is_string_dtype(table[col]):
-                r[col] = None
+                new_columns[col] = np.array([None] * len(r), dtype=object)
             else:
-                r[col] = np.nan
+                new_columns[col] = np.array([np.nan] * len(r))
 
             # find values in the intervals and assign them to the survey
-            r.loc[r.index[i], col] = table.loc[table.index[j], col].to_numpy()
+            new_columns[col][r.index[i]] = table.loc[table.index[j], col].to_numpy()
             if len(exact_from[0]) > 0:
-                r.loc[r.index[exact_from[0]], col] = table.loc[
+                new_columns[col][exact_from[0]] = table.loc[
                     table.index[exact_from[1]], col
                 ].to_numpy()
             if len(exact_to[0]) > 0:
-                r.loc[r.index[exact_to[0]], col] = table.loc[
-                    table.index[exact_to[1]], col
-                ].to_numpy()
+                new_columns[col][exact_to[0]] = table.loc[table.index[exact_to[1]], col].to_numpy()
+        new_df = pd.DataFrame(new_columns, index=r.index, columns=cols)
+        r = pd.concat([r, new_df], axis=1)
+
     return r
 
 
@@ -238,13 +240,19 @@ def resample_interval_to_new_interval(
         }
     )
 
+    # Prepare columns to add
+    new_columns = {}
+
     # Process each column
     for col in cols:
         if col not in table.columns:
             logger.warning(f"Warning: {col} not in table, skipping")
             continue
 
-        result[col] = None
+        # Initialize column with None
+        new_columns[col] = [None] * len(result)
+
+        # Replace assignment to result[col] with assignment to new_columns[col] below
 
         # For each new interval, find overlapping original intervals
         for idx, (new_f, new_t) in enumerate(zip(new_from, new_to)):
@@ -286,6 +294,8 @@ def resample_interval_to_new_interval(
                 # Select the value with maximum occurrence
                 if value_occurrences:
                     max_value = max(value_occurrences, key=value_occurrences.get)
-                    result.loc[idx, col] = max_value
-
-    return result
+                    new_columns[col][idx] = max_value
+    # Add new columns to result dataframe
+    for col, values in new_columns.items():
+        result[col] = values
+    return result.copy()
