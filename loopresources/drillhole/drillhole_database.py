@@ -981,6 +981,23 @@ class DrillholeDatabase:
         -------
         DrillholeDatabase
             New filtered database instance
+
+        Examples
+        --------
+        # Filter to keep only holes where all intervals in 'lithology' table have NaN for 'LITHO' column
+        >>> nan_holes = db.collar.loc[
+        ...     db.intervals['lithology']
+        ...         .groupby(DhConfig.holeid)['LITHO']
+        ...         .apply(lambda s: s.isna().all())
+        ...         .pipe(lambda x: x[x].index)
+        ... ].index.tolist()
+        >>> db_nan = db.filter(holes=nan_holes)
+
+        # Or using a callable:
+        >>> def all_nan_litho(df):
+        ...     return df.groupby(DhConfig.holeid)['LITHO'].apply(lambda s: s.isna().all())
+        >>> nan_holes = all_nan_litho(db.intervals['lithology'])
+        >>> db_nan = db.filter(holes=nan_holes[nan_holes].index.tolist())
         """
         # Start with all collar data
         collar_mask = pd.Series(True, index=self.collar.index)
@@ -1051,8 +1068,8 @@ class DrillholeDatabase:
                     # Expression doesn't apply to this table (e.g., LITHO column not present)
                     pass
 
-            if not filtered_table.empty:
-                new_db.intervals[name] = filtered_table
+            # add the table to the new db even if it is empty as we want to have the same tables
+            new_db.intervals[name] = filtered_table
 
         # Filter point tables
         for name, table in self.points.items():
@@ -1439,3 +1456,50 @@ class DrillholeDatabase:
             return pd.DataFrame(columns=[DhConfig.holeid, DhConfig.depth, "x", "y", "z"])
 
         return pd.concat(desurveyed_points, ignore_index=True)
+
+    def resample_interval_to_depths(
+        self, interval_table_name: str, new_depths: pd.Series
+    ) -> pd.DataFrame:
+        """
+        Resample interval data to match a new set of depths.
+
+        Parameters
+        ----------
+        interval_table_name : str
+            Name of the interval table to resample
+        new_depths : pd.Series
+            Series of new depths to match
+
+        Returns
+        -------
+        pd.DataFrame
+            Resampled interval data
+        """
+        if interval_table_name not in self.intervals:
+            raise KeyError(f"Interval table '{interval_table_name}' not found")
+
+        resampled_intervals = []
+
+        # Process each hole
+        for hole_id in self.list_holes():
+            try:
+                drillhole = self[hole_id]
+                hole_intervals = drillhole.resample_intervals(interval_table_name, new_depths)
+                if not hole_intervals.empty:
+                    resampled_intervals.append(hole_intervals)
+            except Exception as e:
+                logger.warning(f"Failed to resample intervals for hole {hole_id}: {e}")
+                continue
+
+        if not resampled_intervals:
+            # Return empty DataFrame with expected structure
+            return pd.DataFrame(
+                columns=[
+                    DhConfig.holeid,
+                    DhConfig.sample_from,
+                    DhConfig.sample_to,
+                    DhConfig.depth_mid,
+                ]
+            )
+
+        return pd.concat(resampled_intervals, ignore_index=True)
