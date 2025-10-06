@@ -1,3 +1,5 @@
+"""Drillhole subpackage: configuration, utilities and database helpers for drillhole data."""
+
 from .dhconfig import DhConfig
 from .dbconfig import DbConfig
 from .desurvey import desurvey

@@ -1,5 +1,4 @@
-"""
-DrillHoleDatabase - A clean implementation based on AGENTS.md specifications.
+"""DrillHoleDatabase - A clean implementation based on AGENTS.md specifications.
 
 This module provides a modern, pandas-native interface for drillhole data management
 with filtering, validation, and export capabilities.
@@ -20,8 +19,7 @@ logger = logging.getLogger(__name__)
 
 
 class DrillholeDatabase:
-    """
-    Main container for all drillhole data.
+    """Main container for all drillhole data.
 
     Stores global data as pandas DataFrames and dictionaries following
     the specification in AGENTS.md.
@@ -30,8 +28,7 @@ class DrillholeDatabase:
     def __init__(
         self, collar: pd.DataFrame, survey: pd.DataFrame, db_config: Optional[DbConfig] = None
     ):
-        """
-        Initialize DrillholeDatabase.
+        """Initialize DrillholeDatabase.
 
         Parameters
         ----------
@@ -111,8 +108,7 @@ class DrillholeDatabase:
             self._survey = value
 
     def plot_collars(self, ax=None, **kwargs):
-        """
-        Plot collar locations.
+        """Plot collar locations.
 
         Parameters
         ----------
@@ -142,8 +138,7 @@ class DrillholeDatabase:
         return ax
 
     def get_collar_for_hole(self, hole_id: str) -> pd.DataFrame:
-        """
-        Get collar data for a specific hole.
+        """Get collar data for a specific hole.
 
         For file backend, this queries the database directly rather than
         loading all collar data and filtering in Python.
@@ -166,8 +161,7 @@ class DrillholeDatabase:
             return self._load_table_from_db("collar", hole_id=hole_id)
 
     def get_survey_for_hole(self, hole_id: str) -> pd.DataFrame:
-        """
-        Get survey data for a specific hole.
+        """Get survey data for a specific hole.
 
         For file backend, this queries the database directly rather than
         loading all survey data and filtering in Python.
@@ -190,8 +184,7 @@ class DrillholeDatabase:
             return self._load_table_from_db("survey", hole_id=hole_id)
 
     def get_interval_data_for_hole(self, table_name: str, hole_id: str) -> pd.DataFrame:
-        """
-        Get interval table data for a specific hole.
+        """Get interval table data for a specific hole.
 
         For file backend with saved tables, this could query the database directly.
         Currently filters in-memory data.
@@ -216,8 +209,7 @@ class DrillholeDatabase:
         return table[mask].copy()
 
     def get_point_data_for_hole(self, table_name: str, hole_id: str) -> pd.DataFrame:
-        """
-        Get point table data for a specific hole.
+        """Get point table data for a specific hole.
 
         For file backend with saved tables, this could query the database directly.
         Currently filters in-memory data.
@@ -293,8 +285,7 @@ class DrillholeDatabase:
         survey.to_sql("survey", self._conn, if_exists="append", index=False)
 
     def _load_table_from_db(self, table_name: str, hole_id: Optional[str] = None) -> pd.DataFrame:
-        """
-        Load table from database.
+        """Load table from database.
 
         Parameters
         ----------
@@ -340,8 +331,7 @@ class DrillholeDatabase:
 
     @classmethod
     def from_database(cls, db_path: str, project_name: Optional[str] = None) -> "DrillholeDatabase":
-        """
-        Load DrillholeDatabase from an existing SQLite database.
+        """Load DrillholeDatabase from an existing SQLite database.
 
         Parameters
         ----------
@@ -420,8 +410,7 @@ class DrillholeDatabase:
     def link_to_database(
         cls, db_path: str, project_name: Optional[str] = None
     ) -> "DrillholeDatabase":
-        """
-        Create a DrillholeDatabase instance linked to an existing database.
+        """Create a DrillholeDatabase instance linked to an existing database.
 
         This method keeps a persistent connection to the database and loads
         data on-demand rather than loading everything into memory.
@@ -443,8 +432,7 @@ class DrillholeDatabase:
     def save_to_database(
         self, db_path: str, project_name: Optional[str] = None, overwrite: bool = False
     ):
-        """
-        Save the current database to a SQLite file.
+        """Save the current database to a SQLite file.
 
         Parameters
         ----------
@@ -534,8 +522,7 @@ class DrillholeDatabase:
         survey_columns: Optional[Dict[str, str]] = None,
         **kwargs,
     ) -> "DrillholeDatabase":
-        """
-        Create a DrillholeDatabase from CSV files with column mapping.
+        """Create a DrillholeDatabase from CSV files with column mapping.
 
         Parameters
         ----------
@@ -702,8 +689,7 @@ class DrillholeDatabase:
             self.survey[DhConfig.dip] = np.deg2rad(self.survey[DhConfig.dip])
 
     def __getitem__(self, hole_id: str) -> DrillHole:
-        """
-        Return a DrillHole view for a given HOLE_ID.
+        """Return a DrillHole view for a given HOLE_ID.
 
         Parameters
         ----------
@@ -718,8 +704,7 @@ class DrillholeDatabase:
         return DrillHole(self, hole_id)
 
     def __iter__(self):
-        """
-        Iterate over all DrillHole objects in the database.
+        """Iterate over all DrillHole objects in the database.
 
         Yields
         ------
@@ -817,8 +802,7 @@ class DrillholeDatabase:
     def sorted_by(
         self, key: Optional[Union[str, Callable[[DrillHole], float]]] = None, reverse: bool = False
     ):
-        """
-        Iterate over DrillHole objects in sorted order.
+        """Iterate over DrillHole objects in sorted order.
 
         Parameters
         ----------
@@ -894,8 +878,7 @@ class DrillholeDatabase:
             raise
 
     def add_interval_table(self, name: str, df: pd.DataFrame):
-        """
-        Register a new interval table.
+        """Register a new interval table.
 
         Parameters
         ----------
@@ -922,8 +905,7 @@ class DrillholeDatabase:
         self.intervals[name] = df
 
     def add_point_table(self, name: str, df: pd.DataFrame):
-        """
-        Register a new point table.
+        """Register a new point table.
 
         Parameters
         ----------
@@ -960,8 +942,7 @@ class DrillholeDatabase:
         return sorted(merged_hole_ids[DhConfig.holeid].tolist())
 
     def extent(self) -> Tuple[float, float, float, float, float, float]:
-        """
-        Return spatial extent of all drillholes.
+        """Return spatial extent of all drillholes.
 
         Returns
         -------
@@ -983,8 +964,7 @@ class DrillholeDatabase:
         depth_range: Optional[Tuple[float, float]] = None,
         expr: Optional[Union[str, Callable]] = None,
     ) -> "DrillholeDatabase":
-        """
-        Return a filtered DrillholeDatabase.
+        """Return a filtered DrillholeDatabase.
 
         Parameters
         ----------
@@ -1111,8 +1091,7 @@ class DrillholeDatabase:
         table_type: str = "point",
         allow_negative: bool = False,
     ) -> "DrillholeDatabase":
-        """
-        Validate and clean numerical columns in a table.
+        """Validate and clean numerical columns in a table.
 
         This method:
         - Validates that specified columns are numerical
@@ -1170,8 +1149,7 @@ class DrillholeDatabase:
     def filter_by_nan_threshold(
         self, table_name: str, columns: List[str], threshold: float, table_type: str = "point"
     ) -> "DrillholeDatabase":
-        """
-        Filter rows based on the proportion of non-NaN values in specified columns.
+        """Filter rows based on the proportion of non-NaN values in specified columns.
 
         This method removes rows where the proportion of valid (non-NaN) values
         in the specified columns is below the threshold.
@@ -1262,8 +1240,7 @@ class DrillholeDatabase:
         return new_db
 
     def validate(self) -> bool:
-        """
-        Perform schema and consistency checks.
+        """Perform schema and consistency checks.
 
         Returns
         -------
@@ -1333,8 +1310,7 @@ class DrillholeDatabase:
         radius: float = 0.1,
         properties: Optional[List[str]] = None,
     ):
-        """
-        Return a PyVista MultiBlock object containing all drillholes as tubes.
+        """Return a PyVista MultiBlock object containing all drillholes as tubes.
 
         Parameters
         ----------
@@ -1379,8 +1355,7 @@ class DrillholeDatabase:
         return multiblock
 
     def desurvey_intervals(self, interval_table_name: str) -> pd.DataFrame:
-        """
-        Desurvey interval data for all holes to get 3D coordinates.
+        """Desurvey interval data for all holes to get 3D coordinates.
 
         Parameters
         ----------
@@ -1431,8 +1406,7 @@ class DrillholeDatabase:
         return pd.concat(desurveyed_intervals, ignore_index=True)
 
     def desurvey_points(self, point_table_name: str) -> pd.DataFrame:
-        """
-        Desurvey point data for all holes to get 3D coordinates.
+        """Desurvey point data for all holes to get 3D coordinates.
 
         Parameters
         ----------

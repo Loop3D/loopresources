@@ -1,5 +1,4 @@
-"""
-DrillHole - A clean implementation based on AGENTS.md specifications.
+"""DrillHole - A clean implementation based on AGENTS.md specifications.
 
 This module provides a modern, pandas-native interface for drillhole data management
 with filtering, validation, and export capabilities.
@@ -23,7 +22,10 @@ logger = logging.getLogger(__name__)
 
 
 class DrillHoleTrace:
+    """Container providing interpolated trace access for a drillhole."""
+
     def __init__(self, drillhole: "DrillHole", *, interval: float = 1.0):
+        """Create a DrillHoleTrace for a DrillHole using a specified sampling interval."""
         trace_points = desurvey(drillhole.collar, drillhole.survey, interval)
         self.trace_points = trace_points
         self.x_interpolator = interp1d(
@@ -37,6 +39,7 @@ class DrillHoleTrace:
         )
 
     def __call__(self, newinterval: Optional[Union[np.ndarray, float]] = 1.0):
+        """Return resampled trace as a DataFrame for given interval or depths."""
         if not hasattr(newinterval, "__len__"):  # is it an array?
             newdepth = np.arange(
                 0,
@@ -56,18 +59,18 @@ class DrillHoleTrace:
         )
 
     def depth_at(self, x: float, y: float, z: float) -> float:
-        """
-        Return depth along hole closest to a given XYZ point.
+        """Return depth along hole closest to a given XYZ point.
+
         Parameters
         ----------
         x, y, z : float
             Coordinates of the point
+
         Returns
         -------
         float
             Depth along hole closest to the point
         """
-
         distances = np.sqrt(
             (self.trace_points["x"] - x) ** 2
             + (self.trace_points["y"] - y) ** 2
@@ -78,14 +81,13 @@ class DrillHoleTrace:
 
 
 class DrillHole:
-    """
-    A view of the DrillholeDatabase for a single HOLE_ID.
+    """A view of the DrillholeDatabase for a single HOLE_ID.
+
     Provides per-hole access, sampling, and visualization.
     """
 
     def __init__(self, database: "DrillholeDatabase", hole_id: str):
-        """
-        Initialize DrillHole view.
+        """Initialize DrillHole view.
 
         Parameters
         ----------
@@ -225,8 +227,7 @@ class DrillHole:
         return "\n".join(lines)
 
     def __getitem__(self, propertyname: str) -> pd.DataFrame:
-        """
-        Return a single interval or point table for this hole.
+        """Return a single interval or point table for this hole.
 
         Parameters
         ----------
@@ -267,8 +268,7 @@ class DrillHole:
         return result
 
     def trace(self, step: float = 1.0) -> DrillHoleTrace:
-        """
-        Return the interpolated XYZ trace of the hole.
+        """Return the interpolated XYZ trace of the hole.
 
         Parameters
         ----------
@@ -280,12 +280,10 @@ class DrillHole:
         DrillHoleTrace
             Interpolated trace of the drill hole
         """
-
         return DrillHoleTrace(self, interval=step)
 
     def depth_at(self, x: float, y: float, z: float) -> float:
-        """
-        Return depth along hole closest to a given XYZ point.
+        """Return depth along hole closest to a given XYZ point.
 
         Parameters
         ----------
@@ -305,8 +303,7 @@ class DrillHole:
         radius: float = 0.1,
         properties: Optional[List[str]] = None,
     ):
-        """
-        Return a PyVista tube object representing the drillhole trace.
+        """Return a PyVista tube object representing the drillhole trace.
 
         Parameters
         ----------
@@ -454,8 +451,7 @@ class DrillHole:
         return polydata.tube(radius=radius)
 
     def desurvey_intervals(self, interval_table_name: str) -> pd.DataFrame:
-        """
-        Desurvey interval data to get 3D coordinates for FROM and TO depths.
+        """Desurvey interval data to get 3D coordinates for FROM and TO depths.
 
         Parameters
         ----------
@@ -509,8 +505,7 @@ class DrillHole:
         return result
 
     def desurvey_points(self, point_table_name: str) -> pd.DataFrame:
-        """
-        Desurvey point data to get 3D coordinates.
+        """Desurvey point data to get 3D coordinates.
 
         Parameters
         ----------
@@ -546,8 +541,7 @@ class DrillHole:
     def resample(
         self, interval_table_name: str, cols: List[str], new_interval: float = 1.0
     ) -> pd.DataFrame:
-        """
-        Resample interval data onto a new regular interval.
+        """Resample interval data onto a new regular interval.
 
         For each new interval, finds all overlapping original intervals and
         assigns the value that has the biggest occurrence (mode).

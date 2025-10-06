@@ -1,3 +1,9 @@
+"""Desurvey utilities for drillhole survey manipulation.
+
+Functions to convert survey azimuth/inclination records into XYZ coordinates
+sampled at a regular interval along a drillhole trace.
+"""
+
 import numpy as np
 import pandas as pd
 from scipy.interpolate import interp1d
@@ -11,7 +17,7 @@ def desurvey(
     newinterval: Union[np.ndarray, float] = 1.0,
     drop_intermediate: bool = True,
 ):
-    """Desurvey and resample a drillhole along a specific interval
+    """Desurvey and resample a drillhole along a specific interval.
 
     Parameters
     ----------

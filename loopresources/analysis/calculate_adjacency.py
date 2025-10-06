@@ -1,30 +1,12 @@
+"""Adjacency utilities for geological analysis."""
+
 import numpy as np
 import pandas as pd
 from sklearn.neighbors import BallTree
 
 
 def calculate_adjacency_ball_tree(data: pd.DataFrame, radius: float, col: str, k=5) -> np.ndarray:
-    """Calculate the adjacency matrix using a ball tree
-
-    Parameters
-    ----------
-    data : np.ndarray
-        data to calculate adjacency from
-    radius : float
-        radius to search for neighbors
-    col : str
-        column name to use for the adjacency
-
-    Returns
-    -------
-    np.ndarray
-        adjacency matrix
-
-    Notes
-    -----
-    This function uses the ball tree algorithm to calculate the adjacency matrix
-    """
-
+    """Calculate the adjacency matrix using a BallTree."""
     locations = data[["x", "y", "z", col]].to_numpy()
     tree = BallTree(locations[:, 0:3], leaf_size=40)
     dist, ind = tree.query(locations[:, 0:3], k=k)
@@ -41,27 +23,7 @@ def calculate_adjacency_ball_tree(data: pd.DataFrame, radius: float, col: str, k
 def calculate_adjacency_down_hole(
     desurveyed_drillholes: pd.DataFrame, col: str, holeid: str
 ) -> np.ndarray:
-    """Calculate the adjacency matrix for downhole data
-
-    Parameters
-    ----------
-    desurveyed_drillholes : pd.DataFrame
-        desurveyed drillholes
-    col : str
-        column name to use for the adjacency
-    holeid : str
-        column name for the hole id
-
-    Returns
-    -------
-    np.ndarray
-        adjacency matrix
-
-    Notes
-    -----
-    This function calculates the adjacency matrix for downhole data
-    """
-
+    """Calculate the adjacency matrix for downhole data."""
     locations = desurveyed_drillholes[["x", "y", "z", col, holeid]].to_numpy()
     holes = np.unique(locations[:, 4])
     adjacency_matrix = np.zeros((len(np.unique(locations[:, 3])), len(np.unique(locations[:, 3]))))
