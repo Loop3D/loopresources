@@ -1,6 +1,34 @@
+"""Configuration and defaults for the drillhole module.
+
+This module provides the DhConfig class which centralizes default column
+names and flags used by the drillhole subpackage. The class stores
+class-level defaults that can be overridden via ``from_config`` or
+``from_file`` when a project-specific configuration is required.
+"""
+
+
 class DhConfig(object):
-    """
-    Configuration class for the drillhole module
+    """Configuration for drillhole column mappings and flags.
+
+    The attributes are defined as class-level defaults and represent the
+    column names (or behaviour flags) used across the drillhole module.
+
+    Attributes:
+        holeid (str): Column name for hole identifier. Default "HOLEID".
+        sample_to (str): Column name for sample end. Default "SAMPTO".
+        sample_from (str): Column name for sample start. Default "SAMPFROM".
+        x (str): Column name for Easting. Default "EAST".
+        y (str): Column name for Northing. Default "NORTH".
+        z (str): Column name for elevation / reduced level. Default "RL".
+        azimuth (str): Column name for azimuth. Default "AZIMUTH".
+        dip (str): Column name for dip or inclination. Default "DIP".
+        add_ninty (bool): If True, add 90° to azimuth when required. Default True.
+            (Note: the attribute name is kept for backwards compatibility.)
+        depth (str): Column name for depth along hole. Default "DEPTH".
+        total_depth (str): Column name for reported total depth. Default "DEPTH".
+        debug (bool): Debugging flag. Default False.
+        positive_dips_down (bool): Interpret positive dip values as pointing downwards.
+        dip_is_inclination (bool): If True, dip values are treated as inclination (0 = horizontal).
     """
 
     holeid = "HOLEID"
@@ -20,8 +48,18 @@ class DhConfig(object):
 
     @classmethod
     def from_config(cls, config):
-        """
-        Create a DhConfig from a config object
+        """Create a DhConfig from a mapping-like config object.
+
+        Args:
+            config (Mapping[str, Any]): Mapping containing keys that match the
+                attribute names of DhConfig (for example, 'holeid', 'x', 'y', etc.).
+
+        Returns:
+            type: The DhConfig class with attributes set from the provided config.
+
+        Notes:
+            This method updates class-level attributes so callers should be
+            aware that the change is global to the DhConfig class.
         """
         cls.holeid = config["holeid"]
         cls.sample_to = config["sample_to"]
@@ -38,8 +76,13 @@ class DhConfig(object):
 
     @classmethod
     def from_file(cls, file):
-        """
-        Create a DhConfig from a json file
+        """Create a DhConfig from a JSON file.
+
+        Args:
+            file (str): Path to a JSON file containing configuration keys.
+
+        Returns:
+            type: The DhConfig class with attributes set from the JSON file.
         """
         import json
 
@@ -49,8 +92,14 @@ class DhConfig(object):
 
     @classmethod
     def to_json(cls, filename=None):
-        """
-        Write the config to a json file
+        """Write the config to a JSON string or file and return the JSON string.
+
+        Args:
+            filename (str, optional): If provided, the JSON representation will be
+                written to this file path.
+
+        Returns:
+            str: JSON string representation of the current DhConfig values.
         """
         import json
 
@@ -61,6 +110,11 @@ class DhConfig(object):
 
     @classmethod
     def as_dict(cls):
+        """Return the DhConfig as a dictionary.
+
+        Returns:
+            dict: Mapping of DhConfig attribute names to their current values.
+        """
         return {
             "holeid": cls.holeid,
             "sample_to": cls.sample_to,
@@ -76,6 +130,7 @@ class DhConfig(object):
         }
 
     def __repr__(self) -> str:
+        """Return an unambiguous string representation of the DhConfig."""
         return (
             f"DhConfig(holeid={self.holeid}, sample_to={self.sample_to}, "
             f"sample_from={self.sample_from}, x={self.x}, y={self.y}, z={self.z}, "
@@ -84,7 +139,7 @@ class DhConfig(object):
         )
 
     def __str__(self) -> str:
-        """Return a formatted string representation of the DhConfig."""
+        """Return a human-readable formatted string representation of the DhConfig."""
         return (
             "DhConfig - Column Mapping\n"
             "==========================\n"
@@ -105,6 +160,14 @@ class DhConfig(object):
 
     @classmethod
     def fields(cls):
+        """Return list of field names used by the DhConfig.
+
+        The returned list contains the commonly required column names in the
+        order typically expected by other drillhole utilities.
+
+        Returns:
+            list[str]: List of column/field names.
+        """
         return [
             cls.sample_to,
             cls.sample_from,

@@ -1,3 +1,5 @@
+"""Utilities for interpolating columns in drillhole dataframes."""
+
 from typing import Optional
 import pandas as pd
 import numpy as np
@@ -9,6 +11,8 @@ from .. import PRIVATE_DEPTH
 
 
 class DataFrameInterpolator:
+    """Interpolate properties along a continuous axis (e.g. depth)."""
+
     def __init__(
         self,
         dataframe: pd.DataFrame,
@@ -17,23 +21,22 @@ class DataFrameInterpolator:
         fill_value: float = np.nan,
         bounds_error=False,
     ):
-        """A class for interpolating properties in a dataframe
-        along a continuous axis e.g. depth
+        """Create an interpolator for a dataframe.
 
         Parameters
         ----------
         dataframe : pd.DataFrame
-            Pandas dataframe to interpolate the values from
+            Pandas dataframe to interpolate the values from.
         depth : str
-            name of the depth column
+            Name of the depth column.
         columns : npt.ArrayLike, optional
-            List of columns to interpolate, by default interpolates all columns in the dataframe except depth
+            List of columns to interpolate; by default interpolates all columns
+            in the dataframe except the depth column.
         fill_value : npt.ArrayLike, optional
-            fill value for data interpolator when outside range, by default np.nan
+            Fill value for interpolator when outside range, by default np.nan.
         bounds_error : bool, optional
-            Whether to throw exception when outside range, by default False
+            Whether to raise an exception when outside range, by default False.
         """
-
         self.dataframe = dataframe.dropna(how="any")
         self.depth = depth
         self.columns_to_interpolate = (
@@ -54,24 +57,12 @@ class DataFrameInterpolator:
                     fill_value=fill_value,
                     bounds_error=bounds_error,
                 )
-            except:
-                print(self.dataframe, c)
+            except Exception:
+                # Keep behaviour of earlier code but surface the failure
+                raise
 
     def __call__(self, depth: npt.ArrayLike, cols=None) -> pd.DataFrame:
-        """_summary_
-
-        Parameters
-        ----------
-        depth : s
-            npt.ArrayLike
-        cols : _type_, optional
-            List of columns that are to be interpolated, if none interpolate all columns, by default None
-
-        Returns
-        -------
-        pd.DataFrame
-            _description_
-        """
+        """Interpolate and return requested columns for provided depths."""
         if cols is None:
             cols = self.columns_to_interpolate
         deptharr = np.array(depth)

@@ -167,7 +167,8 @@ docs/source/_autosummary/*
 # Sphinx Gallery generated files
 *.py.md5
 **/sg_execution_times.rst
-**/auto_examples/
+**/auto_examples/*
+!**/auto_examples/index.rst
 **/images/sphx_glr_*
 
 # Documentation build artifacts

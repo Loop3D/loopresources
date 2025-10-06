@@ -1,3 +1,10 @@
+"""Utilities to resample and desurvey drillhole tables.
+
+Provide helpers to resample point and interval tables to a survey
+(e.g. mapping interval data to depths) and to desurvey interval/point
+tables into a survey representation.
+"""
+
 from . import DhConfig
 from . import DataFrameInterpolator
 import numpy as np
@@ -16,8 +23,30 @@ def resample_point(
     method="direct",
     inplace: bool = False,
 ):
-    """
-    Composite a table to a survey
+    """Resample point/interval values from `table` onto survey `r`.
+
+    Parameters
+    ----------
+    r : pd.DataFrame
+        Survey dataframe containing a depth column named by
+        ``DhConfig.depth``.
+    table : pd.DataFrame
+        Source table to sample from. Should include
+        ``DhConfig.sample_from`` and ``DhConfig.sample_to`` columns for
+        interval sampling.
+    cols : list
+        List of column names to resample from ``table`` onto ``r``.
+    method : str, optional
+        Sampling method to use. Only ``'direct'`` is currently supported.
+    inplace : bool, optional
+        If True, modify and return the input survey ``r``; otherwise a
+        copy is returned.
+
+    Returns
+    -------
+    pd.DataFrame
+        Survey dataframe with the requested columns populated from
+        ``table``.
     """
     if table.empty:
         logger.debug("Warning: table is empty, nothing has been resampled")
@@ -46,24 +75,31 @@ def resample_point(
         cols_in = [col for col in cols if col in table.columns]
         r[cols_in] = np.nan
         r.loc[r.index[i], cols_in] = table.loc[table.index[j], cols_in].to_numpy()
-        # for col in cols:
-        #     if col not in table.columns:
-        #         # warn the user
-        #         print(f"Warning: {col} not in survey, skipping")
-        #         continue
-        #     r[col] = np.nan
-        #     # find values in the intervals and assign them to the survey
-        #     r.loc[r.index[i], col] = table.loc[table.index[j], col].to_numpy()
-        # # r.loc[exact_from[0], col] = table.loc[
-        # #     table.index[exact_from[1], col]
-        # # ].to_numpy()
-        # # r.loc[exact_to[0], col] = table.loc[
-        # #     table.index[exact_to[1], col]
-        # ].to_numpy()
     return r
 
 
 def desurvey_point(r: pd.DataFrame, table: pd.DataFrame, cols: list):
+    """Desurvey values from a survey index into a table representation.
+
+    This calls the DataFrameInterpolator to interpolate values from the
+    survey ``r`` at depths given in ``table`` and returns the interpolated
+    values concatenated with the original ``table``.
+
+    Parameters
+    ----------
+    r : pd.DataFrame
+        Survey dataframe used as source for interpolation.
+    table : pd.DataFrame
+        Target table containing depths at which values should be
+        interpolated (uses ``DhConfig.depth``).
+    cols : list
+        Columns from ``r`` to interpolate.
+
+    Returns
+    -------
+    pd.DataFrame
+        Concatenation of ``table`` and the interpolated columns.
+    """
     interpolator = DataFrameInterpolator(r, DhConfig.depth)
     desurvey = interpolator(table[DhConfig.depth], cols=cols)
     # merged = table.merge(desurvey)
@@ -79,8 +115,28 @@ def resample_interval(
     method="direct",
     inplace: bool = False,
 ):
-    """
-    Composite a table to a survey
+    """Resample interval-valued columns from ``table`` onto survey ``r``.
+
+    Parameters
+    ----------
+    r : pd.DataFrame
+        Survey dataframe containing a depth column named by
+        ``DhConfig.depth``.
+    table : pd.DataFrame
+        Interval table with ``DhConfig.sample_from`` and
+        ``DhConfig.sample_to`` columns.
+    cols : list
+        Columns to resample.
+    method : str, optional
+        Sampling method to use. Only ``'direct'`` is currently supported.
+    inplace : bool, optional
+        If True, modify and return the input survey ``r``; otherwise a
+        copy is returned.
+
+    Returns
+    -------
+    pd.DataFrame
+        Survey dataframe with interval-derived columns populated.
     """
     if table.empty:
         print("Warning: table is empty, nothing has been resampled")
@@ -106,6 +162,7 @@ def resample_interval(
         exact_to = np.where(
             table[DhConfig.sample_to].to_numpy()[None, :] == r[DhConfig.depth].to_numpy()[:, None]
         )
+        new_columns = {}
         for col in cols:
             if col not in table.columns:
                 # warn the user
@@ -114,20 +171,21 @@ def resample_interval(
 
             # Initialize column with appropriate type
             if table[col].dtype == "object" or pd.api.types.is_string_dtype(table[col]):
-                r[col] = None
+                new_columns[col] = np.array([None] * len(r), dtype=object)
             else:
-                r[col] = np.nan
+                new_columns[col] = np.array([np.nan] * len(r))
 
             # find values in the intervals and assign them to the survey
-            r.loc[r.index[i], col] = table.loc[table.index[j], col].to_numpy()
+            new_columns[col][r.index[i]] = table.loc[table.index[j], col].to_numpy()
             if len(exact_from[0]) > 0:
-                r.loc[r.index[exact_from[0]], col] = table.loc[
+                new_columns[col][exact_from[0]] = table.loc[
                     table.index[exact_from[1]], col
                 ].to_numpy()
             if len(exact_to[0]) > 0:
-                r.loc[r.index[exact_to[0]], col] = table.loc[
-                    table.index[exact_to[1]], col
-                ].to_numpy()
+                new_columns[col][exact_to[0]] = table.loc[table.index[exact_to[1]], col].to_numpy()
+        new_df = pd.DataFrame(new_columns, index=r.index, columns=cols)
+        r = pd.concat([r, new_df], axis=1)
+
     return r
 
 
@@ -137,28 +195,29 @@ def resample_interval_to_new_interval(
     new_interval: float = 1.0,
     method="mode",
 ):
-    """
-    Resample interval data to a new regular interval.
+    """Resample interval data to regular intervals and aggregate by overlap.
 
-    For each new interval, finds all overlapping original intervals and
-    assigns the value that has the biggest occurrence (mode).
+    For each new regular interval this function finds overlapping original
+    intervals and assigns the value with the greatest total overlap
+    (i.e. the maximum summed overlap length). Only the ``"mode"``
+    aggregation method is currently supported.
 
     Parameters
     ----------
     table : pd.DataFrame
-        Interval table with FROM and TO columns
+        Interval table with FROM and TO columns named by ``DhConfig``.
     cols : list
-        List of column names to resample
-    new_interval : float, default 1.0
-        Size of new regular intervals
-    method : str, default "mode"
-        Method to use for aggregation. Currently only "mode" is supported,
-        which selects the value with the biggest occurrence in each interval.
+        Columns to resample.
+    new_interval : float, optional
+        Size of the new regular interval (default is 1.0).
+    method : str, optional
+        Aggregation method to use (default: ``"mode"``).
 
     Returns
     -------
     pd.DataFrame
-        Resampled interval data with regular intervals and specified columns
+        Resampled interval data with regular intervals and specified
+        columns.
     """
     if table.empty:
         logger.debug("Warning: table is empty, nothing has been resampled")
@@ -182,13 +241,19 @@ def resample_interval_to_new_interval(
         }
     )
 
+    # Prepare columns to add
+    new_columns = {}
+
     # Process each column
     for col in cols:
         if col not in table.columns:
             logger.warning(f"Warning: {col} not in table, skipping")
             continue
 
-        result[col] = None
+        # Initialize column with None
+        new_columns[col] = [None] * len(result)
+
+        # Replace assignment to result[col] with assignment to new_columns[col] below
 
         # For each new interval, find overlapping original intervals
         for idx, (new_f, new_t) in enumerate(zip(new_from, new_to)):
@@ -230,126 +295,8 @@ def resample_interval_to_new_interval(
                 # Select the value with maximum occurrence
                 if value_occurrences:
                     max_value = max(value_occurrences, key=value_occurrences.get)
-                    result.loc[idx, col] = max_value
-
-    return result
-
-
-def merge_interval_tables(tables: List[pd.DataFrame]) -> pd.DataFrame:
-    """
-    Merge multiple interval tables into a single table by splitting intervals
-    at every boundary present in any input table.
-
-    The resulting table contains atomic, non-overlapping intervals covering
-    the union of the input intervals for each hole. Columns from input tables
-    are preserved; if the same column name appears in multiple input tables
-    the later occurrences are renamed with a suffix "_N" to avoid collisions.
-
-    Parameters
-    ----------
-    tables : list of pd.DataFrame
-        List of interval tables to merge. Each table must contain the
-        required columns: DhConfig.holeid, DhConfig.sample_from, DhConfig.sample_to.
-
-    Returns
-    -------
-    pd.DataFrame
-        Merged interval table with columns from all inputs and added
-        DhConfig.depth_mid.
-    """
-    # If no tables provided return an empty canonical dataframe
-    if not tables:
-        return pd.DataFrame(
-            columns=[DhConfig.holeid, DhConfig.sample_from, DhConfig.sample_to, DhConfig.depth_mid]
-        )
-
-    # Validate required columns exist in at least one table
-    required = {DhConfig.holeid, DhConfig.sample_from, DhConfig.sample_to}
-
-    # Prepare tables: copy and normalize column names to avoid collisions
-    processed_tables = []
-    col_counts = {}
-    for ti, tab in enumerate(tables, start=1):
-        t = tab.copy()
-        if not required.issubset(set(t.columns)):
-            raise ValueError(f"Table {ti} is missing required columns: {required - set(t.columns)}")
-
-        # Rename data columns that would collide with previously seen names
-        rename_map = {}
-        for c in t.columns:
-            if c in required:
-                continue
-            count = col_counts.get(c, 0)
-            if count == 0:
-                # first occurrence - keep name
-                col_counts[c] = 1
-            else:
-                # subsequent occurrence - rename with suffix
-                col_counts[c] = count + 1
-                new_name = f"{c}_{col_counts[c]}"
-                rename_map[c] = new_name
-        if rename_map:
-            t = t.rename(columns=rename_map)
-        processed_tables.append(t)
-
-    # Gather all hole ids across tables
-    hole_ids = set()
-    for t in processed_tables:
-        hole_ids.update(t[DhConfig.holeid].unique())
-
-    merged_rows = []
-
-    # Process each hole independently
-    for hole in sorted(hole_ids):
-        # collect all unique boundaries for this hole
-        boundaries = set()
-        for t in processed_tables:
-            sub = t[t[DhConfig.holeid] == hole]
-            if sub.empty:
-                continue
-            boundaries.update(sub[DhConfig.sample_from].tolist())
-            boundaries.update(sub[DhConfig.sample_to].tolist())
-        if not boundaries:
-            continue
-        sorted_bounds = sorted(boundaries)
-
-        # build atomic segments between consecutive boundaries
-        for a, b in zip(sorted_bounds[:-1], sorted_bounds[1:]):
-            if b <= a:
-                continue
-            row = {
-                DhConfig.holeid: hole,
-                DhConfig.sample_from: a,
-                DhConfig.sample_to: b,
-            }
-
-            # For each processed table, find the interval that covers [a,b]
-            for t in processed_tables:
-                sub = t[t[DhConfig.holeid] == hole]
-                if sub.empty:
-                    continue
-                cover = sub[(sub[DhConfig.sample_from] <= a) & (sub[DhConfig.sample_to] >= b)]
-                if cover.empty:
-                    # no covering interval -> leave values as NaN
-                    continue
-                # If multiple matches take the first (shouldn't happen if inputs valid)
-                cover_row = cover.iloc[0]
-                for c in cover_row.index:
-                    if c in {DhConfig.holeid, DhConfig.sample_from, DhConfig.sample_to}:
-                        continue
-                    # only set value if not already present (earlier table wins for same-named column)
-                    if c not in row:
-                        row[c] = cover_row[c]
-            merged_rows.append(row)
-
-    if not merged_rows:
-        return pd.DataFrame(columns=[DhConfig.holeid, DhConfig.sample_from, DhConfig.sample_to])
-
-    result = pd.DataFrame(merged_rows)
-    # Ensure columns order: identifiers then data
-    id_cols = [DhConfig.holeid, DhConfig.sample_from, DhConfig.sample_to]
-    other_cols = [c for c in result.columns if c not in id_cols]
-    result = result[id_cols + other_cols]
-    # sort and reset index
-    result = result.sort_values([DhConfig.holeid, DhConfig.sample_from]).reset_index(drop=True)
-    return result
+                    new_columns[col][idx] = max_value
+    # Add new columns to result dataframe
+    for col, values in new_columns.items():
+        result[col] = values
+    return result.copy()

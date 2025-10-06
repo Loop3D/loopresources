@@ -1,5 +1,4 @@
-"""
-DrillHoleDatabase - A clean implementation based on AGENTS.md specifications.
+"""DrillHoleDatabase - A clean implementation based on AGENTS.md specifications.
 
 This module provides a modern, pandas-native interface for drillhole data management
 with filtering, validation, and export capabilities.
@@ -14,540 +13,13 @@ from pathlib import Path
 
 from .dhconfig import DhConfig
 from .dbconfig import DbConfig
+from .drillhole import DrillHole
 
 logger = logging.getLogger(__name__)
 
 
-class DrillHole:
-    """
-    A view of the DrillholeDatabase for a single HOLE_ID.
-    Provides per-hole access, sampling, and visualization.
-    """
-
-    def __init__(self, database: "DrillholeDatabase", hole_id: str):
-        """
-        Initialize DrillHole view.
-
-        Parameters
-        ----------
-        database : DrillholeDatabase
-            Parent database instance
-        hole_id : str
-            The HOLE_ID for this view
-        """
-        self.database = database
-        self.hole_id = hole_id
-
-        # Use optimized methods to get data for this hole
-        # For file backend, this queries the database directly
-        self.collar = self.database.get_collar_for_hole(hole_id)
-        self.survey = self.database.get_survey_for_hole(hole_id)
-
-        if self.collar.empty:
-            raise ValueError(f"Hole {hole_id} not found in collar data")
-        if self.survey.empty:
-            raise ValueError(f"Hole {hole_id} not found in survey data")
-
-    def __repr__(self) -> str:
-        """Return a concise representation of the DrillHole."""
-        total_depth = self.collar[DhConfig.total_depth].values[0]
-        return f"DrillHole(hole_id='{self.hole_id}', depth={total_depth:.2f}m)"
-
-    def __str__(self) -> str:
-        """Return a detailed string representation of the DrillHole."""
-        # Get basic hole information
-        total_depth = self.collar[DhConfig.total_depth].values[0]
-        collar_x = self.collar[DhConfig.x].values[0]
-        collar_y = self.collar[DhConfig.y].values[0]
-        collar_z = self.collar[DhConfig.z].values[0]
-
-        # Calculate average azimuth and dip from survey data
-        avg_azimuth = self.survey[DhConfig.azimuth].mean()
-        avg_dip = self.survey[DhConfig.dip].mean()
-
-        # Convert to degrees if values are in radians (small values suggest radians)
-        if abs(avg_azimuth) < 2 * np.pi and abs(avg_dip) < np.pi:
-            # Likely in radians, convert to degrees
-            avg_azimuth_deg = np.rad2deg(avg_azimuth)
-            avg_dip_deg = np.rad2deg(avg_dip)
-        else:
-            avg_azimuth_deg = avg_azimuth
-            avg_dip_deg = avg_dip
-
-        # Get attached tables
-        interval_tables = list(self.interval_tables().keys())
-        point_tables = list(self.point_tables().keys())
-
-        # Build the string representation
-        lines = [
-            f"DrillHole: {self.hole_id}",
-            f"{'=' * (11 + len(self.hole_id))}",
-            f"Location: X={collar_x:.2f}, Y={collar_y:.2f}, Z={collar_z:.2f}",
-            f"Total Depth: {total_depth:.2f}m",
-            f"Average Azimuth: {avg_azimuth_deg:.2f}°",
-            f"Average Dip: {avg_dip_deg:.2f}°",
-        ]
-
-        # Add interval tables information
-        if interval_tables:
-            lines.append(f"\nInterval Tables ({len(interval_tables)}):")
-            for table_name in interval_tables:
-                table = self[table_name]
-                num_intervals = len(table)
-                # Get non-standard columns (exclude HOLEID, SAMPFROM, SAMPTO, DEPTH)
-                data_cols = [
-                    col
-                    for col in table.columns
-                    if col
-                    not in [
-                        DhConfig.holeid,
-                        DhConfig.sample_from,
-                        DhConfig.sample_to,
-                        DhConfig.depth,
-                    ]
-                ]
-
-                lines.append(f"  - {table_name}: {num_intervals} intervals")
-
-                # Add statistics for numerical columns
-                for col in data_cols:
-                    if pd.api.types.is_numeric_dtype(table[col]):
-                        non_null = table[col].notna().sum()
-                        if non_null > 0:
-                            mean_val = table[col].mean()
-                            min_val = table[col].min()
-                            max_val = table[col].max()
-                            lines.append(
-                                f"    • {col}: mean={mean_val:.2f}, min={min_val:.2f}, max={max_val:.2f} (n={non_null})"
-                            )
-                        else:
-                            lines.append(f"    • {col}: all null")
-                    else:
-                        # For categorical data, show unique values
-                        unique_vals = table[col].nunique()
-                        non_null = table[col].notna().sum()
-                        lines.append(f"    • {col}: {unique_vals} unique values (n={non_null})")
-        else:
-            lines.append("\nInterval Tables: None")
-
-        # Add point tables information
-        if point_tables:
-            lines.append(f"\nPoint Tables ({len(point_tables)}):")
-            for table_name in point_tables:
-                table = self[table_name]
-                num_points = len(table)
-                # Get non-standard columns
-                data_cols = [
-                    col for col in table.columns if col not in [DhConfig.holeid, DhConfig.depth]
-                ]
-
-                lines.append(f"  - {table_name}: {num_points} points")
-
-                # Add statistics for numerical columns
-                for col in data_cols:
-                    if pd.api.types.is_numeric_dtype(table[col]):
-                        non_null = table[col].notna().sum()
-                        if non_null > 0:
-                            mean_val = table[col].mean()
-                            min_val = table[col].min()
-                            max_val = table[col].max()
-                            lines.append(
-                                f"    • {col}: mean={mean_val:.2f}, min={min_val:.2f}, max={max_val:.2f} (n={non_null})"
-                            )
-                        else:
-                            lines.append(f"    • {col}: all null")
-                    else:
-                        unique_vals = table[col].nunique()
-                        non_null = table[col].notna().sum()
-                        lines.append(f"    • {col}: {unique_vals} unique values (n={non_null})")
-        else:
-            lines.append("\nPoint Tables: None")
-
-        return "\n".join(lines)
-
-    def __getitem__(self, propertyname: str) -> pd.DataFrame:
-        """
-        Return a single interval or point table for this hole.
-
-        Parameters
-        ----------
-        propertyname : str
-            Name of the interval or point table
-
-        Returns
-        -------
-        pd.DataFrame
-            Filtered table containing only data for this hole
-        """
-        # Check intervals first
-        if propertyname in self.database.intervals:
-            return self.database.get_interval_data_for_hole(propertyname, self.hole_id)
-
-        # Check points
-        if propertyname in self.database.points:
-            return self.database.get_point_data_for_hole(propertyname, self.hole_id)
-
-        raise KeyError(f"Table '{propertyname}' not found in intervals or points")
-
-    def interval_tables(self) -> Dict[str, pd.DataFrame]:
-        """Return all interval tables for this hole."""
-        result = {}
-        for name in self.database.intervals.keys():
-            filtered = self.database.get_interval_data_for_hole(name, self.hole_id)
-            if not filtered.empty:
-                result[name] = filtered
-        return result
-
-    def point_tables(self) -> Dict[str, pd.DataFrame]:
-        """Return all point tables for this hole."""
-        result = {}
-        for name in self.database.points.keys():
-            filtered = self.database.get_point_data_for_hole(name, self.hole_id)
-            if not filtered.empty:
-                result[name] = filtered
-        return result
-
-    def trace(self, step: float = 1.0) -> pd.DataFrame:
-        """
-        Return the interpolated XYZ trace of the hole.
-
-        Parameters
-        ----------
-        step : float, default 1.0
-            Step size for interpolation along hole depth
-
-        Returns
-        -------
-        pd.DataFrame
-            DataFrame with depth, x, y, z columns
-        """
-        from .desurvey import desurvey
-
-        return desurvey(self.collar, self.survey, step)
-
-    def depth_at(self, x: float, y: float, z: float) -> float:
-        """
-        Return depth along hole closest to a given XYZ point.
-
-        Parameters
-        ----------
-        x, y, z : float
-            Coordinates of the point
-
-        Returns
-        -------
-        float
-            Depth along hole closest to the point
-        """
-        trace = self.trace()
-        distances = np.sqrt((trace["x"] - x) ** 2 + (trace["y"] - y) ** 2 + (trace["z"] - z) ** 2)
-        closest_idx = distances.idxmin()
-        return trace.loc[closest_idx, "depth"]
-
-    def vtk(
-        self,
-        newinterval: Union[float, np.ndarray] = 1.0,
-        radius: float = 0.1,
-        properties: Optional[List[str]] = None,
-    ):
-        """
-        Return a PyVista tube object representing the drillhole trace.
-
-        Parameters
-        ----------
-        newinterval : float or array-like, default 1.0
-            Step size for interpolation along hole depth, or specific depths to sample
-        radius : float, default 0.1
-            Radius of the tube representation
-        properties : list of str, optional
-            List of property names (interval table names) to attach as cell data.
-            Properties will be resampled to match the trace intervals.
-
-        Returns
-        -------
-        pyvista.PolyData
-            PyVista tube object of the drillhole trace with optional cell properties
-
-        Examples
-        --------
-        >>> hole = db['DH001']
-        >>> # Create VTK with lithology as cell property
-        >>> tube = hole.vtk(newinterval=1.0, properties=['lithology'])
-        """
-        try:
-            import pyvista as pv
-        except ImportError:
-            raise ImportError(
-                "PyVista is required for VTK output. Install with: pip install pyvista"
-            )
-
-        trace = self.trace(newinterval)
-
-        # Create line connectivity for PyVista
-        line_connectivity = np.vstack(
-            [
-                np.zeros(len(trace) - 1, dtype=int) + 2,  # Each line segment has 2 points
-                np.arange(0, len(trace) - 1),  # Start points
-                np.arange(1, len(trace)),  # End points
-            ]
-        ).T
-
-        # Create PolyData with points and line connectivity
-        polydata = pv.PolyData(trace[["x", "y", "z"]].values, lines=line_connectivity)
-
-        # Add properties as cell data if requested
-        if properties is not None:
-            from .resample import resample_interval
-
-            for prop_name in properties:
-                try:
-                    # Get the interval table
-                    prop_table = self[prop_name]
-
-                    # If the property table is empty for this hole, create a dummy interval with NaN values
-                    if prop_table.empty:
-                        # Check if the table exists in the database at all
-                        if prop_name in self.database.intervals:
-                            # Get column names from the global table to maintain consistency
-                            global_table = self.database.intervals[prop_name]
-                            cols_to_resample = [
-                                col
-                                for col in global_table.columns
-                                if col
-                                not in [
-                                    DhConfig.holeid,
-                                    DhConfig.sample_from,
-                                    DhConfig.sample_to,
-                                    DhConfig.depth,
-                                ]
-                            ]
-
-                            if cols_to_resample:
-                                # Get the hole's total depth from collar
-                                total_depth = self.collar[DhConfig.total_depth].values[0]
-
-                                # Create a dummy interval spanning the entire hole with NaN values
-                                prop_table = pd.DataFrame(
-                                    {
-                                        DhConfig.holeid: [self.hole_id],
-                                        DhConfig.sample_from: [0.0],
-                                        DhConfig.sample_to: [total_depth],
-                                    }
-                                )
-
-                                # Add NaN columns for each property
-                                for col in cols_to_resample:
-                                    prop_table[col] = np.nan
-
-                                logger.debug(
-                                    f"Property table '{prop_name}' is empty for hole '{self.hole_id}', "
-                                    f"using NaN values for entire hole depth (0-{total_depth}m)."
-                                )
-                            else:
-                                logger.warning(
-                                    f"No data columns found in property table '{prop_name}', skipping"
-                                )
-                                continue
-                        else:
-                            logger.warning(
-                                f"Property table '{prop_name}' not found in database. "
-                                f"Available tables: {list(self.database.intervals.keys())}"
-                            )
-                            continue
-
-                    # Get all columns except the standard ones
-                    cols_to_resample = [
-                        col
-                        for col in prop_table.columns
-                        if col
-                        not in [
-                            DhConfig.holeid,
-                            DhConfig.sample_from,
-                            DhConfig.sample_to,
-                            DhConfig.depth,
-                        ]
-                    ]
-
-                    if not cols_to_resample:
-                        logger.warning(
-                            f"No data columns found in property table '{prop_name}', skipping"
-                        )
-                        continue
-
-                    # Resample the property to the trace points
-                    trace_with_props = resample_interval(
-                        trace, prop_table, cols_to_resample, method="direct"
-                    )
-
-                    # Add each column as cell data (for line segments, not points)
-                    # Cell data should have n-1 values for n points
-                    for col in cols_to_resample:
-                        if col in trace_with_props.columns:
-                            # Use values from trace points, excluding the last one for cell data
-                            cell_values = trace_with_props[col].values[:-1]
-                            polydata.cell_data[f"{prop_name}_{col}"] = cell_values
-
-                except KeyError as e:
-                    logger.warning(
-                        f"Property table '{prop_name}' not found for hole '{self.hole_id}'. "
-                        f"Available tables: {list(self.database.intervals.keys())}. Error: {e}"
-                    )
-                except Exception as e:
-                    logger.warning(f"Failed to add property '{prop_name}': {e}")
-
-        # Return as tube
-        return polydata.tube(radius=radius)
-
-    def desurvey_intervals(self, interval_table_name: str) -> pd.DataFrame:
-        """
-        Desurvey interval data to get 3D coordinates for FROM and TO depths.
-
-        Parameters
-        ----------
-        interval_table_name : str
-            Name of the interval table to desurvey
-
-        Returns
-        -------
-        pd.DataFrame
-            Original interval data with added columns:
-            - x_from, y_from, z_from: 3D coordinates at FROM depth
-            - x_to, y_to, z_to: 3D coordinates at TO depth
-            - x_mid, y_mid, z_mid: 3D coordinates at midpoint depth
-        """
-        # Get the interval table for this hole
-        intervals = self[interval_table_name]
-
-        if intervals.empty:
-            return intervals
-
-        # Get all unique depths (from and to values)
-        from_depths = intervals[DhConfig.sample_from].values
-        to_depths = intervals[DhConfig.sample_to].values
-        all_depths = np.unique(np.concatenate([from_depths, to_depths]))
-
-        # Desurvey at all depths
-        from .desurvey import desurvey
-
-        trace = desurvey(self.collar, self.survey, all_depths)
-
-        # Create interpolators for x, y, z coordinates
-        from scipy.interpolate import interp1d
-
-        x_interp = interp1d(
-            trace[DhConfig.depth], trace["x"], kind="linear", fill_value="extrapolate"
-        )
-        y_interp = interp1d(
-            trace[DhConfig.depth], trace["y"], kind="linear", fill_value="extrapolate"
-        )
-        z_interp = interp1d(
-            trace[DhConfig.depth], trace["z"], kind="linear", fill_value="extrapolate"
-        )
-
-        # Create result dataframe with original data
-        result = intervals.copy()
-
-        # Add FROM coordinates
-        result["x_from"] = x_interp(from_depths)
-        result["y_from"] = y_interp(from_depths)
-        result["z_from"] = z_interp(from_depths)
-
-        # Add TO coordinates
-        result["x_to"] = x_interp(to_depths)
-        result["y_to"] = y_interp(to_depths)
-        result["z_to"] = z_interp(to_depths)
-
-        # Add midpoint coordinates
-        mid_depths = (from_depths + to_depths) / 2
-        result["x_mid"] = x_interp(mid_depths)
-        result["y_mid"] = y_interp(mid_depths)
-        result["z_mid"] = z_interp(mid_depths)
-        result["depth_mid"] = mid_depths
-
-        return result
-
-    def desurvey_points(self, point_table_name: str) -> pd.DataFrame:
-        """
-        Desurvey point data to get 3D coordinates.
-
-        Parameters
-        ----------
-        point_table_name : str
-            Name of the point table to desurvey
-
-        Returns
-        -------
-        pd.DataFrame
-            Original point data with added columns: x, y, z
-        """
-        # Get the point table for this hole
-        points = self[point_table_name]
-
-        if points.empty:
-            return points
-
-        # Get all depths
-        depths = points[DhConfig.depth].values
-
-        # Desurvey at these depths
-        from .desurvey import desurvey
-
-        trace = desurvey(self.collar, self.survey, depths)
-
-        # Create result dataframe with original data
-        result = points.copy()
-
-        # Add coordinates
-        result["x"] = trace["x"].values
-        result["y"] = trace["y"].values
-        result["z"] = trace["z"].values
-
-        return result
-
-    def resample(
-        self, interval_table_name: str, cols: List[str], new_interval: float = 1.0
-    ) -> pd.DataFrame:
-        """
-        Resample interval data onto a new regular interval.
-
-        For each new interval, finds all overlapping original intervals and
-        assigns the value that has the biggest occurrence (mode).
-
-        Parameters
-        ----------
-        interval_table_name : str
-            Name of the interval table to resample
-        cols : list of str
-            List of column names to resample
-        new_interval : float, default 1.0
-            Size of new regular intervals in meters
-
-        Returns
-        -------
-        pd.DataFrame
-            Resampled interval data with regular intervals
-
-        Examples
-        --------
-        >>> hole = db['DH001']
-        >>> # Resample lithology to 1m intervals
-        >>> resampled = hole.resample('lithology', ['LITHO'], new_interval=1.0)
-        """
-        from .resample import resample_interval_to_new_interval
-
-        # Get the interval table for this hole
-        intervals = self[interval_table_name]
-
-        if intervals.empty:
-            return intervals
-
-        # Resample the intervals
-        return resample_interval_to_new_interval(intervals, cols, new_interval)
-
-
 class DrillholeDatabase:
-    """
-    Main container for all drillhole data.
+    """Main container for all drillhole data.
 
     Stores global data as pandas DataFrames and dictionaries following
     the specification in AGENTS.md.
@@ -556,8 +28,7 @@ class DrillholeDatabase:
     def __init__(
         self, collar: pd.DataFrame, survey: pd.DataFrame, db_config: Optional[DbConfig] = None
     ):
-        """
-        Initialize DrillholeDatabase.
+        """Initialize DrillholeDatabase.
 
         Parameters
         ----------
@@ -636,9 +107,38 @@ class DrillholeDatabase:
         else:
             self._survey = value
 
-    def get_collar_for_hole(self, hole_id: str) -> pd.DataFrame:
+    def plot_collars(self, ax=None, **kwargs):
+        """Plot collar locations.
+
+        Parameters
+        ----------
+        ax : matplotlib.axes.Axes, optional
+            Matplotlib Axes to plot on. If None, creates a new figure and axes.
+        **kwargs
+            Additional keyword arguments passed to ax.scatter()
+
+        Returns
+        -------
+        matplotlib.axes.Axes
+            The Axes object with the plot
         """
-        Get collar data for a specific hole.
+        import matplotlib.pyplot as plt
+
+        if ax is None:
+            fig, ax = plt.subplots(figsize=(8, 6))
+
+        collar = self.collar
+        ax.scatter(collar[DhConfig.x], collar[DhConfig.y], **kwargs)
+        ax.set_xlabel("X")
+        ax.set_ylabel("Y")
+        ax.set_title("Collar Locations")
+        ax.axis("equal")
+        for x, y, hole_id in zip(collar[DhConfig.x], collar[DhConfig.y], collar[DhConfig.holeid]):
+            ax.text(x, y, hole_id, fontsize=9, ha="right", va="bottom")
+        return ax
+
+    def get_collar_for_hole(self, hole_id: str) -> pd.DataFrame:
+        """Get collar data for a specific hole.
 
         For file backend, this queries the database directly rather than
         loading all collar data and filtering in Python.
@@ -661,8 +161,7 @@ class DrillholeDatabase:
             return self._load_table_from_db("collar", hole_id=hole_id)
 
     def get_survey_for_hole(self, hole_id: str) -> pd.DataFrame:
-        """
-        Get survey data for a specific hole.
+        """Get survey data for a specific hole.
 
         For file backend, this queries the database directly rather than
         loading all survey data and filtering in Python.
@@ -685,8 +184,7 @@ class DrillholeDatabase:
             return self._load_table_from_db("survey", hole_id=hole_id)
 
     def get_interval_data_for_hole(self, table_name: str, hole_id: str) -> pd.DataFrame:
-        """
-        Get interval table data for a specific hole.
+        """Get interval table data for a specific hole.
 
         For file backend with saved tables, this could query the database directly.
         Currently filters in-memory data.
@@ -711,8 +209,7 @@ class DrillholeDatabase:
         return table[mask].copy()
 
     def get_point_data_for_hole(self, table_name: str, hole_id: str) -> pd.DataFrame:
-        """
-        Get point table data for a specific hole.
+        """Get point table data for a specific hole.
 
         For file backend with saved tables, this could query the database directly.
         Currently filters in-memory data.
@@ -788,8 +285,7 @@ class DrillholeDatabase:
         survey.to_sql("survey", self._conn, if_exists="append", index=False)
 
     def _load_table_from_db(self, table_name: str, hole_id: Optional[str] = None) -> pd.DataFrame:
-        """
-        Load table from database.
+        """Load table from database.
 
         Parameters
         ----------
@@ -835,8 +331,7 @@ class DrillholeDatabase:
 
     @classmethod
     def from_database(cls, db_path: str, project_name: Optional[str] = None) -> "DrillholeDatabase":
-        """
-        Load DrillholeDatabase from an existing SQLite database.
+        """Load DrillholeDatabase from an existing SQLite database.
 
         Parameters
         ----------
@@ -915,8 +410,7 @@ class DrillholeDatabase:
     def link_to_database(
         cls, db_path: str, project_name: Optional[str] = None
     ) -> "DrillholeDatabase":
-        """
-        Create a DrillholeDatabase instance linked to an existing database.
+        """Create a DrillholeDatabase instance linked to an existing database.
 
         This method keeps a persistent connection to the database and loads
         data on-demand rather than loading everything into memory.
@@ -938,8 +432,7 @@ class DrillholeDatabase:
     def save_to_database(
         self, db_path: str, project_name: Optional[str] = None, overwrite: bool = False
     ):
-        """
-        Save the current database to a SQLite file.
+        """Save the current database to a SQLite file.
 
         Parameters
         ----------
@@ -1029,8 +522,7 @@ class DrillholeDatabase:
         survey_columns: Optional[Dict[str, str]] = None,
         **kwargs,
     ) -> "DrillholeDatabase":
-        """
-        Create a DrillholeDatabase from CSV files with column mapping.
+        """Create a DrillholeDatabase from CSV files with column mapping.
 
         Parameters
         ----------
@@ -1197,8 +689,7 @@ class DrillholeDatabase:
             self.survey[DhConfig.dip] = np.deg2rad(self.survey[DhConfig.dip])
 
     def __getitem__(self, hole_id: str) -> DrillHole:
-        """
-        Return a DrillHole view for a given HOLE_ID.
+        """Return a DrillHole view for a given HOLE_ID.
 
         Parameters
         ----------
@@ -1213,8 +704,7 @@ class DrillholeDatabase:
         return DrillHole(self, hole_id)
 
     def __iter__(self):
-        """
-        Iterate over all DrillHole objects in the database.
+        """Iterate over all DrillHole objects in the database.
 
         Yields
         ------
@@ -1312,8 +802,7 @@ class DrillholeDatabase:
     def sorted_by(
         self, key: Optional[Union[str, Callable[[DrillHole], float]]] = None, reverse: bool = False
     ):
-        """
-        Iterate over DrillHole objects in sorted order.
+        """Iterate over DrillHole objects in sorted order.
 
         Parameters
         ----------
@@ -1389,8 +878,7 @@ class DrillholeDatabase:
             raise
 
     def add_interval_table(self, name: str, df: pd.DataFrame):
-        """
-        Register a new interval table.
+        """Register a new interval table.
 
         Parameters
         ----------
@@ -1417,8 +905,7 @@ class DrillholeDatabase:
         self.intervals[name] = df
 
     def add_point_table(self, name: str, df: pd.DataFrame):
-        """
-        Register a new point table.
+        """Register a new point table.
 
         Parameters
         ----------
@@ -1455,8 +942,7 @@ class DrillholeDatabase:
         return sorted(merged_hole_ids[DhConfig.holeid].tolist())
 
     def extent(self) -> Tuple[float, float, float, float, float, float]:
-        """
-        Return spatial extent of all drillholes.
+        """Return spatial extent of all drillholes.
 
         Returns
         -------
@@ -1478,8 +964,7 @@ class DrillholeDatabase:
         depth_range: Optional[Tuple[float, float]] = None,
         expr: Optional[Union[str, Callable]] = None,
     ) -> "DrillholeDatabase":
-        """
-        Return a filtered DrillholeDatabase.
+        """Return a filtered DrillholeDatabase.
 
         Parameters
         ----------
@@ -1623,8 +1108,7 @@ class DrillholeDatabase:
         table_type: str = "point",
         allow_negative: bool = False,
     ) -> "DrillholeDatabase":
-        """
-        Validate and clean numerical columns in a table.
+        """Validate and clean numerical columns in a table.
 
         This method:
         - Validates that specified columns are numerical
@@ -1682,8 +1166,7 @@ class DrillholeDatabase:
     def filter_by_nan_threshold(
         self, table_name: str, columns: List[str], threshold: float, table_type: str = "point"
     ) -> "DrillholeDatabase":
-        """
-        Filter rows based on the proportion of non-NaN values in specified columns.
+        """Filter rows based on the proportion of non-NaN values in specified columns.
 
         This method removes rows where the proportion of valid (non-NaN) values
         in the specified columns is below the threshold.
@@ -1774,8 +1257,7 @@ class DrillholeDatabase:
         return new_db
 
     def validate(self) -> bool:
-        """
-        Perform schema and consistency checks.
+        """Perform schema and consistency checks.
 
         Returns
         -------
@@ -1845,8 +1327,7 @@ class DrillholeDatabase:
         radius: float = 0.1,
         properties: Optional[List[str]] = None,
     ):
-        """
-        Return a PyVista MultiBlock object containing all drillholes as tubes.
+        """Return a PyVista MultiBlock object containing all drillholes as tubes.
 
         Parameters
         ----------
@@ -1891,8 +1372,7 @@ class DrillholeDatabase:
         return multiblock
 
     def desurvey_intervals(self, interval_table_name: str) -> pd.DataFrame:
-        """
-        Desurvey interval data for all holes to get 3D coordinates.
+        """Desurvey interval data for all holes to get 3D coordinates.
 
         Parameters
         ----------
@@ -1943,8 +1423,7 @@ class DrillholeDatabase:
         return pd.concat(desurveyed_intervals, ignore_index=True)
 
     def desurvey_points(self, point_table_name: str) -> pd.DataFrame:
-        """
-        Desurvey point data for all holes to get 3D coordinates.
+        """Desurvey point data for all holes to get 3D coordinates.
 
         Parameters
         ----------

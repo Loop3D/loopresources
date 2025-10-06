@@ -1,3 +1,5 @@
+"""Orientation utilities for converting alpha/beta/gamma core angles into vectors."""
+
 import numpy as np
 import pandas as pd
 from LoopStructural.utils import normal_vector_to_strike_and_dip
@@ -14,21 +16,7 @@ def alphaBetaGamma2vector(
     },
     inplace=False,
 ) -> pd.DataFrame:
-    """Calculate the lineation vector and the plane from the alpha beta and gamma angle and core orientation
-
-    Parameters
-    ----------
-    df : pd.DataFrame
-        dataframe containing the orientation data
-    column_map : dict, optional
-        m, by default { 'Beta': 'BetaAngle', 'Alpha': 'AlphaAngle', 'DIP': 'DIP_DEG', 'AZIMUTH': 'AZIMUTH_DEG', 'Gamma': 'Gamma', }
-    inplace : bool, optional
-        Whether to modify the dataframe in place or create a copy, by default False
-    Returns
-    -------
-    pd.DataFrame
-        Original dataframe with the lineation vector and plane normal vector
-    """
+    """Calculate the lineation vector and plane from core orientation angles."""
     if not inplace:
         df = df.copy()
     plane_local = np.zeros((len(df), 3))
@@ -85,19 +73,19 @@ def alphaBeta2vector(
     inplace=False,
     strike_dip=False,
 ):
-    """Calculate the lineation vector from the alpha beta and gamma angle and core orientation
+    """Calculate the plane vector from core orientation angles.
 
     Parameters
     ----------
     df : pd.DataFrame
-        dataframe containing the orientation data
+        Dataframe containing the orientation data.
     column_map : dict, optional
-        m, by default { 'Beta': 'BetaAngle', 'Alpha': 'AlphaAngle', 'DIP': 'DIP_DEG', 'AZIMUTH': 'AZIMUTH_DEG' }
-
-    Returns
-    -------
-    pd.DataFrame
-        the original dataframe with the plane vector added
+        Mapping of expected columns to dataframe column names.
+    inplace : bool, optional
+        If True, modify the dataframe in place.
+    strike_dip : bool, optional
+        If True, also compute strike and dip values and add them to the
+        dataframe.
     """
     if not inplace:
         df = df.copy()
