@@ -109,6 +109,15 @@ repos:
       - id: commitizen
         stages: [commit-msg]
 
+  # ── Docstring checks (pydocstyle) ────────────────────────────────────────
+  - repo: https://github.com/PyCQA/pydocstyle
+    rev: 6.3.0
+    hooks:
+      - id: pydocstyle
+        # Use a convention (google or numpy) or omit to use default.
+        args: ["--convention=google"]
+        files: *python-files
+
   # # ── Local custom checks ─────────────────────────────────────────────────────
   # - repo: local
   #   hooks:
