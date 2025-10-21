@@ -10,10 +10,13 @@ from typing import Dict, List, Optional, Tuple, Union, Callable
 import logging
 import sqlite3
 from pathlib import Path
+from LoopStructural.utils import normal_vector_to_strike_and_dip#, normal_vector_to_dip_and_dip_direction
+from LoopStructural import BoundingBox
 
 from .dhconfig import DhConfig
 from .dbconfig import DbConfig
 from .drillhole import DrillHole
+from .orientation import alphaBeta2vector
 
 logger = logging.getLogger(__name__)
 
@@ -941,22 +944,30 @@ class DrillholeDatabase:
         )
         return sorted(merged_hole_ids[DhConfig.holeid].tolist())
 
-    def extent(self) -> Tuple[float, float, float, float, float, float]:
+    def extent(self, sampling: float=1.0,buffer: float=0.0) -> BoundingBox:
         """Return spatial extent of all drillholes.
-
+        Parameters
+        ----------
+        sampling : float, default 1.0
+            Sampling interval in meters for calculating extent from traces.
+            Higher values are faster but less accurate.
+        buffer : float, default 0.0
+            Buffer in meters to add to each side of the extent.
         Returns
         -------
-        tuple
-            (xmin, xmax, ymin, ymax, zmin, zmax)
+        BoundingBox
+            The spatial extent of all drillholes as a BoundingBox object.
         """
-        x_col, y_col, z_col = DhConfig.x, DhConfig.y, DhConfig.z
+        all_traces = pd.concat(
+            [h.trace(sampling).trace_points for h in self],
+        )
+        bb = (
+            BoundingBox()
+            .fit(all_traces[['x', 'y', 'z']].values, local_coordinate = True)
+            .with_buffer(buffer)
+        )
 
-        xmin, xmax = self.collar[x_col].min(), self.collar[x_col].max()
-        ymin, ymax = self.collar[y_col].min(), self.collar[y_col].max()
-        zmin, zmax = self.collar[z_col].min(), self.collar[z_col].max()
-
-        return (xmin, xmax, ymin, ymax, zmin, zmax)
-
+        return bb
     def filter(
         self,
         holes: Optional[List[str]] = None,
@@ -1453,9 +1464,67 @@ class DrillholeDatabase:
 
         if not desurveyed_points:
             # Return empty DataFrame with expected structure
-            return pd.DataFrame(columns=[DhConfig.holeid, DhConfig.depth, "x", "y", "z"])
+            return pd.DataFrame(columns=[DhConfig.holeid, DhConfig.depth, "x", "y", "z","DIP","AZIMUTH"])
 
         return pd.concat(desurveyed_points, ignore_index=True)
+
+    def alpha_beta_to_orientation(self, table_name: str,fmt: str = 'vector') -> pd.DataFrame:
+        """Desurvey point table, and add strike and dip column using alpha and beta angles.
+        
+        Parameters
+        ----------
+        table_name : str
+            Name of the point table to process
+        fmt : str, default 'vector'
+            Format of the output orientation. Options are:
+            - 'vector': returns the components of the normal vector nx, ny, nz
+            - 'strike_dip': returns strike and dip as columns 'STRIKE' and 'DIP'
+            - 'dip_direction_dip': returns dip direction and dip as columns 'DIP_DIRECTION' and 'DIP'
+        
+        Returns
+        -------
+        pd.DataFrame
+            Desurveyed point data with added orientation columns
+        Raises
+        ------
+        KeyError
+            If required columns are missing
+        ValueError
+            If fmt is not recognized
+        """
+        if table_name not in self.points:
+            raise KeyError(f"Point table '{table_name}' not found")
+        if DhConfig.alpha not in self.points[table_name].columns:
+            raise KeyError(f"Column '{DhConfig.alpha}' not found in point table '{table_name}'")
+        if DhConfig.beta not in self.points[table_name].columns:
+            raise KeyError(f"Column '{DhConfig.beta}' not found in point table '{table_name}'")
+        if fmt not in ['vector','strike_dip','dip_direction_dip']:
+            raise ValueError(f"fmt must be 'vector', 'strike_dip', or 'dip_direction_dip', got '{fmt}'")
+        if fmt == 'vector':
+            columns = ['nx','ny','nz']
+        elif fmt == 'strike_dip':
+            columns = ['STRIKE','DIP']
+        else: # fmt == 'dip_direction_dip'
+            columns = ['DIP_DIRECTION','DIP']
+        desurveyed_points = self.desurvey_points(table_name)
+        desurveyed_points = desurveyed_points.copy()
+        desurveyed_points[columns] = np.nan
+        if desurveyed_points.empty:
+            logger.warning(f"Point table '{table_name}' is empty after desurveying")
+            return desurveyed_points
+
+        desurveyed_points = alphaBeta2vector(desurveyed_points)
+        if fmt == 'vector':
+            return desurveyed_points
+        else:
+            strike_dip = normal_vector_to_strike_and_dip(desurveyed_points[['nx','ny','nz']].values)
+            if fmt == 'strike_dip':
+                desurveyed_points[['STRIKE','DIP']] = strike_dip
+                return desurveyed_points
+            else: # dip and dip_dir
+                dip_direction = (strike_dip[:,0] + 90) % 360
+                desurveyed_points[['DIP_DIRECTION','DIP']] = np.column_stack((dip_direction, strike_dip[:,1]))
+                return desurveyed_points
 
     def resample_interval_to_depths(
         self, interval_table_name: str, new_depths: pd.Series

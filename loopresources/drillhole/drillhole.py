@@ -37,6 +37,12 @@ class DrillHoleTrace:
         self.z_interpolator = interp1d(
             trace_points[DhConfig.depth], trace_points["z"], fill_value="extrapolate"
         )
+        self.dip_interpolator = interp1d(
+            trace_points[DhConfig.depth], trace_points[DhConfig.dip], fill_value="extrapolate"
+        )
+        self.azimuth_interpolator = interp1d(
+            trace_points[DhConfig.depth], trace_points[DhConfig.azimuth], fill_value="extrapolate"
+        )
 
     def __call__(self, newinterval: Optional[Union[np.ndarray, float]] = 1.0):
         """Return resampled trace as a DataFrame for given interval or depths."""
@@ -55,6 +61,8 @@ class DrillHoleTrace:
                 "x": self.x_interpolator(newdepth),
                 "y": self.y_interpolator(newdepth),
                 "z": self.z_interpolator(newdepth),
+                "dip":self.dip_interpolator(newdepth),
+                "azimuth":self.azimuth_interpolator(newdepth),
             }
         )
 
@@ -266,6 +274,8 @@ class DrillHole:
             if not filtered.empty:
                 result[name] = filtered
         return result
+
+
 
     def trace(self, step: float = 1.0) -> DrillHoleTrace:
         """Return the interpolated XYZ trace of the hole.
@@ -532,7 +542,8 @@ class DrillHole:
         result["x"] = desurveyed_points["x"].values
         result["y"] = desurveyed_points["y"].values
         result["z"] = desurveyed_points["z"].values
-
+        result['DIP'] = np.rad2deg(desurveyed_points['dip'].values)
+        result['AZIMUTH'] = np.rad2deg(desurveyed_points['azimuth'].values)
         return result
 
     def resample(

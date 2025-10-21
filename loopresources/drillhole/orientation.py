@@ -65,14 +65,13 @@ def alphaBetaGamma2vector(
 def alphaBeta2vector(
     df: pd.DataFrame,
     column_map={
-        "Beta": "BetaAngle",
-        "Alpha": "AlphaAngle",
-        "DIP": "DIP_DEG",
-        "AZIMUTH": "AZIMUTH_DEG",
+        "BETA": "BETA",
+        "ALPHA": "ALPHA",
+        "DIP": "DIP",
+        "AZIMUTH": "AZIMUTH",
     },
     inplace=False,
-    strike_dip=False,
-):
+) -> pd.DataFrame:
     """Calculate the plane vector from core orientation angles.
 
     Parameters
@@ -83,20 +82,24 @@ def alphaBeta2vector(
         Mapping of expected columns to dataframe column names.
     inplace : bool, optional
         If True, modify the dataframe in place.
-    strike_dip : bool, optional
-        If True, also compute strike and dip values and add them to the
-        dataframe.
+    Returns
+    -------
+    pd.DataFrame
+        Dataframe with added 'nx', 'ny', 'nz' columns representing the normal vector.
+    Notes
+    -----
+        The input angles are expected to be in degrees.
     """
     if not inplace:
         df = df.copy()
     plane_local = np.zeros((len(df), 3))
-    plane_local[:, 0] = np.cos(np.deg2rad(df[column_map["Beta"]])) * np.cos(
-        np.deg2rad(df[column_map["Alpha"]])
+    plane_local[:, 0] = np.cos(np.deg2rad(df[column_map["BETA"]])) * np.cos(
+        np.deg2rad(df[column_map["ALPHA"]])
     )
-    plane_local[:, 1] = np.sin(np.deg2rad(df[column_map["Beta"]])) * np.cos(
-        np.deg2rad(df[column_map["Alpha"]])
+    plane_local[:, 1] = np.sin(np.deg2rad(df[column_map["BETA"]])) * np.cos(
+        np.deg2rad(df[column_map["ALPHA"]])
     )
-    plane_local[:, 2] = np.sin(np.deg2rad(df[column_map["Alpha"]]))
+    plane_local[:, 2] = np.sin(np.deg2rad(df[column_map["ALPHA"]]))
 
     Z_rot = np.zeros((len(df), 3, 3))
     Y_rot = np.zeros((len(df), 3, 3))
@@ -117,8 +120,6 @@ def alphaBeta2vector(
     df["nx"] = vector[:, 0, 0]
     df["ny"] = vector[:, 1, 0]
     df["nz"] = vector[:, 2, 0]
-    strike_dip = normal_vector_to_strike_and_dip(df[["nx", "ny", "nz"]].values)
-    df["strike"] = strike_dip[:, 0]
-    df["dip"] = strike_dip[:, 1]
+    
 
     return df

@@ -45,6 +45,8 @@ class DhConfig(object):
     debug = False
     positive_dips_down = True
     dip_is_inclination = False
+    alpha = "ALPHA"
+    beta = "BETA"
 
     @classmethod
     def from_config(cls, config):
@@ -72,6 +74,8 @@ class DhConfig(object):
         cls.add_ninty = config["add_ninty"]
         cls.depth = config["depth"]
         cls.total_depth = config["total_depth"]
+        cls.alpha = config.get("alpha", "ALPHA")
+        cls.beta = config.get("beta", "BETA")
         return cls
 
     @classmethod
@@ -127,6 +131,8 @@ class DhConfig(object):
             "add_ninty": cls.add_ninty,
             "depth": cls.depth,
             "total_depth": cls.total_depth,
+            "alpha": cls.alpha,
+            "beta": cls.beta,
         }
 
     def __repr__(self) -> str:
@@ -136,6 +142,7 @@ class DhConfig(object):
             f"sample_from={self.sample_from}, x={self.x}, y={self.y}, z={self.z}, "
             f"azimuth={self.azimuth}, dip={self.dip}, add_ninty={self.add_ninty}, "
             f"depth={self.depth}, total_depth={self.total_depth})"
+            f"alpha={self.alpha}, beta={self.beta})"
         )
 
     def __str__(self) -> str:
@@ -155,7 +162,9 @@ class DhConfig(object):
             f"Total Depth:     {self.total_depth}\n"
             f"Add 90°:         {self.add_ninty}\n"
             f"Positive Dips Down: {self.positive_dips_down}\n"
-            f"Dip is Inclination: {self.dip_is_inclination}"
+            f"Dip is Inclination: {self.dip_is_inclination}\n"
+            f"Alpha:           {self.alpha}\n"
+            f"Beta:            {self.beta}\n"
         )
 
     @classmethod
