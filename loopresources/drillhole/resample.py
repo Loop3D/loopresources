@@ -259,7 +259,7 @@ def resample_interval_to_new_interval(
         # interval with the longest overlap is equivalent to the mode
         # value for that interval
         segment_id = np.argmax(overlap_length, axis=1)
-        result.loc[result.index[segment_id[0]],cols] = table.loc[table.index[segment_id], cols].values
+        result.loc[result.index[segment_id[0]],cols] = table.loc[table.index[segment_id[1]], cols].values
         # raise Exception("stop")
     result[DhConfig.holeid] = table[DhConfig.holeid].iloc[0]
     return result.copy()
