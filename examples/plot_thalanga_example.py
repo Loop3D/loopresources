@@ -17,6 +17,9 @@ from loopresources.drillhole import DrillholeDatabase, DhConfig
 # Load the collar and survey data from the CSV files in the thalanga folder.
 
 # Get the path to the thalanga data folder
+# Sphinx Gallery does not define __file__, so use a relative path
+# This works both in Sphinx Gallery and when running as a script/notebook
+
 data_folder = os.path.join('.', 'thalanga')
 
 # Load collar data
