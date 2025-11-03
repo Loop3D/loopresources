@@ -12,7 +12,6 @@ import pandas as pd
 import logging
 from typing import List
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -232,71 +231,35 @@ def resample_interval_to_new_interval(
     new_to = new_from + new_interval
     # Ensure last interval doesn't exceed max depth
     new_to = np.minimum(new_to, max_depth)
-
+    # cols.pop(cols.index(DhConfig.sample_from))
+    # cols.pop(cols.index(DhConfig.sample_to))
     # Create result dataframe
     result = pd.DataFrame(
         {
             DhConfig.sample_from: new_from,
             DhConfig.sample_to: new_to,
+            **{col: [None] * len(new_from) for col in cols},
         }
     )
 
-    # Prepare columns to add
-    new_columns = {}
-
-    # Process each column
-    for col in cols:
-        if col not in table.columns:
-            logger.warning(f"Warning: {col} not in table, skipping")
-            continue
-
-        # Initialize column with None
-        new_columns[col] = [None] * len(result)
-
-        # Replace assignment to result[col] with assignment to new_columns[col] below
-
-        # For each new interval, find overlapping original intervals
-        for idx, (new_f, new_t) in enumerate(zip(new_from, new_to)):
-            # Find overlapping intervals
-            # An interval overlaps if: original_from < new_to AND original_to > new_from
-            overlap_mask = (table[DhConfig.sample_from] < new_t) & (
-                table[DhConfig.sample_to] > new_f
-            )
-            overlapping = table[overlap_mask]
-
-            if len(overlapping) == 0:
-                continue
-
-            if method == "mode":
-                # Calculate the length of overlap for each original interval
-                overlap_lengths = []
-                overlap_values = []
-
-                for _, row in overlapping.iterrows():
-                    orig_from = row[DhConfig.sample_from]
-                    orig_to = row[DhConfig.sample_to]
-
-                    # Calculate overlap length
-                    overlap_start = max(new_f, orig_from)
-                    overlap_end = min(new_t, orig_to)
-                    overlap_len = overlap_end - overlap_start
-
-                    overlap_lengths.append(overlap_len)
-                    overlap_values.append(row[col])
-
-                # Find value with maximum total occurrence (sum of overlap lengths)
-                value_occurrences = {}
-                for val, length in zip(overlap_values, overlap_lengths):
-                    if val in value_occurrences:
-                        value_occurrences[val] += length
-                    else:
-                        value_occurrences[val] = length
-
-                # Select the value with maximum occurrence
-                if value_occurrences:
-                    max_value = max(value_occurrences, key=value_occurrences.get)
-                    new_columns[col][idx] = max_value
-    # Add new columns to result dataframe
-    for col, values in new_columns.items():
-        result[col] = values
+    
+    grid = np.arange(0, 66, new_interval)  # 0 to 65
+    grid_start = grid[:grid.shape[0]-1,None]
+    grid_end = grid[1:,None]
+    starts = table[DhConfig.sample_from].to_numpy()[None, :]
+    ends = table[DhConfig.sample_to].to_numpy()[None, :]  
+    in_interval = (grid_start >= starts) & (grid_end < ends)
+    overlap_length = np.zeros_like(in_interval, dtype=float)
+    overlap_length[in_interval] = new_interval
+    start_only = (grid_start >= starts) & (grid_start < ends) & ~(grid_end <= ends)
+    overlap_length[start_only] = (ends - grid_start)[start_only]
+    end_only = (grid_end > starts) & (grid_end <= ends) & ~(grid_start >= starts)
+    overlap_length[end_only] = (grid_end - starts)[end_only]
+    if method == "mode":
+        # interval with the longest overlap is equivalent to the mode
+        # value for that interval
+        segment_id = np.argmax(overlap_length, axis=1)
+        result.loc[result.index[segment_id[0]],cols] = table.loc[table.index[segment_id], cols].values
+        # raise Exception("stop")
+    result[DhConfig.holeid] = table[DhConfig.holeid].iloc[0]
     return result.copy()
