@@ -1,6 +1,6 @@
 # 3 — Advanced Options
 
-This lesson covers advanced options and features available via `from_csv()`.
+This tutorial covers advanced options and features available via `from_csv()`.
 
 ## Passing pandas `read_csv` options
 

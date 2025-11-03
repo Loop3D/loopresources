@@ -1,6 +1,6 @@
 # 1 — Basic Usage
 
-This lesson shows how to load collar and survey CSV files into a
+This tutorial shows how to load collar and survey CSV files into a
 `DrillholeDatabase`.
 
 ### When columns match DhConfig names

@@ -1,6 +1,6 @@
 # 2 — Required Columns & Validation
 
-This lesson explains the columns `from_csv()` requires and the validation
+This tutorial explains the columns `from_csv()` requires and the validation
 performed.
 
 ## Collar CSV required fields

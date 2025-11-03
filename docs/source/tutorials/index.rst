@@ -13,4 +13,4 @@ Tutorials
    06-advanced-user
    07-numerical-data
    08-file-database
-   from_csv_guide
+   09-from_csv_guide
