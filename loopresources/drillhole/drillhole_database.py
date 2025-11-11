@@ -1203,12 +1203,19 @@ class DrillholeDatabase:
             Self, to allow method chaining
         """
         # Determine which table dictionary to use
+        tables = None
         if table_type == "point":
             tables = self.points
         elif table_type == "interval":
             tables = self.intervals
-        else:
-            raise ValueError(f"table_type must be 'point' or 'interval', got '{table_type}'")
+            
+        if tables is None:
+            if table_name in self.intervals:
+                tables = self.intervals
+            elif table_name in self.points:
+                tables = self.points
+        if tables is None:
+            raise ValueError(f"table not found in {table_type} tables")
 
         if table_name not in tables:
             raise KeyError(f"Table '{table_name}' not found in {table_type} tables")
