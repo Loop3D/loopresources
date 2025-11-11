@@ -10,7 +10,9 @@ from typing import Dict, List, Optional, Tuple, Union, Callable
 import logging
 import sqlite3
 from pathlib import Path
-from LoopStructural.utils import normal_vector_to_strike_and_dip#, normal_vector_to_dip_and_dip_direction
+from LoopStructural.utils import (
+    normal_vector_to_strike_and_dip,
+)  # , normal_vector_to_dip_and_dip_direction
 from LoopStructural import BoundingBox
 
 from .dhconfig import DhConfig
@@ -245,14 +247,16 @@ class DrillholeDatabase:
         cursor = self._conn.cursor()
 
         # Create projects table
-        cursor.execute("""
+        cursor.execute(
+            """
             CREATE TABLE IF NOT EXISTS projects (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 name TEXT UNIQUE NOT NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 metadata TEXT
             )
-        """)
+        """
+        )
 
         # Insert project if specified
         if self.db_config.project_name:
@@ -453,14 +457,16 @@ class DrillholeDatabase:
         cursor = conn.cursor()
 
         # Create tables
-        cursor.execute("""
+        cursor.execute(
+            """
             CREATE TABLE IF NOT EXISTS projects (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 name TEXT UNIQUE NOT NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 metadata TEXT
             )
-        """)
+        """
+        )
 
         # Handle project
         project_id = None
@@ -865,6 +871,7 @@ class DrillholeDatabase:
                         f"Column '{key}' not found in collar for hole {h.hole_id}, using 0"
                     )
                     return 0
+
         elif callable(key):
             # Use custom function
             sort_key = key
@@ -880,16 +887,42 @@ class DrillholeDatabase:
             logger.error(f"Error sorting holes: {e}")
             raise
 
-    def add_interval_table(self, name: str, df: pd.DataFrame):
+    def add_interval_table(self, name: str, df: Union[pd.DataFrame, str], column_mapping: Optional[Dict[str, str]] = None):
         """Register a new interval table.
 
         Parameters
         ----------
         name : str
             Unique name for the table
-        df : pd.DataFrame
-            Interval data with required columns: HOLE_ID, FROM, TO
+        df : pd.DataFrame, str
+            Interval data or path to file with required columns: HOLE_ID, FROM, TO
+        column_mapping : dict, optional
+            Mapping of CSV column names to required DrillholeDatabase columns.
+            Keys should be DhConfig field names (holeid, sample_from, sample_to).
         """
+        if isinstance(df, str):
+            # Load from CSV file
+            df = pd.read_csv(df)
+        if column_mapping is not None:
+            # Create mapping from config field names to actual column names
+            mapped_df = pd.DataFrame()
+            for config_field, csv_column in column_mapping.items():
+                # Get the actual DhConfig attribute value
+                config_col_name = getattr(DhConfig, config_field, config_field)
+                if csv_column not in df.columns:
+                    raise ValueError(
+                        f"Column '{csv_column}' specified in column_mapping not found in interval data. "
+                        f"Available columns: {list(df.columns)}"
+                    )
+                mapped_df[config_col_name] = df[csv_column]
+
+            # Add any remaining columns that weren't mapped
+            for col in df.columns:
+                if col not in column_mapping.values():
+                    mapped_df[col] = df[col]
+            df = mapped_df
+        if type(df) is not pd.DataFrame:
+            raise TypeError("df must be a pandas DataFrame, or a path to a CSV file")
         df = df.copy()
 
         # Validate required columns
@@ -907,16 +940,42 @@ class DrillholeDatabase:
 
         self.intervals[name] = df
 
-    def add_point_table(self, name: str, df: pd.DataFrame):
+    def add_point_table(self, name: str, df: Union[pd.DataFrame,str], column_mapping: Optional[Dict[str, str]] = None):
         """Register a new point table.
 
         Parameters
         ----------
         name : str
             Unique name for the table
-        df : pd.DataFrame
-            Point data with required columns: HOLE_ID, DEPTH
+        df : pd.DataFrame, str
+            Point data or path to file with required columns: HOLE_ID, DEPTH
+        column_mapping : dict, optional
+            Mapping of CSV column names to required DrillholeDatabase columns.
+            Keys should be DhConfig field names (holeid, depth).
         """
+        if isinstance(df, str):
+            # Load from CSV file
+            df = pd.read_csv(df)
+        if column_mapping is not None:
+            # Create mapping from config field names to actual column names
+            mapped_df = pd.DataFrame()
+            for config_field, csv_column in column_mapping.items():
+                # Get the actual DhConfig attribute value
+                config_col_name = getattr(DhConfig, config_field, config_field)
+                if csv_column not in df.columns:
+                    raise ValueError(
+                        f"Column '{csv_column}' specified in column_mapping not found in point data. "
+                        f"Available columns: {list(df.columns)}"
+                    )
+                mapped_df[config_col_name] = df[csv_column]
+
+            # Add any remaining columns that weren't mapped
+            for col in df.columns:
+                if col not in column_mapping.values():
+                    mapped_df[col] = df[col]
+            df = mapped_df
+        if type(df) is not pd.DataFrame:
+            raise TypeError("df must be a pandas DataFrame, or a path to a CSV file")
         df = df.copy()
 
         # Validate required columns
@@ -944,7 +1003,7 @@ class DrillholeDatabase:
         )
         return sorted(merged_hole_ids[DhConfig.holeid].tolist())
 
-    def extent(self, sampling: float=1.0,buffer: float=0.0) -> BoundingBox:
+    def extent(self, sampling: float = 1.0, buffer: float = 0.0) -> BoundingBox:
         """Return spatial extent of all drillholes.
         Parameters
         ----------
@@ -963,11 +1022,12 @@ class DrillholeDatabase:
         )
         bb = (
             BoundingBox()
-            .fit(all_traces[['x', 'y', 'z']].values, local_coordinate = True)
+            .fit(all_traces[['x', 'y', 'z']].values, local_coordinate=True)
             .with_buffer(buffer)
         )
 
         return bb
+
     def filter(
         self,
         holes: Optional[List[str]] = None,
@@ -1464,13 +1524,15 @@ class DrillholeDatabase:
 
         if not desurveyed_points:
             # Return empty DataFrame with expected structure
-            return pd.DataFrame(columns=[DhConfig.holeid, DhConfig.depth, "x", "y", "z","DIP","AZIMUTH"])
+            return pd.DataFrame(
+                columns=[DhConfig.holeid, DhConfig.depth, "x", "y", "z", "DIP", "AZIMUTH"]
+            )
 
         return pd.concat(desurveyed_points, ignore_index=True)
 
-    def alpha_beta_to_orientation(self, table_name: str,fmt: str = 'vector') -> pd.DataFrame:
+    def alpha_beta_to_orientation(self, table_name: str, fmt: str = 'vector') -> pd.DataFrame:
         """Desurvey point table, and add strike and dip column using alpha and beta angles.
-        
+
         Parameters
         ----------
         table_name : str
@@ -1480,7 +1542,7 @@ class DrillholeDatabase:
             - 'vector': returns the components of the normal vector nx, ny, nz
             - 'strike_dip': returns strike and dip as columns 'STRIKE' and 'DIP'
             - 'dip_direction_dip': returns dip direction and dip as columns 'DIP_DIRECTION' and 'DIP'
-        
+
         Returns
         -------
         pd.DataFrame
@@ -1498,14 +1560,16 @@ class DrillholeDatabase:
             raise KeyError(f"Column '{DhConfig.alpha}' not found in point table '{table_name}'")
         if DhConfig.beta not in self.points[table_name].columns:
             raise KeyError(f"Column '{DhConfig.beta}' not found in point table '{table_name}'")
-        if fmt not in ['vector','strike_dip','dip_direction_dip']:
-            raise ValueError(f"fmt must be 'vector', 'strike_dip', or 'dip_direction_dip', got '{fmt}'")
+        if fmt not in ['vector', 'strike_dip', 'dip_direction_dip']:
+            raise ValueError(
+                f"fmt must be 'vector', 'strike_dip', or 'dip_direction_dip', got '{fmt}'"
+            )
         if fmt == 'vector':
-            columns = ['nx','ny','nz']
+            columns = ['nx', 'ny', 'nz']
         elif fmt == 'strike_dip':
-            columns = ['STRIKE','DIP']
-        else: # fmt == 'dip_direction_dip'
-            columns = ['DIP_DIRECTION','DIP']
+            columns = ['STRIKE', 'DIP']
+        else:  # fmt == 'dip_direction_dip'
+            columns = ['DIP_DIRECTION', 'DIP']
         desurveyed_points = self.desurvey_points(table_name)
         desurveyed_points = desurveyed_points.copy()
         desurveyed_points[columns] = np.nan
@@ -1517,17 +1581,21 @@ class DrillholeDatabase:
         if fmt == 'vector':
             return desurveyed_points
         else:
-            strike_dip = normal_vector_to_strike_and_dip(desurveyed_points[['nx','ny','nz']].values)
+            strike_dip = normal_vector_to_strike_and_dip(
+                desurveyed_points[['nx', 'ny', 'nz']].values
+            )
             if fmt == 'strike_dip':
-                desurveyed_points[['STRIKE','DIP']] = strike_dip
+                desurveyed_points[['STRIKE', 'DIP']] = strike_dip
                 return desurveyed_points
-            else: # dip and dip_dir
-                dip_direction = (strike_dip[:,0] + 90) % 360
-                desurveyed_points[['DIP_DIRECTION','DIP']] = np.column_stack((dip_direction, strike_dip[:,1]))
+            else:  # dip and dip_dir
+                dip_direction = (strike_dip[:, 0] + 90) % 360
+                desurveyed_points[['DIP_DIRECTION', 'DIP']] = np.column_stack(
+                    (dip_direction, strike_dip[:, 1])
+                )
                 return desurveyed_points
 
     def resample_interval_to_depths(
-        self, interval_table_name: str, new_depths: pd.Series
+        self, interval_table_name: str, new_interval: float
     ) -> pd.DataFrame:
         """
         Resample interval data to match a new set of depths.
@@ -1546,19 +1614,27 @@ class DrillholeDatabase:
         """
         if interval_table_name not in self.intervals:
             raise KeyError(f"Interval table '{interval_table_name}' not found")
+        cols = [
+            c
+            for c in self.intervals[interval_table_name].columns.tolist()
+            if c != DhConfig.depth
+            and c != DhConfig.sample_from
+            and c != DhConfig.sample_to
+            and c != DhConfig.holeid
+        ]
 
         resampled_intervals = []
 
         # Process each hole
         for hole_id in self.list_holes():
-            try:
-                drillhole = self[hole_id]
-                hole_intervals = drillhole.resample_intervals(interval_table_name, new_depths)
-                if not hole_intervals.empty:
-                    resampled_intervals.append(hole_intervals)
-            except Exception as e:
-                logger.warning(f"Failed to resample intervals for hole {hole_id}: {e}")
-                continue
+            # tr/y:
+            drillhole = self[hole_id]
+            hole_intervals = drillhole.resample(interval_table_name, cols=cols, new_interval=new_interval)
+            if not hole_intervals.empty:
+                resampled_intervals.append(hole_intervals)
+            # except Exception as e:
+            #     logger.warning(f"Failed to resample intervals for hole {hole_id}: {e}")
+            #     continue
 
         if not resampled_intervals:
             # Return empty DataFrame with expected structure
