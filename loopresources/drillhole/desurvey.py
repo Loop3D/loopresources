@@ -43,6 +43,55 @@ def desurvey(
     method
 
     """
+    if newinterval <= 0:
+        raise ValueError("newinterval must be greater than 0.")
+    if DhConfig.depth not in survey.columns:
+        raise ValueError(f"Survey table must contain a '{DhConfig.depth}' column.")
+    survey = survey.sort_values(DhConfig.depth).reset_index()
+    
+    if DhConfig.total_depth not in collar.columns or collar[DhConfig.total_depth].isnull().all() or len(survey)==0:
+        return pd.DataFrame(
+            columns=(
+                [
+                    DhConfig.depth,
+                    DhConfig.dip,
+                    DhConfig.azimuth,
+                    'x_from',
+                    'y_from',
+                    'z_from',
+                    'x_to',
+                    'y_to',
+                    'z_to',
+                    'x_mid',
+                    'y_mid',
+                    'z_mid',
+                    'x',
+                    'y',
+                    'z',
+                ]
+                if drop_intermediate
+                else [
+                    DhConfig.depth,
+                    DhConfig.dip,
+                    DhConfig.azimuth,
+                    'xm',
+                    'ym',
+                    'zm',
+                    'x_from',
+                    'y_from',
+                    'z_from',
+                    'x_to',
+                    'y_to',
+                    'z_to',
+                    'x_mid',
+                    'y_mid',
+                    'z_mid',
+                    'x',
+                    'y',
+                    'z',
+                ]
+            )
+        )
     # print(collar[DhConfig.z].min(), collar[DhConfig.total_depth].max())
     if not hasattr(newinterval, "__len__"):  # is it an array?
         newdepth = np.arange(
@@ -52,9 +101,7 @@ def desurvey(
         )
     else:
         newdepth = newinterval
-    survey = survey.sort_values(DhConfig.depth).reset_index()
-    if len(survey) == 0:
-        raise ValueError("Survey table is empty")
+
     ## extrapolate using the bottom azimuth value.. its better than nothing
     # convert from dip to inclination
     # dip is measured from the horizontal, inclination is measured from the vertical
@@ -70,7 +117,6 @@ def desurvey(
         incl = survey[DhConfig.dip].to_numpy()
     incl_fill_value = incl.tolist()[-1]
     azi_fill_value = survey[DhConfig.azimuth].to_list()[-1]
-    # print(survey[DhConfig.depth])
 
     if survey.shape[0] > 1:
         azi_interp = interp1d(
@@ -96,6 +142,13 @@ def desurvey(
         np.vstack([newdepth, incli, azi]).T,
         columns=[DhConfig.depth, DhConfig.dip, DhConfig.azimuth],
     )
+    if DhConfig.dip_is_inclination:
+        resampled_survey[DhConfig.dip] = resampled_survey[DhConfig.dip]
+    else:
+        if DhConfig.positive_dips_down:
+            resampled_survey[DhConfig.dip] = resampled_survey[DhConfig.dip] - np.deg2rad(90)
+        else:
+            resampled_survey[DhConfig.dip] = np.deg2rad(90) - resampled_survey[DhConfig.dip]
 
     resampled_survey["xm"] = 0.0
     resampled_survey["ym"] = 0.0
