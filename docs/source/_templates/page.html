@@ -1,12 +1,16 @@
 {% extends "!page.html" %} {% block footer %}
 <script type="text/javascript">
   $(document).ready(function () {
-    $(".toggle > *").hide();
-    $(".toggle .header").show();
-    $(".toggle .header").click(function () {
+    // Only target toggle elements inside the main content area to avoid hiding header/menu items
+    $(".bd-content .toggle > *").hide();
+    $(".bd-content .toggle .header").show();
+    $(".bd-content .toggle .header").click(function () {
       $(this).parent().children().not(".header").toggle(400);
       $(this).parent().children(".header").toggleClass("open");
     });
+
+    // Ensure navbar/menu links are visible in case other scripts hid them
+    $("#navbar-main .nav, #navbar-main .nav-item, #navbar-main .nav-link").show();
   });
 </script>
 {% endblock %}

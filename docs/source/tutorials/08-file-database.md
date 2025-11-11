@@ -1,4 +1,4 @@
-# 8 - File Database Backend for `DrillholeDatabase` — Tutorial
+# 6 - File Database Backend for `DrillholeDatabase` 
 
 This tutorial demonstrates how to use the **file-based (SQLite) backend** for
 `DrillholeDatabase`. It covers two common workflows:

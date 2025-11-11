@@ -5,51 +5,72 @@
 
 LoopResources
 =====================================
+.. image:: static/loopresources_logo.png
+   :alt: LoopResources logo
+   :align: center
+   :width: 100%
+
+.. important::
+   LoopResources is currently in active development. While the core functionality is stable, some APIs may change in future releases.
+   Currently only the drillhole database functionality is implemented, with a link to LoopStructural and resource modelling tools to follow.
 
 Overview
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-LoopResources
-=============
+**LoopResources** is a Python library designed for subsurface resource modelling workflows.
+It provides a database interface for managing drillhole data with a vision for easy integration into LoopStructural
+and subsequent resource modelling.
 
-**LoopResources** is a Python library designed to streamline subsurface resource modelling workflows by integrating geological data management, implicit modelling, and geostatistical analysis in a unified framework.
+To install LoopResources, use pip:
+.. code-block:: bash
+
+   pip install loopresources
+
+optional dependencies for VTK support can be installed via:
+.. code-block:: bash
+
+   pip install loopresources[vtk]
+
 
 The library has three main goals:
 
+
+
 1. **Provide a Pythonic interface for drillhole databases**
 
-   LoopResources offers a consistent, object-oriented API for working with drillhole data from diverse sources. It enables efficient querying, manipulation, and visualization of drillhole and assay data, with built-in support for validation and metadata tracking.
+   .. code-block:: python
 
-2. **Integrate with implicit geological modelling via `LoopStructural <https://loop3d.github.io/LoopStructural/>`_**
+      from loopresources import DrillholeDatabase
+      import pandas as pd
+      db = DrillholeDatabase.from_csv(
+          survey_csv="survey.csv",
+          collar_csv="collar.csv",
+          assay_csv="assay.csv",
+      )
+      db.add_table("lithology", pd.read_csv(lithology_df))
+      desurveyed_lithology = db.desurvey_intervals("lithology")
+      vtk_objects = []
+      for h in db:
+          vtk_objects.append(h.to_vtk())
 
-   Seamless integration with LoopStructural allows users to build and update 3D geological models directly from drillhole data and geological interpretations. LoopResources bridges data and model domains, simplifying workflows that move from raw data to structural models.
+
+2. **Integrate with implicit geological modelling via LoopStructural**
+
+   A direct link between LoopStructural and LoopResources for easy building and update of geological models from drillhole data.
 
 3. **Enable resource modelling and domaining workflows**
 
    The library provides tools for using LoopStructural surfaces for geological domaining and supports interoperability with third-party geostatistical packages for grade estimation, simulation, and uncertainty analysis.
+   
+   .. toctree::
+      :hidden:
 
-.. toctree::
-   :maxdepth: 2
-   :caption: Contents:
+      auto_examples/index
+      tutorials/index
 
-   auto_examples/index
-   tutorials/index
+   .. toctree::
+      :hidden:
 
-Indices and tables
-==================
+      _autosummary/loopresources
 
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
-
-  .. toctree::
-   :caption: LoopResources API
-   :hidden:
-
-.. autosummary::
-   :caption: API
-   :toctree: _autosummary
-   :template: custom-module-template.rst
-   :recursive:
-
-   loopresources
+   
