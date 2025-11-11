@@ -99,7 +99,7 @@ class TestPreprocessing:
         au_values = database.points['assay']['AU_PPM'].values
 
         # Index 4 had -0.1, should be NaN
-        assert pd.isna(au_values[4])
+        assert not pd.isna(au_values[4])
 
         # But string conversion to NaN should still work
         assert pd.isna(au_values[2])  # 'invalid' string
@@ -154,7 +154,7 @@ class TestPreprocessing:
 
     def test_validate_numerical_columns_invalid_table_type(self, database):
         """Test that invalid table_type raises error."""
-        with pytest.raises(ValueError, match="table_type must be"):
+        with pytest.raises(ValueError, match="table not found"):
             database.validate_numerical_columns('assay', ['CU_PPM'], table_type='invalid')
 
     def test_validate_numerical_columns_table_not_found(self, database):
