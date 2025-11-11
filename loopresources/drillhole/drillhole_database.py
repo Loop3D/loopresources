@@ -685,17 +685,30 @@ class DrillholeDatabase:
 
     def _normalize_angles(self):
         """Convert angles to radians if they appear to be in degrees."""
-        # Check azimuth range
-        az_range = self.survey[DhConfig.azimuth].max() - self.survey[DhConfig.azimuth].min()
+        # Work on a copy of the survey DataFrame and write back via the property
+        # setter to avoid chained-assignment warnings and to ensure the
+        # underlying storage (memory or file-backed) is updated correctly.
+        survey_df = self.survey.copy()
+
+        # Check azimuth range safely (handle empty/NaN cases)
+        az_min = survey_df[DhConfig.azimuth].min()
+        az_max = survey_df[DhConfig.azimuth].max()
+        az_range = (az_max - az_min) if pd.notna(az_min) and pd.notna(az_max) else 0.0
         if az_range > 2 * np.pi:
             logger.info("Converting azimuth from degrees to radians")
-            self.survey[DhConfig.azimuth] = np.deg2rad(self.survey[DhConfig.azimuth])
+            survey_df[DhConfig.azimuth] = np.deg2rad(survey_df[DhConfig.azimuth])
 
-        # Check dip range
-        dip_range = self.survey[DhConfig.dip].max() - self.survey[DhConfig.dip].min()
+        # Check dip range safely (handle empty/NaN cases)
+        dip_min = survey_df[DhConfig.dip].min()
+        dip_max = survey_df[DhConfig.dip].max()
+        dip_range = (dip_max - dip_min) if pd.notna(dip_min) and pd.notna(dip_max) else 0.0
         if dip_range > np.pi:
             logger.info("Converting dip from degrees to radians")
-            self.survey[DhConfig.dip] = np.deg2rad(self.survey[DhConfig.dip])
+            survey_df[DhConfig.dip] = np.deg2rad(survey_df[DhConfig.dip])
+
+        # Assign the modified DataFrame back through the property setter so the
+        # underlying attribute is updated in a single operation (no chained assignment).
+        self.survey = survey_df
 
     def __getitem__(self, hole_id: str) -> DrillHole:
         """Return a DrillHole view for a given HOLE_ID.
@@ -740,8 +753,9 @@ class DrillholeDatabase:
         num_holes = len(self.list_holes())
 
         # Get spatial extent
-        xmin, xmax, ymin, ymax, zmin, zmax = self.extent()
-
+        bb = self.extent()
+        xmin, ymin, zmin = bb.global_origin[:3]
+        xmax, ymax, zmax = bb.global_maximum[:3]
         lines = [
             "DrillholeDatabase",
             "=================",
@@ -1171,7 +1185,50 @@ class DrillholeDatabase:
                 new_db.points[name] = filtered_table
 
         return new_db
+    def get_table(self, table_name: str, table_type: str = "point") -> pd.DataFrame:
+        """Retrieve a table by name and type.
 
+        Parameters
+        ----------
+        table_name : str
+            Name of the interval or point table to retrieve
+        table_type : str, default 'point'
+            Type of table ('point' or 'interval')
+
+        Returns
+        -------
+        pd.DataFrame
+            The requested table DataFrame
+
+        Raises
+        ------
+        ValueError
+            If the specified table does not exist
+        
+        Notes
+        -----
+        If the table name does not exist in the specified type, the method
+        will check the other type before raising an error.
+        """
+        tables = None
+        if table_type == "point":
+            tables = self.points
+        elif table_type == "interval":
+            tables = self.intervals
+
+        if tables is None:
+            if table_name in self.intervals:
+                tables = self.intervals
+            elif table_name in self.points:
+                tables = self.points
+        if tables is None:
+            raise ValueError(f"table not found in {table_type} tables")
+
+        if table_name not in tables:
+            raise KeyError(f"Table '{table_name}' not found in {table_type} tables")
+
+        table = tables[table_name]
+        return table
     def validate_numerical_columns(
         self,
         table_name: str,
@@ -1203,24 +1260,7 @@ class DrillholeDatabase:
             Self, to allow method chaining
         """
         # Determine which table dictionary to use
-        tables = None
-        if table_type == "point":
-            tables = self.points
-        elif table_type == "interval":
-            tables = self.intervals
-            
-        if tables is None:
-            if table_name in self.intervals:
-                tables = self.intervals
-            elif table_name in self.points:
-                tables = self.points
-        if tables is None:
-            raise ValueError(f"table not found in {table_type} tables")
-
-        if table_name not in tables:
-            raise KeyError(f"Table '{table_name}' not found in {table_type} tables")
-
-        table = tables[table_name]
+        table = self.get_table(table_name, table_type)  # Validate table exists
 
         # Process each column
         for col in columns:
@@ -1232,12 +1272,10 @@ class DrillholeDatabase:
             table[col] = pd.to_numeric(table[col], errors="coerce")
 
             # Replace non-positive or negative values with NaN
-            if allow_negative:
+            if not allow_negative:
                 # Only replace negative values
-                table.loc[table[col] < 0, col] = np.nan
-            else:
-                # Replace values <= 0
                 table.loc[table[col] <= 0, col] = np.nan
+            
 
         return self
 
@@ -1278,18 +1316,7 @@ class DrillholeDatabase:
         if not 0.0 <= threshold <= 1.0:
             raise ValueError(f"threshold must be between 0.0 and 1.0, got {threshold}")
 
-        # Determine which table dictionary to use
-        if table_type == "point":
-            tables = self.points
-        elif table_type == "interval":
-            tables = self.intervals
-        else:
-            raise ValueError(f"table_type must be 'point' or 'interval', got '{table_type}'")
-
-        if table_name not in tables:
-            raise KeyError(f"Table '{table_name}' not found in {table_type} tables")
-
-        table = tables[table_name].copy()
+        table = self.get_table(table_name, table_type)  # Validate table exists
 
         # Check which columns exist
         existing_columns = [col for col in columns if col in table.columns]
