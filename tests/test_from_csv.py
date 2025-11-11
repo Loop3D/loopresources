@@ -17,29 +17,29 @@ class TestFromCsv:
     def sample_collar_data(self):
         """Sample collar data with custom column names."""
         return {
-            'HOLE_ID': ['DH001', 'DH002', 'DH003'],
-            'X_MGA': [100.0, 200.0, 300.0],
-            'Y_MGA': [1000.0, 2000.0, 3000.0],
-            'Z_MGA': [50.0, 60.0, 70.0],
-            'DEPTH': [100.0, 150.0, 200.0]
+            "HOLE_ID": ["DH001", "DH002", "DH003"],
+            "X_MGA": [100.0, 200.0, 300.0],
+            "Y_MGA": [1000.0, 2000.0, 3000.0],
+            "Z_MGA": [50.0, 60.0, 70.0],
+            "DEPTH": [100.0, 150.0, 200.0],
         }
 
     @pytest.fixture
     def sample_survey_data(self):
         """Sample survey data with custom column names."""
         return {
-            'Drillhole ID': ['DH001', 'DH001', 'DH002', 'DH002', 'DH003'],
-            'Depth': [0.0, 50.0, 0.0, 75.0, 0.0],
-            'Azimuth': [0.0, 0.0, 45.0, 45.0, 90.0],
-            'Dip': [90.0, 90.0, 80.0, 80.0, 85.0]
+            "Drillhole ID": ["DH001", "DH001", "DH002", "DH002", "DH003"],
+            "Depth": [0.0, 50.0, 0.0, 75.0, 0.0],
+            "Azimuth": [0.0, 0.0, 45.0, 45.0, 90.0],
+            "Dip": [90.0, 90.0, 80.0, 80.0, 85.0],
         }
 
     def test_from_csv_with_mapping(self, sample_collar_data, sample_survey_data):
         """Test from_csv with column mapping."""
         with tempfile.TemporaryDirectory() as tmpdir:
             # Create CSV files
-            collar_file = os.path.join(tmpdir, 'collar.csv')
-            survey_file = os.path.join(tmpdir, 'survey.csv')
+            collar_file = os.path.join(tmpdir, "collar.csv")
+            survey_file = os.path.join(tmpdir, "survey.csv")
             pd.DataFrame(sample_collar_data).to_csv(collar_file, index=False)
             pd.DataFrame(sample_survey_data).to_csv(survey_file, index=False)
 
@@ -48,23 +48,23 @@ class TestFromCsv:
                 collar_file=collar_file,
                 survey_file=survey_file,
                 collar_columns={
-                    'holeid': 'HOLE_ID',
-                    'x': 'X_MGA',
-                    'y': 'Y_MGA',
-                    'z': 'Z_MGA',
-                    'total_depth': 'DEPTH'
+                    "holeid": "HOLE_ID",
+                    "x": "X_MGA",
+                    "y": "Y_MGA",
+                    "z": "Z_MGA",
+                    "total_depth": "DEPTH",
                 },
                 survey_columns={
-                    'holeid': 'Drillhole ID',
-                    'depth': 'Depth',
-                    'azimuth': 'Azimuth',
-                    'dip': 'Dip'
-                }
+                    "holeid": "Drillhole ID",
+                    "depth": "Depth",
+                    "azimuth": "Azimuth",
+                    "dip": "Dip",
+                },
             )
 
             # Verify the data was loaded correctly
             assert len(db.list_holes()) == 3
-            assert 'DH001' in db.list_holes()
+            assert "DH001" in db.list_holes()
             assert len(db.collar) == 3
             assert len(db.survey) == 5
 
@@ -80,56 +80,55 @@ class TestFromCsv:
         with tempfile.TemporaryDirectory() as tmpdir:
             # Create collar CSV with DhConfig column names
             collar_data = {
-                DhConfig.holeid: ['DH001', 'DH002'],
+                DhConfig.holeid: ["DH001", "DH002"],
                 DhConfig.x: [100.0, 200.0],
                 DhConfig.y: [1000.0, 2000.0],
                 DhConfig.z: [50.0, 60.0],
-                DhConfig.total_depth: [100.0, 150.0]
+                DhConfig.total_depth: [100.0, 150.0],
             }
-            collar_file = os.path.join(tmpdir, 'collar.csv')
+            collar_file = os.path.join(tmpdir, "collar.csv")
             pd.DataFrame(collar_data).to_csv(collar_file, index=False)
 
             # Create survey CSV with DhConfig column names
             survey_data = {
-                DhConfig.holeid: ['DH001', 'DH001', 'DH002'],
+                DhConfig.holeid: ["DH001", "DH001", "DH002"],
                 DhConfig.depth: [0.0, 50.0, 0.0],
                 DhConfig.azimuth: [0.0, 0.0, 45.0],
-                DhConfig.dip: [90.0, 90.0, 80.0]
+                DhConfig.dip: [90.0, 90.0, 80.0],
             }
-            survey_file = os.path.join(tmpdir, 'survey.csv')
+            survey_file = os.path.join(tmpdir, "survey.csv")
             pd.DataFrame(survey_data).to_csv(survey_file, index=False)
 
             # Load without mapping
-            db = DrillholeDatabase.from_csv(
-                collar_file=collar_file,
-                survey_file=survey_file
-            )
+            db = DrillholeDatabase.from_csv(collar_file=collar_file, survey_file=survey_file)
 
             # Verify the data was loaded correctly
             assert len(db.list_holes()) == 2
-            assert 'DH001' in db.list_holes()
+            assert "DH001" in db.list_holes()
 
     def test_from_csv_missing_column_error(self, sample_collar_data, sample_survey_data):
         """Test that from_csv raises error when mapped column doesn't exist."""
         with tempfile.TemporaryDirectory() as tmpdir:
             # Create CSV files
-            collar_file = os.path.join(tmpdir, 'collar.csv')
-            survey_file = os.path.join(tmpdir, 'survey.csv')
+            collar_file = os.path.join(tmpdir, "collar.csv")
+            survey_file = os.path.join(tmpdir, "survey.csv")
             pd.DataFrame(sample_collar_data).to_csv(collar_file, index=False)
             pd.DataFrame(sample_survey_data).to_csv(survey_file, index=False)
 
             # Try to load with invalid column mapping
-            with pytest.raises(ValueError, match="Column 'INVALID_COLUMN' specified in collar_columns"):
+            with pytest.raises(
+                ValueError, match="Column 'INVALID_COLUMN' specified in collar_columns"
+            ):
                 DrillholeDatabase.from_csv(
                     collar_file=collar_file,
                     survey_file=survey_file,
                     collar_columns={
-                        'holeid': 'INVALID_COLUMN',
-                        'x': 'X_MGA',
-                        'y': 'Y_MGA',
-                        'z': 'Z_MGA',
-                        'total_depth': 'DEPTH'
-                    }
+                        "holeid": "INVALID_COLUMN",
+                        "x": "X_MGA",
+                        "y": "Y_MGA",
+                        "z": "Z_MGA",
+                        "total_depth": "DEPTH",
+                    },
                 )
 
     def test_from_csv_with_missing_values(self):
@@ -137,44 +136,41 @@ class TestFromCsv:
         with tempfile.TemporaryDirectory() as tmpdir:
             # Create collar CSV with some missing values
             collar_data = {
-                DhConfig.holeid: ['DH001', 'DH002', 'DH003'],
+                DhConfig.holeid: ["DH001", "DH002", "DH003"],
                 DhConfig.x: [100.0, 200.0, None],  # Missing X for DH003
                 DhConfig.y: [1000.0, 2000.0, 3000.0],
                 DhConfig.z: [50.0, 60.0, 70.0],
-                DhConfig.total_depth: [100.0, 150.0, 200.0]
+                DhConfig.total_depth: [100.0, 150.0, 200.0],
             }
-            collar_file = os.path.join(tmpdir, 'collar.csv')
+            collar_file = os.path.join(tmpdir, "collar.csv")
             pd.DataFrame(collar_data).to_csv(collar_file, index=False)
 
             # Create survey CSV
             survey_data = {
-                DhConfig.holeid: ['DH001', 'DH002'],
+                DhConfig.holeid: ["DH001", "DH002"],
                 DhConfig.depth: [0.0, 0.0],
                 DhConfig.azimuth: [0.0, 45.0],
-                DhConfig.dip: [90.0, 80.0]
+                DhConfig.dip: [90.0, 80.0],
             }
-            survey_file = os.path.join(tmpdir, 'survey.csv')
+            survey_file = os.path.join(tmpdir, "survey.csv")
             pd.DataFrame(survey_data).to_csv(survey_file, index=False)
 
             # Load data
-            db = DrillholeDatabase.from_csv(
-                collar_file=collar_file,
-                survey_file=survey_file
-            )
+            db = DrillholeDatabase.from_csv(collar_file=collar_file, survey_file=survey_file)
 
             # Verify that DH003 was dropped due to missing X
             assert len(db.list_holes()) == 2
-            assert 'DH003' not in db.list_holes()
+            assert "DH003" not in db.list_holes()
 
     def test_from_csv_preserves_extra_columns(self, sample_collar_data, sample_survey_data):
         """Test that from_csv preserves extra columns not in the mapping."""
         with tempfile.TemporaryDirectory() as tmpdir:
             # Add extra columns to the data
             collar_data = sample_collar_data.copy()
-            collar_data['EXTRA_INFO'] = ['info1', 'info2', 'info3']
-            
-            collar_file = os.path.join(tmpdir, 'collar.csv')
-            survey_file = os.path.join(tmpdir, 'survey.csv')
+            collar_data["EXTRA_INFO"] = ["info1", "info2", "info3"]
+
+            collar_file = os.path.join(tmpdir, "collar.csv")
+            survey_file = os.path.join(tmpdir, "survey.csv")
             pd.DataFrame(collar_data).to_csv(collar_file, index=False)
             pd.DataFrame(sample_survey_data).to_csv(survey_file, index=False)
 
@@ -183,23 +179,23 @@ class TestFromCsv:
                 collar_file=collar_file,
                 survey_file=survey_file,
                 collar_columns={
-                    'holeid': 'HOLE_ID',
-                    'x': 'X_MGA',
-                    'y': 'Y_MGA',
-                    'z': 'Z_MGA',
-                    'total_depth': 'DEPTH'
+                    "holeid": "HOLE_ID",
+                    "x": "X_MGA",
+                    "y": "Y_MGA",
+                    "z": "Z_MGA",
+                    "total_depth": "DEPTH",
                 },
                 survey_columns={
-                    'holeid': 'Drillhole ID',
-                    'depth': 'Depth',
-                    'azimuth': 'Azimuth',
-                    'dip': 'Dip'
-                }
+                    "holeid": "Drillhole ID",
+                    "depth": "Depth",
+                    "azimuth": "Azimuth",
+                    "dip": "Dip",
+                },
             )
 
             # Verify extra column is preserved
-            assert 'EXTRA_INFO' in db.collar.columns
+            assert "EXTRA_INFO" in db.collar.columns
 
 
-if __name__ == '__main__':
-    pytest.main([__file__, '-v'])
+if __name__ == "__main__":
+    pytest.main([__file__, "-v"])

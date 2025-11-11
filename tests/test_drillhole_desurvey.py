@@ -4,6 +4,7 @@ import pytest
 from loopresources import DhConfig, desurvey
 import pandas as pd
 import numpy as np
+
 """
 Code Analysis
 
@@ -31,7 +32,6 @@ Additional aspects:
 
 
 class TestDesurvey:
-
     # Tests that the function returns the correct output when provided with valid collar and survey dataframes and a valid newinterval value. tags: [happy path]
     def test_desurvey_valid_input(self):
         # create valid collar and survey DataFrames
@@ -56,8 +56,12 @@ class TestDesurvey:
         # check that output is correct
         # assert result.shape == (6, 7)
         assert result[DhConfig.depth].tolist() == [0, 5, 10, 15, 20, 25]
-        assert np.isclose(result[DhConfig.dip].values, np.array([0., 5., 10., 15., 20., 25.])).all()
-        assert np.isclose(result[DhConfig.azimuth].values, np.array([0., 5., 10., 15., 20., 25.])).all()
+        assert np.isclose(
+            result[DhConfig.dip].values, np.array([0.0, 5.0, 10.0, 15.0, 20.0, 25.0])
+        ).all()
+        assert np.isclose(
+            result[DhConfig.azimuth].values, np.array([0.0, 5.0, 10.0, 15.0, 20.0, 25.0])
+        ).all()
 
     # Tests that the function raises an error when provided with a newinterval value of 0 or negative, or a survey dataframe with only one row. tags: [edge case]
     def test_desurvey_invalid_input(self):
@@ -84,7 +88,6 @@ class TestDesurvey:
         # test with newinterval value of -1
         with pytest.raises(ValueError):
             desurvey(collar, survey, newinterval=-1)
-        
 
     # Tests that the function returns an empty dataframe when provided with empty collar or survey dataframes. tags: [edge case]
     def test_desurvey_empty_input(self):
@@ -183,11 +186,11 @@ class TestDesurvey:
         # assert that function raises a ValueError
         results = desurvey(collar, survey)
         # check that the arrays were sorted by depth and the interpolated dip/azi is correct
-        assert (results.loc[results['DEPTH'] == 0.0, 'DIP'] == -45).all()
-        assert (results.loc[results['DEPTH'] == 0.0, 'AZIMUTH'] == 90).all()
+        assert (results.loc[results["DEPTH"] == 0.0, "DIP"] == -45).all()
+        assert (results.loc[results["DEPTH"] == 0.0, "AZIMUTH"] == 90).all()
 
-        assert (results.loc[results['DEPTH'] == 5.0, 'DIP'] == -90).all()
-        assert (results.loc[results['DEPTH'] == 5.0, 'AZIMUTH'] == 0).all()
+        assert (results.loc[results["DEPTH"] == 5.0, "DIP"] == -90).all()
+        assert (results.loc[results["DEPTH"] == 5.0, "AZIMUTH"] == 0).all()
 
-        assert (results.loc[results['DEPTH'] == 10.0, 'DIP'] == 0).all()
-        assert (results.loc[results['DEPTH'] == 10.0, 'AZIMUTH'] == 180).all()
+        assert (results.loc[results["DEPTH"] == 10.0, "DIP"] == 0).all()
+        assert (results.loc[results["DEPTH"] == 10.0, "AZIMUTH"] == 180).all()

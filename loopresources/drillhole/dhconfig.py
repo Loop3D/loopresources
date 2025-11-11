@@ -39,7 +39,7 @@ class DhConfig(object):
     z = "RL"
     azimuth = "AZIMUTH"
     dip = "DIP"
-    add_ninty = True
+    add_ninty = False
     depth = "DEPTH"
     total_depth = "DEPTH"
     debug = False

@@ -48,47 +48,51 @@ def desurvey(
     if DhConfig.depth not in survey.columns:
         raise ValueError(f"Survey table must contain a '{DhConfig.depth}' column.")
     survey = survey.sort_values(DhConfig.depth).reset_index()
-    
-    if DhConfig.total_depth not in collar.columns or collar[DhConfig.total_depth].isnull().all() or len(survey)==0:
+
+    if (
+        DhConfig.total_depth not in collar.columns
+        or collar[DhConfig.total_depth].isnull().all()
+        or len(survey) == 0
+    ):
         return pd.DataFrame(
             columns=(
                 [
                     DhConfig.depth,
                     DhConfig.dip,
                     DhConfig.azimuth,
-                    'x_from',
-                    'y_from',
-                    'z_from',
-                    'x_to',
-                    'y_to',
-                    'z_to',
-                    'x_mid',
-                    'y_mid',
-                    'z_mid',
-                    'x',
-                    'y',
-                    'z',
+                    "x_from",
+                    "y_from",
+                    "z_from",
+                    "x_to",
+                    "y_to",
+                    "z_to",
+                    "x_mid",
+                    "y_mid",
+                    "z_mid",
+                    "x",
+                    "y",
+                    "z",
                 ]
                 if drop_intermediate
                 else [
                     DhConfig.depth,
                     DhConfig.dip,
                     DhConfig.azimuth,
-                    'xm',
-                    'ym',
-                    'zm',
-                    'x_from',
-                    'y_from',
-                    'z_from',
-                    'x_to',
-                    'y_to',
-                    'z_to',
-                    'x_mid',
-                    'y_mid',
-                    'z_mid',
-                    'x',
-                    'y',
-                    'z',
+                    "xm",
+                    "ym",
+                    "zm",
+                    "x_from",
+                    "y_from",
+                    "z_from",
+                    "x_to",
+                    "y_to",
+                    "z_to",
+                    "x_mid",
+                    "y_mid",
+                    "z_mid",
+                    "x",
+                    "y",
+                    "z",
                 ]
             )
         )

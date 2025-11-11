@@ -24,6 +24,4 @@ print(f"Extent: {db.extent()}")
 # Access an individual hole
 hole = db[db.list_holes()[0]]
 print(f"Total depth: {hole.collar[DhConfig.total_depth].iloc[0]}")
-
-
 ```

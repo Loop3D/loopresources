@@ -24,23 +24,6 @@ Example naming convention:
 
 .. raw:: html
 
-    <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates how the new __str__ and __repr__ methods make it easy to explore and understand drillhole data interactively.">
-
-.. only:: html
-
-  .. image:: /auto_examples/images/thumb/sphx_glr_example_string_representations_thumb.png
-    :alt:
-
-  :ref:`sphx_glr_auto_examples_example_string_representations.py`
-
-.. raw:: html
-
-      <div class="sphx-glr-thumbnail-title">Example: Using String Representations for Drillhole Data Exploration</div>
-    </div>
-
-
-.. raw:: html
-
     <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates how to use the DrillholeDatabase.from_csv() method to load drilling data directly from CSV files with column mapping.">
 
 .. only:: html
@@ -53,6 +36,23 @@ Example naming convention:
 .. raw:: html
 
       <div class="sphx-glr-thumbnail-title">DrillholeDatabase.from_csv() Example</div>
+    </div>
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates how the new __str__ and __repr__ methods make it easy to explore and understand drillhole data interactively.">
+
+.. only:: html
+
+  .. image:: /auto_examples/images/thumb/sphx_glr_example_string_representations_thumb.png
+    :alt:
+
+  :ref:`sphx_glr_auto_examples_example_string_representations.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Example: Using String Representations for Drillhole Data Exploration</div>
     </div>
 
 
@@ -96,10 +96,10 @@ Example naming convention:
 
 .. only:: html
 
-  .. image:: /auto_examples/images/thumb/sphx_glr_test_thalanga_thumb.png
+  .. image:: /auto_examples/images/thumb/sphx_glr_ttttest_thalanga_thumb.png
     :alt:
 
-  :ref:`sphx_glr_auto_examples_test_thalanga.py`
+  :ref:`sphx_glr_auto_examples_ttttest_thalanga.py`
 
 .. raw:: html
 
@@ -151,11 +151,11 @@ Example naming convention:
 .. toctree::
    :hidden:
 
-   /auto_examples/example_string_representations
    /auto_examples/plot_from_csv_example
+   /auto_examples/example_string_representations
    /auto_examples/plot_interval_resampling
    /auto_examples/plot_thalanga_example
-   /auto_examples/test_thalanga
+   /auto_examples/ttttest_thalanga
    /auto_examples/plot_basic_drillhole_usage
    /auto_examples/example_preprocessing
 

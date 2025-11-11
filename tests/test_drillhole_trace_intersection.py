@@ -14,19 +14,27 @@ def make_simple_trace():
     y = np.zeros_like(depths)
     z = 100.0 - depths
 
-    pts = pd.DataFrame({
-        DhConfig.depth: depths,
-        "x": x,
-        "y": y,
-        "z": z,
-    })
+    pts = pd.DataFrame(
+        {
+            DhConfig.depth: depths,
+            "x": x,
+            "y": y,
+            "z": z,
+        }
+    )
 
     # Construct DrillHoleTrace without using desurvey by creating object and setting attributes
     trace = DrillHoleTrace.__new__(DrillHoleTrace)
     trace.trace_points = pts
-    trace.x_interpolator = interp1d(pts[DhConfig.depth].values, pts["x"].values, fill_value="extrapolate")
-    trace.y_interpolator = interp1d(pts[DhConfig.depth].values, pts["y"].values, fill_value="extrapolate")
-    trace.z_interpolator = interp1d(pts[DhConfig.depth].values, pts["z"].values, fill_value="extrapolate")
+    trace.x_interpolator = interp1d(
+        pts[DhConfig.depth].values, pts["x"].values, fill_value="extrapolate"
+    )
+    trace.y_interpolator = interp1d(
+        pts[DhConfig.depth].values, pts["y"].values, fill_value="extrapolate"
+    )
+    trace.z_interpolator = interp1d(
+        pts[DhConfig.depth].values, pts["z"].values, fill_value="extrapolate"
+    )
 
     return trace
 

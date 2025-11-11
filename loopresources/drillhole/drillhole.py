@@ -62,8 +62,8 @@ class DrillHoleTrace:
                 "x": self.x_interpolator(newdepth),
                 "y": self.y_interpolator(newdepth),
                 "z": self.z_interpolator(newdepth),
-                "dip":self.dip_interpolator(newdepth),
-                "azimuth":self.azimuth_interpolator(newdepth),
+                "dip": self.dip_interpolator(newdepth),
+                "azimuth": self.azimuth_interpolator(newdepth),
             }
         )
 
@@ -88,7 +88,9 @@ class DrillHoleTrace:
         closest_idx = distances.idxmin()
         return self.trace_points.loc[closest_idx, DhConfig.depth]
 
-    def find_implicit_function_intersection(self, function: Callable[[ArrayLike], ArrayLike]) -> pd.DataFrame:
+    def find_implicit_function_intersection(
+        self, function: Callable[[ArrayLike], ArrayLike]
+    ) -> pd.DataFrame:
         """Find intersection of drillhole trace with an implicit function.
 
         The provided function may be vectorised (accepting an Nx3 array and returning N values)
@@ -160,8 +162,13 @@ class DrillHoleTrace:
 
         df = pd.DataFrame(intersections)
         # Remove potential duplicate depths and sort
-        df = df.drop_duplicates(subset=[DhConfig.depth]).sort_values(by=DhConfig.depth).reset_index(drop=True)
+        df = (
+            df.drop_duplicates(subset=[DhConfig.depth])
+            .sort_values(by=DhConfig.depth)
+            .reset_index(drop=True)
+        )
         return df
+
 
 class DrillHole:
     """A view of the DrillholeDatabase for a single HOLE_ID.
@@ -350,8 +357,6 @@ class DrillHole:
                 result[name] = filtered
         return result
 
-
-
     def trace(self, step: float = 1.0) -> DrillHoleTrace:
         """Return the interpolated XYZ trace of the hole.
 
@@ -366,7 +371,10 @@ class DrillHole:
             Interpolated trace of the drill hole
         """
         return DrillHoleTrace(self, interval=step)
-    def find_implicit_function_intersection(self, function: Callable[[ArrayLike], ArrayLike], step: float = 1.0) -> pd.DataFrame:
+
+    def find_implicit_function_intersection(
+        self, function: Callable[[ArrayLike], ArrayLike], step: float = 1.0
+    ) -> pd.DataFrame:
         """Find intersection of drillhole trace with an implicit function.
 
         The provided function may be vectorised (accepting an Nx3 array and returning N values)
@@ -386,6 +394,7 @@ class DrillHole:
         """
         trace = self.trace(step)
         return trace.find_implicit_function_intersection(function)
+
     def depth_at(self, x: float, y: float, z: float) -> float:
         """Return depth along hole closest to a given XYZ point.
 
@@ -636,8 +645,8 @@ class DrillHole:
         result["x"] = desurveyed_points["x"].values
         result["y"] = desurveyed_points["y"].values
         result["z"] = desurveyed_points["z"].values
-        result['DIP'] = np.rad2deg(desurveyed_points['dip'].values)
-        result['AZIMUTH'] = np.rad2deg(desurveyed_points['azimuth'].values)
+        result["DIP"] = np.rad2deg(desurveyed_points["dip"].values)
+        result["AZIMUTH"] = np.rad2deg(desurveyed_points["azimuth"].values)
         return result
 
     def resample(

@@ -33,6 +33,7 @@ classifiers = [
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
   "Topic :: Multimedia :: Graphics :: 3D Modeling",
   "Topic :: Scientific/Engineering",
   "Topic :: Scientific/Engineering :: GIS",
@@ -45,7 +46,21 @@ dependencies = [
   "scipy",
   "tqdm",
 ]
-urls."Source Code" = 'https://github.com/Loop3D/loopresources'
+optional-dependencies.all = [ "loop", "vtk" ]
+optional-dependencies.dev = [
+  "black",
+  "codespell",
+  "isort",
+  "pre-commit",
+  "pytest",
+  "pytest-cov",
+  "ruff",
+  "sphinx",
+  "sphinx-rtd-theme",
+]
+optional-dependencies.loop = [ "loopstructural>=1.6.21" ]
+optional-dependencies.urls."Source Code" = 'https://github.com/Loop3D/loopresources'
+optional-dependencies.vtk = [ "pyvista" ]
 
 [tool.setuptools.dynamic]
 version = { attr = 'loopresources.version.__version__' }

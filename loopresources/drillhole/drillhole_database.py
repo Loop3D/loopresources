@@ -901,7 +901,12 @@ class DrillholeDatabase:
             logger.error(f"Error sorting holes: {e}")
             raise
 
-    def add_interval_table(self, name: str, df: Union[pd.DataFrame, str], column_mapping: Optional[Dict[str, str]] = None):
+    def add_interval_table(
+        self,
+        name: str,
+        df: Union[pd.DataFrame, str],
+        column_mapping: Optional[Dict[str, str]] = None,
+    ):
         """Register a new interval table.
 
         Parameters
@@ -954,7 +959,12 @@ class DrillholeDatabase:
 
         self.intervals[name] = df
 
-    def add_point_table(self, name: str, df: Union[pd.DataFrame,str], column_mapping: Optional[Dict[str, str]] = None):
+    def add_point_table(
+        self,
+        name: str,
+        df: Union[pd.DataFrame, str],
+        column_mapping: Optional[Dict[str, str]] = None,
+    ):
         """Register a new point table.
 
         Parameters
@@ -1036,7 +1046,7 @@ class DrillholeDatabase:
         )
         bb = (
             BoundingBox()
-            .fit(all_traces[['x', 'y', 'z']].values, local_coordinate=True)
+            .fit(all_traces[["x", "y", "z"]].values, local_coordinate=True)
             .with_buffer(buffer)
         )
 
@@ -1185,6 +1195,7 @@ class DrillholeDatabase:
                 new_db.points[name] = filtered_table
 
         return new_db
+
     def get_table(self, table_name: str, table_type: str = "point") -> pd.DataFrame:
         """Retrieve a table by name and type.
 
@@ -1204,7 +1215,7 @@ class DrillholeDatabase:
         ------
         ValueError
             If the specified table does not exist
-        
+
         Notes
         -----
         If the table name does not exist in the specified type, the method
@@ -1229,6 +1240,7 @@ class DrillholeDatabase:
 
         table = tables[table_name]
         return table
+
     def validate_numerical_columns(
         self,
         table_name: str,
@@ -1275,7 +1287,6 @@ class DrillholeDatabase:
             if not allow_negative:
                 # Only replace negative values
                 table.loc[table[col] <= 0, col] = np.nan
-            
 
         return self
 
@@ -1564,7 +1575,7 @@ class DrillholeDatabase:
 
         return pd.concat(desurveyed_points, ignore_index=True)
 
-    def alpha_beta_to_orientation(self, table_name: str, fmt: str = 'vector') -> pd.DataFrame:
+    def alpha_beta_to_orientation(self, table_name: str, fmt: str = "vector") -> pd.DataFrame:
         """Desurvey point table, and add strike and dip column using alpha and beta angles.
 
         Parameters
@@ -1594,16 +1605,16 @@ class DrillholeDatabase:
             raise KeyError(f"Column '{DhConfig.alpha}' not found in point table '{table_name}'")
         if DhConfig.beta not in self.points[table_name].columns:
             raise KeyError(f"Column '{DhConfig.beta}' not found in point table '{table_name}'")
-        if fmt not in ['vector', 'strike_dip', 'dip_direction_dip']:
+        if fmt not in ["vector", "strike_dip", "dip_direction_dip"]:
             raise ValueError(
                 f"fmt must be 'vector', 'strike_dip', or 'dip_direction_dip', got '{fmt}'"
             )
-        if fmt == 'vector':
-            columns = ['nx', 'ny', 'nz']
-        elif fmt == 'strike_dip':
-            columns = ['STRIKE', 'DIP']
+        if fmt == "vector":
+            columns = ["nx", "ny", "nz"]
+        elif fmt == "strike_dip":
+            columns = ["STRIKE", "DIP"]
         else:  # fmt == 'dip_direction_dip'
-            columns = ['DIP_DIRECTION', 'DIP']
+            columns = ["DIP_DIRECTION", "DIP"]
         desurveyed_points = self.desurvey_points(table_name)
         desurveyed_points = desurveyed_points.copy()
         desurveyed_points[columns] = np.nan
@@ -1612,18 +1623,18 @@ class DrillholeDatabase:
             return desurveyed_points
 
         desurveyed_points = alphaBeta2vector(desurveyed_points)
-        if fmt == 'vector':
+        if fmt == "vector":
             return desurveyed_points
         else:
             strike_dip = normal_vector_to_strike_and_dip(
-                desurveyed_points[['nx', 'ny', 'nz']].values
+                desurveyed_points[["nx", "ny", "nz"]].values
             )
-            if fmt == 'strike_dip':
-                desurveyed_points[['STRIKE', 'DIP']] = strike_dip
+            if fmt == "strike_dip":
+                desurveyed_points[["STRIKE", "DIP"]] = strike_dip
                 return desurveyed_points
             else:  # dip and dip_dir
                 dip_direction = (strike_dip[:, 0] + 90) % 360
-                desurveyed_points[['DIP_DIRECTION', 'DIP']] = np.column_stack(
+                desurveyed_points[["DIP_DIRECTION", "DIP"]] = np.column_stack(
                     (dip_direction, strike_dip[:, 1])
                 )
                 return desurveyed_points
@@ -1663,7 +1674,9 @@ class DrillholeDatabase:
         for hole_id in self.list_holes():
             # tr/y:
             drillhole = self[hole_id]
-            hole_intervals = drillhole.resample(interval_table_name, cols=cols, new_interval=new_interval)
+            hole_intervals = drillhole.resample(
+                interval_table_name, cols=cols, new_interval=new_interval
+            )
             if not hole_intervals.empty:
                 resampled_intervals.append(hole_intervals)
             # except Exception as e:

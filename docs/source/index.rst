@@ -42,6 +42,7 @@ The library has three main goals:
 
       from loopresources import DrillholeDatabase
       import pandas as pd
+
       db = DrillholeDatabase.from_csv(
           survey_csv="survey.csv",
           collar_csv="collar.csv",

@@ -2,7 +2,6 @@
 
 import numpy as np
 import pandas as pd
-from LoopStructural.utils import normal_vector_to_strike_and_dip
 
 
 def alphaBetaGamma2vector(
@@ -120,6 +119,5 @@ def alphaBeta2vector(
     df["nx"] = vector[:, 0, 0]
     df["ny"] = vector[:, 1, 0]
     df["nz"] = vector[:, 2, 0]
-    
 
     return df

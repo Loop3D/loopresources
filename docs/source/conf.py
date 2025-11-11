@@ -51,9 +51,9 @@ templates_path = ["_templates"]
 # Sphinx Gallery configuration
 sphinx_gallery_conf = {
     "examples_dirs": "../../examples",  # path to your example scripts
-    "gallery_dirs": "auto_examples",    # path to where to save gallery generated output
-    "filename_pattern": "/plot_",       # pattern to match example files
-    "ignore_pattern": "__init__\.py",   # ignore __init__.py files
+    "gallery_dirs": "auto_examples",  # path to where to save gallery generated output
+    "filename_pattern": "/plot_",  # pattern to match example files
+    "ignore_pattern": "__init__\.py",  # ignore __init__.py files
     "download_all_examples": False,
     "min_reported_time": 0,
     "thumbnail_size": (200, 200),

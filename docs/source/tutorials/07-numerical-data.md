@@ -105,7 +105,6 @@ clean_db = (
 ### Advanced: Map Bounding Box + Preprocessing + Completeness
 
 ```python
-
 clean_db = (
     db.validate_numerical_columns("assay", ["CU_PPM", "AU_PPM"], allow_negative=False)
     .filter(bounding_box=(100, 200, 1000, 1100))
