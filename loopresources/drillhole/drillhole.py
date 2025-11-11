@@ -6,6 +6,7 @@ with filtering, validation, and export capabilities.
 
 import pandas as pd
 import numpy as np
+from numpy.typing import ArrayLike
 from scipy.interpolate import interp1d
 from typing import Dict, List, Optional, Union
 import logging
@@ -13,7 +14,7 @@ import logging
 from .dhconfig import DhConfig
 from .desurvey import desurvey
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Callable
 
 if TYPE_CHECKING:
     from .drillholedatabase import DrillholeDatabase  # Only imported for type checking
@@ -87,6 +88,80 @@ class DrillHoleTrace:
         closest_idx = distances.idxmin()
         return self.trace_points.loc[closest_idx, DhConfig.depth]
 
+    def find_implicit_function_intersection(self, function: Callable[[ArrayLike], ArrayLike]) -> pd.DataFrame:
+        """Find intersection of drillhole trace with an implicit function.
+
+        The provided function may be vectorised (accepting an Nx3 array and returning N values)
+        or accept separate x,y,z arrays. Returns DataFrame with columns: depth, x, y, z.
+        """
+        pts = self.trace_points
+        coords = np.vstack([pts["x"].values, pts["y"].values, pts["z"].values]).T
+
+        # Call the function, trying vectorised signature first, then per-coordinate
+        try:
+            values = function(coords)
+        except Exception:
+            try:
+                values = function(pts["x"].values, pts["y"].values, pts["z"].values)
+            except Exception as e:
+                raise RuntimeError(f"Implicit function call failed: {e}")
+
+        values = np.asarray(values).ravel()
+        if values.size != len(pts):
+            raise ValueError("Implicit function must return one value per trace point")
+
+        depths = pts[DhConfig.depth].values
+
+        intersections = []
+
+        # Handle exact zeros first
+        zero_idxs = np.where(np.isclose(values, 0.0))[0]
+        for idx in zero_idxs:
+            d = float(depths[idx])
+            intersections.append(
+                {
+                    DhConfig.depth: d,
+                    "x": float(self.x_interpolator(d)),
+                    "y": float(self.y_interpolator(d)),
+                    "z": float(self.z_interpolator(d)),
+                }
+            )
+
+        # Find sign changes (ignore intervals involving NaN)
+        s = np.sign(values)
+        s[np.isnan(values)] = 0
+        sign_change_idxs = np.where(s[:-1] * s[1:] < 0)[0]
+
+        for idx in sign_change_idxs:
+            v1 = float(values[idx])
+            v2 = float(values[idx + 1])
+            d1 = float(depths[idx])
+            d2 = float(depths[idx + 1])
+
+            if np.isclose(v2 - v1, 0.0):
+                # Degenerate interval, skip
+                continue
+
+            # Linear interpolation for depth at root
+            depth_intersect = d1 + (0.0 - v1) * (d2 - d1) / (v2 - v1)
+
+            intersections.append(
+                {
+                    DhConfig.depth: float(depth_intersect),
+                    "x": float(self.x_interpolator(depth_intersect)),
+                    "y": float(self.y_interpolator(depth_intersect)),
+                    "z": float(self.z_interpolator(depth_intersect)),
+                }
+            )
+
+        if not intersections:
+            # Return empty DataFrame with expected columns
+            return pd.DataFrame(columns=[DhConfig.depth, "x", "y", "z"])
+
+        df = pd.DataFrame(intersections)
+        # Remove potential duplicate depths and sort
+        df = df.drop_duplicates(subset=[DhConfig.depth]).sort_values(by=DhConfig.depth).reset_index(drop=True)
+        return df
 
 class DrillHole:
     """A view of the DrillholeDatabase for a single HOLE_ID.
@@ -291,7 +366,26 @@ class DrillHole:
             Interpolated trace of the drill hole
         """
         return DrillHoleTrace(self, interval=step)
+    def find_implicit_function_intersection(self, function: Callable[[ArrayLike], ArrayLike], step: float = 1.0) -> pd.DataFrame:
+        """Find intersection of drillhole trace with an implicit function.
 
+        The provided function may be vectorised (accepting an Nx3 array and returning N values)
+        or accept separate x,y,z arrays. Returns DataFrame with columns: depth, x, y, z.
+
+        Parameters
+        ----------
+        function : Callable[[ArrayLike], ArrayLike]
+            Implicit function defining the surface to intersect with
+        step : float, default 1.0
+            Step size for interpolation along hole depth
+
+        Returns
+        -------
+        pd.DataFrame
+            DataFrame of intersection points with columns: depth, x, y, z
+        """
+        trace = self.trace(step)
+        return trace.find_implicit_function_intersection(function)
     def depth_at(self, x: float, y: float, z: float) -> float:
         """Return depth along hole closest to a given XYZ point.
 
