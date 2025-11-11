@@ -11,7 +11,7 @@ import sys
 sys.path.insert(0, os.path.abspath("../.."))
 import loopresources as lr
 
-project = "Resources"
+project = "LoopResources"
 copyright = "2023, Lachlan Grose"
 author = "Lachlan Grose"
 release = lr.__version__
