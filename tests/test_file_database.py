@@ -139,7 +139,7 @@ class TestFileDatabaseBackend:
         """Test project-based database storage."""
         # Create database with project
         db_config = DbConfig(backend="file", db_path=temp_db_path, project_name="project1")
-        db1 = DrillholeDatabase(sample_collar, sample_survey, db_config)
+        _db1 = DrillholeDatabase(sample_collar, sample_survey, db_config)
 
         # Create another database with different project
         sample_collar2 = sample_collar.copy()
@@ -148,7 +148,7 @@ class TestFileDatabaseBackend:
         sample_survey2[DhConfig.holeid] = ["DH004", "DH004", "DH005", "DH005", "DH006"]
 
         db_config2 = DbConfig(backend="file", db_path=temp_db_path, project_name="project2")
-        db2 = DrillholeDatabase(sample_collar2, sample_survey2, db_config2)
+        _db2 = DrillholeDatabase(sample_collar2, sample_survey2, db_config2)
 
         # Load project1 and verify
         db_loaded1 = DrillholeDatabase.from_database(temp_db_path, project_name="project1")
@@ -205,7 +205,7 @@ class TestFileDatabaseBackend:
     def test_nonexistent_project_raises_error(self, temp_db_path):
         """Test that loading nonexistent project raises error."""
         # Create empty database
-        db_config = DbConfig(backend="file", db_path=temp_db_path)
+        _db_config = DbConfig(backend="file", db_path=temp_db_path)
 
         with pytest.raises(ValueError, match="Projects table not found|Project .* not found"):
             DrillholeDatabase.from_database(temp_db_path, project_name="nonexistent")

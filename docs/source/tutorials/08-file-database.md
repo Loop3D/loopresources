@@ -33,9 +33,24 @@ This tutorial demonstrates how to use the **file-based (SQLite) backend** for
 import pandas as pd
 from loopresources.drillhole import DrillholeDatabase, DbConfig
 
-collar = pd.DataFrame({"HOLEID": ["DH001", "DH002"], "EAST": [100.0, 200.0], "NORTH": [1000.0, 2000.0], "RL": [50.0, 60.0], "DEPTH": [100.0, 150.0]})
+collar = pd.DataFrame(
+    {
+        "HOLEID": ["DH001", "DH002"],
+        "EAST": [100.0, 200.0],
+        "NORTH": [1000.0, 2000.0],
+        "RL": [50.0, 60.0],
+        "DEPTH": [100.0, 150.0],
+    }
+)
 
-survey = pd.DataFrame({"HOLEID": ["DH001", "DH001", "DH002"], "DEPTH": [0.0, 50.0, 0.0], "AZIMUTH": [0.0, 0.0, 45.0], "DIP": [90.0, 90.0, 80.0]})
+survey = pd.DataFrame(
+    {
+        "HOLEID": ["DH001", "DH001", "DH002"],
+        "DEPTH": [0.0, 50.0, 0.0],
+        "AZIMUTH": [0.0, 0.0, 45.0],
+        "DIP": [90.0, 90.0, 80.0],
+    }
+)
 
 config = DbConfig(backend="file", db_path="drillholes.db")
 db = DrillholeDatabase(collar, survey, db_config=config)
@@ -73,7 +88,9 @@ db_mem.save_to_database("drillholes.db", project_name="Project_A")
 from loopresources.drillhole import DrillholeDatabase
 
 db_loaded = DrillholeDatabase.from_database("drillholes.db", project_name="Project_A")
-db_linked = DrillholeDatabase.link_to_database("drillholes.db", project_name="Project_A")
+db_linked = DrillholeDatabase.link_to_database(
+    "drillholes.db", project_name="Project_A"
+)
 ```
 
 ---

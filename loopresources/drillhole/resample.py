@@ -242,10 +242,10 @@ def resample_interval_to_new_interval(
         }
     )
 
-    grid_start = new_from[:,None]#grid[:grid.shape[0]-1,None]
-    grid_end = new_to[:,None]#grid[1:,None]
+    grid_start = new_from[:, None]  # grid[:grid.shape[0]-1,None]
+    grid_end = new_to[:, None]  # grid[1:,None]
     starts = table[DhConfig.sample_from].to_numpy()[None, :]
-    ends = table[DhConfig.sample_to].to_numpy()[None, :]  
+    ends = table[DhConfig.sample_to].to_numpy()[None, :]
     in_interval = (grid_start >= starts) & (grid_end < ends)
     overlap_length = np.zeros_like(in_interval, dtype=float)
     overlap_length[in_interval] = new_interval
@@ -258,7 +258,7 @@ def resample_interval_to_new_interval(
         # value for that interval
         segment_id = np.argmax(overlap_length, axis=1)
         for c in cols:
-            result.loc[result.index,c] = table.loc[table.index[segment_id], c].values
+            result.loc[result.index, c] = table.loc[table.index[segment_id], c].values
         # raise Exception("stop")
     result[DhConfig.holeid] = table[DhConfig.holeid].iloc[0]
     return result.copy()

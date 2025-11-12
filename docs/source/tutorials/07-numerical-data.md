@@ -19,7 +19,9 @@ indicate below detection limit.
 
 
 ```python
-validate_numerical_columns(table_name, columns, table_type="interval", allow_negative=False)
+validate_numerical_columns(
+    table_name, columns, table_type="interval", allow_negative=False
+)
 ```
 
 **Behavior**:
@@ -33,7 +35,9 @@ validate_numerical_columns(table_name, columns, table_type="interval", allow_neg
 **Example**:
 
 ```python
-db = db.validate_numerical_columns("assay", columns=["CU_PPM", "AU_PPM", "AG_PPM"], allow_negative=False)
+db = db.validate_numerical_columns(
+    "assay", columns=["CU_PPM", "AU_PPM", "AG_PPM"], allow_negative=False
+)
 ```
 
 ---
@@ -61,7 +65,9 @@ filter_by_nan_threshold(table_name, columns, threshold, table_type="point")
 **Example**:
 
 ```python
-filtered_db = db.filter_by_nan_threshold("assay", columns=["CU_PPM", "AU_PPM", "AG_PPM", "PB_PPM"], threshold=0.75)
+filtered_db = db.filter_by_nan_threshold(
+    "assay", columns=["CU_PPM", "AU_PPM", "AG_PPM", "PB_PPM"], threshold=0.75
+)
 ```
 
 **Edge Cases**:
@@ -77,9 +83,9 @@ filtered_db = db.filter_by_nan_threshold("assay", columns=["CU_PPM", "AU_PPM", "
 ### Basic Cleaning + Strict Completeness
 
 ```python
-clean_db = db.validate_numerical_columns("assay", ["CU_PPM", "AU_PPM", "AG_PPM"], allow_negative=False).filter_by_nan_threshold(
-    "assay", ["CU_PPM", "AU_PPM", "AG_PPM"], threshold=0.9
-)
+clean_db = db.validate_numerical_columns(
+    "assay", ["CU_PPM", "AU_PPM", "AG_PPM"], allow_negative=False
+).filter_by_nan_threshold("assay", ["CU_PPM", "AU_PPM", "AG_PPM"], threshold=0.9)
 ```
 
 ### Hole ID + Preprocessing + Permissive Completeness

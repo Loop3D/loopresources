@@ -45,7 +45,9 @@ contacts = litho_logs.extract_contacts(store_as="contacts")
 
 # Extract basal contacts following stratigraphic order
 lithology_order = ["sandstone", "granite", "schist"]
-basal_contacts = litho_logs.extract_basal_contacts(lithology_order, store_as="basal_contacts")
+basal_contacts = litho_logs.extract_basal_contacts(
+    lithology_order, store_as="basal_contacts"
+)
 
 # Apply smoothing filter
 smoothed = litho_logs.apply_smoothing_filter(window_size=3, store_as="geology_smoothed")
@@ -54,7 +56,9 @@ smoothed = litho_logs.apply_smoothing_filter(window_size=3, store_as="geology_sm
 pairs = litho_logs.identify_lithological_pairs()
 
 # Calculate contact orientations
-orientations = litho_logs.calculate_contact_orientations(store_as="contact_orientations")
+orientations = litho_logs.calculate_contact_orientations(
+    store_as="contact_orientations"
+)
 ```
 
 ## Methods
@@ -105,7 +109,9 @@ Extract basal contacts (bottom boundaries) for lithologies following a specified
 stratigraphic order.
 
 ```python
-basal_contacts = litho_logs.extract_basal_contacts(lithology_order=["sandstone", "granite", "schist"], store_as="basal_contacts")
+basal_contacts = litho_logs.extract_basal_contacts(
+    lithology_order=["sandstone", "granite", "schist"], store_as="basal_contacts"
+)
 ```
 
 **Parameters:**
@@ -180,7 +186,9 @@ Calculate the orientation of lithological contacts using nearest neighbor
 analysis.
 
 ```python
-orientations = litho_logs.calculate_contact_orientations(radius=500.0, min_neighbors=3, store_as="contact_orientations")
+orientations = litho_logs.calculate_contact_orientations(
+    radius=500.0, min_neighbors=3, store_as="contact_orientations"
+)
 ```
 
 **Parameters:**

@@ -100,7 +100,7 @@ print()
 # ---------------------------------------------
 
 try:
-    import pyvista as pv
+    import pyvista as pv  # noqa: F401
 
     # Create VTK tube with lithology as cell property
     tube = hole.vtk(newinterval=5.0, properties=["lithology"])

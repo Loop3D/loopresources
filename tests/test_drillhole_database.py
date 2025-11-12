@@ -83,9 +83,9 @@ class TestDrillholeDatabase:
         assert holes == ["DH001", "DH002", "DH003"]
 
         # Test extent
-        bb = db.extent()
-        xmin = bb.global_origin[0]
-        xmax = bb.global_maximum[0]
+        # bb = db.extent()
+        # xmin = bb.global_origin[0]
+        # xmax = bb.global_maximum[0]
         # assert xmin > 100.0
         # assert xmax < 320.0
         ##todo calculate actual expected extent values and assert here
@@ -357,7 +357,8 @@ class TestIntervalResampling:
         db.add_interval_table("lithology", partial_lithology)
 
         try:
-            import pyvista as pv
+            import pyvista as pv  # noqa: F401
+
         except ImportError:
             pytest.skip("PyVista not installed")
 
