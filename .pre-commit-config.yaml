@@ -1,7 +1,8 @@
 # Top-level configuration
 minimum_pre_commit_version: "3.6.0"
 default_install_hook_types: [pre-commit, commit-msg, pre-push]
-
+language_version:
+  python: python3.12
 
 ci:
   autoupdate_commit_msg: "chore: update pre-commit hooks"
@@ -25,7 +26,7 @@ repos:
 
   # ── Docstring & README code-block formatter (needs Black internally) ───────
   -   repo: https://github.com/adamchainz/blacken-docs
-      rev: ""  # replace with latest tag on GitHub
+      rev: "1.20.0"  # replace with latest tag on GitHub
       hooks:
       -   id: blacken-docs
           additional_dependencies:
@@ -45,7 +46,7 @@ repos:
       - id: pyproject-fmt
 
   - repo: https://github.com/rhysd/actionlint
-    rev: v1.7.7
+    rev: v1.7.8
     hooks:
       - id: actionlint
         files: "^\\.github/workflows/.*\\.ya?ml$"
