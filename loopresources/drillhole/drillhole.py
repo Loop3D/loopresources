@@ -547,7 +547,11 @@ class DrillHole:
                         if col in trace_with_props.columns:
                             # Use values from trace points, excluding the last one for cell data
                             cell_values = trace_with_props[col].values[:-1]
-                            polydata.cell_data[f"{prop_name}_{col}"] = cell_values
+                            if col in polydata.cell_data:
+                                logger.warning(
+                                    f"Overwriting existing cell data for property '{col}'"
+                                )
+                            polydata.cell_data[col] = cell_values
 
                 except KeyError as e:
                     logger.warning(
