@@ -59,7 +59,6 @@ optional-dependencies.dev = [
   "sphinx-rtd-theme",
 ]
 optional-dependencies.loop = [ "loopstructural>=1.6.21" ]
-optional-dependencies.urls."Source Code" = 'https://github.com/Loop3D/loopresources'
 optional-dependencies.vtk = [ "pyvista" ]
 
 [tool.setuptools.dynamic]
