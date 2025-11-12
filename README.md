@@ -16,9 +16,10 @@ pip install loopresources
 ```python
 from loopresources import DrillholeDatabase
 import pyvista as pv
-db = DrillholeDatabase.from_csv('path_to_collar.csv', 'path_to_survey.csv')
-db.add_interval_table('lithology', lithology_data)
-desurveyed_lithology = db.desurvey_intervals('lithology')
+
+db = DrillholeDatabase.from_csv("path_to_collar.csv", "path_to_survey.csv")
+db.add_interval_table("lithology", lithology_data)
+desurveyed_lithology = db.desurvey_intervals("lithology")
 p = pv.Plotter()
 for h in db:
     p.add_mesh(h.vtk(radius=2.0))
