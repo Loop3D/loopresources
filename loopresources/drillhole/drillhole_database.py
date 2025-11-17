@@ -600,49 +600,9 @@ class DrillholeDatabase:
         # Read CSV files
         collar_raw = pd.read_csv(collar_file, **kwargs)
         survey_raw = pd.read_csv(survey_file, **kwargs)
-
-        # Map collar columns
-        if collar_columns is not None:
-            # Create mapping from config field names to actual column names
-            collar_df = pd.DataFrame()
-            for config_field, csv_column in collar_columns.items():
-                # Get the actual DhConfig attribute value
-                config_col_name = getattr(DhConfig, config_field, config_field)
-                if csv_column not in collar_raw.columns:
-                    raise ValueError(
-                        f"Column '{csv_column}' specified in collar_columns mapping not found in collar CSV. "
-                        f"Available columns: {list(collar_raw.columns)}"
-                    )
-                collar_df[config_col_name] = collar_raw[csv_column]
-
-            # Add any remaining columns that weren't mapped
-            for col in collar_raw.columns:
-                if col not in collar_columns.values():
-                    collar_df[col] = collar_raw[col]
-        else:
-            collar_df = collar_raw.copy()
-
-        # Map survey columns
-        if survey_columns is not None:
-            # Create mapping from config field names to actual column names
-            survey_df = pd.DataFrame()
-            for config_field, csv_column in survey_columns.items():
-                # Get the actual DhConfig attribute value
-                config_col_name = getattr(DhConfig, config_field, config_field)
-                if csv_column not in survey_raw.columns:
-                    raise ValueError(
-                        f"Column '{csv_column}' specified in survey_columns mapping not found in survey CSV. "
-                        f"Available columns: {list(survey_raw.columns)}"
-                    )
-                survey_df[config_col_name] = survey_raw[csv_column]
-
-            # Add any remaining columns that weren't mapped
-            for col in survey_raw.columns:
-                if col not in survey_columns.values():
-                    survey_df[col] = survey_raw[col]
-        else:
-            survey_df = survey_raw.copy()
-
+        collar_df = collar_raw.rename(columns=collar_columns)
+        survey_df = survey_raw.rename(columns=survey_columns)
+        
         # Remove rows with missing essential data
         required_collar_cols = [
             DhConfig.holeid,
