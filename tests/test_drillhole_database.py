@@ -367,8 +367,8 @@ class TestIntervalResampling:
         tube = hole_no_data.vtk(newinterval=5.0, properties=["lithology"])
 
         # Should have lithology data (as NaN)
-        assert "lithology_LITHO" in tube.cell_data
-        litho_values = tube.cell_data["lithology_LITHO"]
+        assert "LITHO" in tube.cell_data
+        litho_values = tube.cell_data["LITHO"]
         assert np.all(pd.isna(litho_values))
 
         # Test database-level VTK with mixed data
@@ -378,14 +378,14 @@ class TestIntervalResampling:
         assert len(multiblock) == 3
 
         # Check DH001 has real data
-        assert "lithology_LITHO" in multiblock["DH001"].cell_data
-        dh001_litho = multiblock["DH001"].cell_data["lithology_LITHO"]
+        assert "LITHO" in multiblock["DH001"].cell_data
+        dh001_litho = multiblock["DH001"].cell_data["LITHO"]
         assert not np.all(pd.isna(dh001_litho))  # Should have real values
 
         # Check DH002 and DH003 have NaN data
         for hole_id in ["DH002", "DH003"]:
-            assert "lithology_LITHO" in multiblock[hole_id].cell_data
-            hole_litho = multiblock[hole_id].cell_data["lithology_LITHO"]
+            assert "LITHO" in multiblock[hole_id].cell_data
+            hole_litho = multiblock[hole_id].cell_data["LITHO"]
             assert np.all(pd.isna(hole_litho))  # Should be all NaN
 
 

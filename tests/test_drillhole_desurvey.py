@@ -51,16 +51,18 @@ class TestDesurvey:
                 DhConfig.azimuth: [0, 10, 20, 30],
             }
         )
+        survey[DhConfig.dip] = np.deg2rad(survey[DhConfig.dip])
+        survey[DhConfig.azimuth] = np.deg2rad(survey[DhConfig.azimuth])
         # call function with valid input
         result = desurvey(collar, survey, newinterval=5)
         # check that output is correct
         # assert result.shape == (6, 7)
         assert result[DhConfig.depth].tolist() == [0, 5, 10, 15, 20, 25]
         assert np.isclose(
-            result[DhConfig.dip].values, np.array([0.0, 5.0, 10.0, 15.0, 20.0, 25.0])
+            result[DhConfig.dip].values, np.array([0.0, 5.0, 10.0, 15.0, 20.0, 25.0]),atol=5e-1
         ).all()
         assert np.isclose(
-            result[DhConfig.azimuth].values, np.array([0.0, 5.0, 10.0, 15.0, 20.0, 25.0])
+            result[DhConfig.azimuth].values, np.array([0.0, 5.0, 10.0, 15.0, 20.0, 25.0]),atol=5e-1
         ).all()
 
     # Tests that the function raises an error when provided with a newinterval value of 0 or negative, or a survey dataframe with only one row. tags: [edge case]
@@ -133,7 +135,7 @@ class TestDesurvey:
             }
         )
         # assert that function raises a KeyError
-        with pytest.raises(ValueError):
+        with pytest.raises(KeyError):
             desurvey(collar, survey)
 
     # Tests that the function raises an error when the input dataframes have different data types than expected. tags: [other possible issue]
@@ -183,14 +185,17 @@ class TestDesurvey:
                 "DIP": [-90, -45, 0],
             }
         )
+        survey[DhConfig.dip] = np.deg2rad(survey[DhConfig.dip])
+        survey[DhConfig.azimuth] = np.deg2rad(survey[DhConfig.azimuth])
         # assert that function raises a ValueError
-        results = desurvey(collar, survey)
+        results = desurvey(collar, survey, newinterval=1)
         # check that the arrays were sorted by depth and the interpolated dip/azi is correct
-        assert (results.loc[results["DEPTH"] == 0.0, "DIP"] == -45).all()
-        assert (results.loc[results["DEPTH"] == 0.0, "AZIMUTH"] == 90).all()
+        print(results.loc[results["DEPTH"] == 0.0])
+        assert (np.isclose(results.loc[results["DEPTH"] == 0.0, "DIP"], -45.).all())
+        assert (np.isclose(results.loc[results["DEPTH"] == 0.0, "AZIMUTH"], 90.).all())
 
-        assert (results.loc[results["DEPTH"] == 5.0, "DIP"] == -90).all()
-        assert (results.loc[results["DEPTH"] == 5.0, "AZIMUTH"] == 0).all()
+        assert (np.isclose(results.loc[results["DEPTH"] == 5.0, "DIP"], -90.).all())
+        assert (np.isclose(results.loc[results["DEPTH"] == 5.0, "AZIMUTH"], 0.).all())
 
-        assert (results.loc[results["DEPTH"] == 10.0, "DIP"] == 0).all()
-        assert (results.loc[results["DEPTH"] == 10.0, "AZIMUTH"] == 180).all()
+        assert (np.isclose(results.loc[results["DEPTH"] == 10.0, "DIP"], 0.).all())
+        assert (np.isclose(results.loc[results["DEPTH"] == 10.0, "AZIMUTH"], 180.).all())

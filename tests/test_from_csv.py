@@ -48,17 +48,17 @@ class TestFromCsv:
                 collar_file=collar_file,
                 survey_file=survey_file,
                 collar_columns={
-                    "holeid": "HOLE_ID",
-                    "x": "X_MGA",
-                    "y": "Y_MGA",
-                    "z": "Z_MGA",
-                    "total_depth": "DEPTH",
+                    "HOLE_ID": DhConfig.holeid,
+                    "X_MGA": DhConfig.x,
+                    "Y_MGA": DhConfig.y,
+                    "Z_MGA": DhConfig.z,
+                    "DEPTH": DhConfig.total_depth,
                 },
                 survey_columns={
-                    "holeid": "Drillhole ID",
-                    "depth": "Depth",
-                    "azimuth": "Azimuth",
-                    "dip": "Dip",
+                    "Drillhole ID": DhConfig.holeid,
+                    "Depth": DhConfig.depth,
+                    "Azimuth": DhConfig.azimuth,
+                    "Dip": DhConfig.dip,
                 },
             )
 
@@ -116,18 +116,16 @@ class TestFromCsv:
             pd.DataFrame(sample_survey_data).to_csv(survey_file, index=False)
 
             # Try to load with invalid column mapping
-            with pytest.raises(
-                ValueError, match="Column 'INVALID_COLUMN' specified in collar_columns"
-            ):
+            with pytest.raises(KeyError, match="Required collar column 'HOLEID' not found in CSV file"):
                 DrillholeDatabase.from_csv(
                     collar_file=collar_file,
                     survey_file=survey_file,
                     collar_columns={
-                        "holeid": "INVALID_COLUMN",
-                        "x": "X_MGA",
-                        "y": "Y_MGA",
-                        "z": "Z_MGA",
-                        "total_depth": "DEPTH",
+                        "INVALID_COLUMN": DhConfig.holeid,
+                        "X_MGA": DhConfig.x,
+                        "Y_MGA": DhConfig.y,
+                        "Z_MGA": DhConfig.z,
+                        "DEPTH": DhConfig.total_depth,
                     },
                 )
 
@@ -179,17 +177,17 @@ class TestFromCsv:
                 collar_file=collar_file,
                 survey_file=survey_file,
                 collar_columns={
-                    "holeid": "HOLE_ID",
-                    "x": "X_MGA",
-                    "y": "Y_MGA",
-                    "z": "Z_MGA",
-                    "total_depth": "DEPTH",
+                    "HOLE_ID": DhConfig.holeid,
+                    "X_MGA": DhConfig.x,
+                    "Y_MGA": DhConfig.y,
+                    "Z_MGA": DhConfig.z,
+                    "DEPTH": DhConfig.total_depth,
                 },
                 survey_columns={
-                    "holeid": "Drillhole ID",
-                    "depth": "Depth",
-                    "azimuth": "Azimuth",
-                    "dip": "Dip",
+                    "Drillhole ID": DhConfig.holeid,
+                    "Depth": DhConfig.depth,
+                    "Azimuth": DhConfig.azimuth,
+                    "Dip": DhConfig.dip,
                 },
             )
 

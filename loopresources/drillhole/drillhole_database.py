@@ -527,8 +527,8 @@ class DrillholeDatabase:
         cls,
         collar_file: str,
         survey_file: str,
-        collar_columns: Optional[Dict[str, str]] = None,
-        survey_columns: Optional[Dict[str, str]] = None,
+        collar_columns: Dict[str, str] = {},
+        survey_columns: Dict[str, str] = {},
         **kwargs,
     ) -> "DrillholeDatabase":
         """Create a DrillholeDatabase from CSV files with column mapping.
@@ -541,24 +541,26 @@ class DrillholeDatabase:
             Path to the survey CSV file
         collar_columns : dict, optional
             Mapping of CSV column names to required DrillholeDatabase columns.
-            Keys should be DhConfig field names (holeid, x, y, z, total_depth).
-            Values should be the actual column names in the CSV file.
+            Uses pandas.rename semantics.
+            Keys should be the actual column names in the CSV file.
+            Values should be DhConfig field names (holeid, x, y, z, total_depth).
             Example: {
-                'holeid': 'HOLE_ID',
-                'x': 'X_MGA',
-                'y': 'Y_MGA',
-                'z': 'Z_MGA',
-                'total_depth': 'DEPTH'
+                'HOLE_ID': DhConfig.holeid,
+                'X_MGA': DhConfig.x,
+                'Y_MGA': DhConfig.y,
+                'Z_MGA': DhConfig.z,
+                'DEPTH': DhConfig.total_depth   
             }
         survey_columns : dict, optional
             Mapping of CSV column names to required DrillholeDatabase columns.
-            Keys should be DhConfig field names (holeid, depth, azimuth, dip).
+            Keys should be actual column names
+            Values should be DhConfig field names (holeid, depth, azimuth, dip).
             Values should be the actual column names in the CSV file.
             Example: {
-                'holeid': 'Drillhole ID',
-                'depth': 'Depth',
-                'azimuth': 'Azimuth',
-                'dip': 'Dip'
+                'Drillhole ID': DhConfig.holeid,
+                'Depth': DhConfig.depth,
+                'Azimuth': DhConfig.azimuth,
+                'Dip': DhConfig.dip 
             }
         **kwargs
             Additional keyword arguments passed to pd.read_csv()
@@ -576,17 +578,17 @@ class DrillholeDatabase:
         ...     collar_file='collar.csv',
         ...     survey_file='survey.csv',
         ...     collar_columns={
-        ...         'holeid': 'HOLE_ID',
-        ...         'x': 'X_MGA',
-        ...         'y': 'Y_MGA',
-        ...         'z': 'Z_MGA',
-        ...         'total_depth': 'DEPTH'
+        ...         'HOLE_ID': DhConfig.holeid,
+        ...         'X_MGA': DhConfig.x,
+        ...         'Y_MGA': DhConfig.y,
+        ...         'Z_MGA': DhConfig.z,
+        ...         'DEPTH': DhConfig.total_depth
         ...     },
         ...     survey_columns={
-        ...         'holeid': 'Drillhole ID',
-        ...         'depth': 'Depth',
-        ...         'azimuth': 'Azimuth',
-        ...         'dip': 'Dip'
+        ...         'Drillhole ID': DhConfig.holeid,
+        ...         'Depth': DhConfig.depth,
+        ...         'Azimuth': DhConfig.azimuth,
+        ...         'Dip': DhConfig.dip
         ...     }
         ... )
 
@@ -611,6 +613,9 @@ class DrillholeDatabase:
             DhConfig.z,
             DhConfig.total_depth,
         ]
+        for col in required_collar_cols:
+            if col not in collar_df.columns:
+                raise KeyError(f"Required collar column '{col}' not found in CSV file")
         collar_df = collar_df.dropna(subset=required_collar_cols)
 
         required_survey_cols = [DhConfig.holeid, DhConfig.depth, DhConfig.azimuth, DhConfig.dip]

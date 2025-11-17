@@ -36,7 +36,13 @@ def desurvey(
         - If there are insufficient survey points, the function will default to
           the tangent method.
     """
-
+    if newinterval <= 0:
+        raise ValueError("newinterval must be a positive value.")
+    if not isinstance(survey, pd.DataFrame):
+        return pd.DataFrame()
+    if len(survey) == 0 or collar.empty:
+        return pd.DataFrame()
+    survey = survey.sort_values(by=DhConfig.depth).reset_index(drop=True)
     if len(survey) < 2:
         return straight_path_from_single_survey(collar, survey, newinterval)
     if method == "tangent":
