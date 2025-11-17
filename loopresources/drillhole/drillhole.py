@@ -11,6 +11,8 @@ from scipy.interpolate import interp1d
 from typing import Dict, List, Optional, Union
 import logging
 
+from loopresources.drillhole.math import slerp, trendandplunge2vector, vector2trendandplunge
+
 from .dhconfig import DhConfig
 from .desurvey import desurvey
 
@@ -38,13 +40,17 @@ class DrillHoleTrace:
         self.z_interpolator = interp1d(
             trace_points[DhConfig.depth], trace_points["z"], fill_value="extrapolate"
         )
-        self.dip_interpolator = interp1d(
-            trace_points[DhConfig.depth], trace_points[DhConfig.dip], fill_value="extrapolate"
-        )
-        self.azimuth_interpolator = interp1d(
-            trace_points[DhConfig.depth], trace_points[DhConfig.azimuth], fill_value="extrapolate"
+        unit_vectors = trendandplunge2vector(
+            trace_points[DhConfig.azimuth], trace_points[DhConfig.dip]
         )
 
+        def orientation_interpolator(depth):
+            new_vectors = slerp(unit_vectors, trace_points[DhConfig.depth], depth)
+            new_azimuth, new_dip = vector2trendandplunge(new_vectors)
+            return new_azimuth, new_dip
+        self.orientation_interpolator = orientation_interpolator
+        
+        
     def __call__(self, newinterval: Optional[Union[np.ndarray, float]] = 1.0):
         """Return resampled trace as a DataFrame for given interval or depths."""
         if not hasattr(newinterval, "__len__"):  # is it an array?
@@ -55,15 +61,16 @@ class DrillHoleTrace:
             )
         else:  # if its an array just use the array values
             newdepth = newinterval
-
+        #avoid duplicate call
+        azi, dip = self.orientation_interpolator(newdepth)
         return pd.DataFrame(
             {
                 DhConfig.depth: newdepth,
                 "x": self.x_interpolator(newdepth),
                 "y": self.y_interpolator(newdepth),
                 "z": self.z_interpolator(newdepth),
-                "dip": self.dip_interpolator(newdepth),
-                "azimuth": self.azimuth_interpolator(newdepth),
+                "dip": dip,
+                "azimuth": azi,
             }
         )
 

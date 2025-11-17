@@ -3,100 +3,56 @@
 Functions to convert survey azimuth/inclination records into XYZ coordinates
 sampled at a regular interval along a drillhole trace.
 """
-
-import numpy as np
 import pandas as pd
-from scipy.interpolate import interp1d
-from typing import Union
-from . import DhConfig
+import numpy as np
+
+from .dhconfig import DhConfig
+from .math import slerp, vector2trendandplunge, trendandplunge2vector
 
 
 def desurvey(
-    collar: pd.DataFrame,
-    survey: pd.DataFrame,
-    newinterval: Union[np.ndarray, float] = 1.0,
-    drop_intermediate: bool = True,
-):
-    """Desurvey and resample a drillhole along a specific interval.
+    collar: pd.DataFrame, survey: pd.DataFrame, newinterval=10, method="minimum_curvature", drop_intermediate=True
+) -> pd.DataFrame:
+    """Compute well path from collar and survey data at regular intervals.
 
-    Parameters
-    ----------
-    collar : pd.DataFrame
-        collar for a single drill hole
-    survey : pd.DataFrame
-        survey table for a single drill hole
-    newinterval : float, optional
-        step size of interval, by default 1.0 meter
-    drop_intermediate : bool, optional
-        whether to drop intermediate columns (xm, ym, zm), by default True
+    Parameters:
+        collar (pd.DataFrame): DataFrame containing collar information with
+            columns defined in DhConfig.
+        survey (pd.DataFrame): DataFrame containing survey information with
+            columns defined in DhConfig.
+        newinterval (float): Interval at which to resample the drillhole trace.
+        method (str): Method to use for desurveying. Options are
+            "tangent" or "minimum_curvature".
+        drop_intermediate (bool): Whether to drop intermediate calculation
+            columns from the output DataFrame.
+    Returns:    
+        pd.DataFrame: Resampled drillhole trace with XYZ coordinates and
+            survey information at specified intervals.
 
-    Returns
-    -------
-    pd.DataFrame
-        resulting table sampled along drillhole at the specific interval
-
-    Notes
-    -----
-    This function uses the minimum curvature method for desurveying the drillhole.
-    The azimuth and inclination of the drillhole are interpolated first to the new
-    interval and then the xyz coordinates are calculated using the minimum curvature
-    method
-
+    Notes:
+        - The "tangent" method uses linear interpolation between survey points.
+        - The "minimum_curvature" method uses spherical linear interpolation
+          (SLERP) for a smoother path.
+        - If there are insufficient survey points, the function will default to
+          the tangent method.
     """
-    if newinterval <= 0:
-        raise ValueError("newinterval must be greater than 0.")
-    if DhConfig.depth not in survey.columns:
-        raise ValueError(f"Survey table must contain a '{DhConfig.depth}' column.")
-    survey = survey.sort_values(DhConfig.depth).reset_index()
 
-    if (
-        DhConfig.total_depth not in collar.columns
-        or collar[DhConfig.total_depth].isnull().all()
-        or len(survey) == 0
-    ):
-        return pd.DataFrame(
-            columns=(
-                [
-                    DhConfig.depth,
-                    DhConfig.dip,
-                    DhConfig.azimuth,
-                    "x_from",
-                    "y_from",
-                    "z_from",
-                    "x_to",
-                    "y_to",
-                    "z_to",
-                    "x_mid",
-                    "y_mid",
-                    "z_mid",
-                    "x",
-                    "y",
-                    "z",
-                ]
-                if drop_intermediate
-                else [
-                    DhConfig.depth,
-                    DhConfig.dip,
-                    DhConfig.azimuth,
-                    "xm",
-                    "ym",
-                    "zm",
-                    "x_from",
-                    "y_from",
-                    "z_from",
-                    "x_to",
-                    "y_to",
-                    "z_to",
-                    "x_mid",
-                    "y_mid",
-                    "z_mid",
-                    "x",
-                    "y",
-                    "z",
-                ]
-            )
-        )
-    # print(collar[DhConfig.z].min(), collar[DhConfig.total_depth].max())
+    if len(survey) < 2:
+        return straight_path_from_single_survey(collar, survey, newinterval)
+    if method == "tangent":
+        return tangent_method(collar, survey, newinterval, drop_intermediate)
+    
+    elif method == "minimum_curvature":
+        return minimum_curvature(collar, survey, newinterval, drop_intermediate)
+    else:
+        raise ValueError(f"Unknown method: {method}")
+
+
+def tangent_method(
+        collar: pd.DataFrame, survey: pd.DataFrame, newinterval=10, drop_intermediate=True
+) -> pd.DataFrame:
+    """Compute well path using tangent method at regular intervals."""
+    # Implementation goes here
     if not hasattr(newinterval, "__len__"):  # is it an array?
         newdepth = np.arange(
             0,
@@ -105,69 +61,125 @@ def desurvey(
         )
     else:
         newdepth = newinterval
+    depth = survey[DhConfig.depth].values
+    azimuth = survey[DhConfig.azimuth].values
+    dip = survey[DhConfig.dip].values
+    vertices = [[collar[DhConfig.x].values[0], collar[DhConfig.y].values[0], collar[DhConfig.z].values[0]]]
+    for i in range(0, len(survey)):
+        newpos =vertices[-1][:]
+        delta_depth = depth[i] - depth[i - 1]
+        newpos[0] += delta_depth * np.sin(np.deg2rad(90 - dip[i - 1])) * np.sin(np.deg2rad(azimuth[i - 1]))
+        newpos[1] += delta_depth * np.sin(np.deg2rad(90 - dip[i - 1])) * np.cos(np.deg2rad(azimuth[i - 1]))
+        newpos[2] += delta_depth * np.cos(np.deg2rad(90 - dip[i - 1]))
+        vertices.append(newpos)
+    vertices = np.array(vertices)
+    seg_vecs = np.diff(vertices, axis=0)  # segment vectors
+    seg_lens = np.linalg.norm(seg_vecs, axis=1)     # segment lengths
+    # cumulative length along the polyline
+    cumlen = np.concatenate(([0], np.cumsum(seg_lens)))
+    seg_idx = np.searchsorted(cumlen, newdepth, side="right") - 1
+    seg_idx = np.clip(seg_idx, 0, len(seg_vecs) - 1)
+    # local distance inside each segment
+    seg_start_s = cumlen[seg_idx]
+    local_s = newdepth - seg_start_s
+    t = local_s / seg_lens[seg_idx]                 # interpolation factor 0–1
 
-    ## extrapolate using the bottom azimuth value.. its better than nothing
-    # convert from dip to inclination
-    # dip is measured from the horizontal, inclination is measured from the vertical
-    # if positive dip down, then inclination = 90 - dip
-    # if negative dip down, then inclination = 90 + dip
-    # if inclination is provided not dip do nothing
-    incl = survey[DhConfig.dip].to_numpy() + np.deg2rad(90)
-    if not DhConfig.positive_dips_down:
-        print("positive dips down")
-        incl = np.deg2rad(90) - survey[DhConfig.dip].to_numpy()
-    if DhConfig.dip_is_inclination:
-        print("dip is inclination")
-        incl = survey[DhConfig.dip].to_numpy()
-    incl_fill_value = incl.tolist()[-1]
-    azi_fill_value = survey[DhConfig.azimuth].to_list()[-1]
+    # interpolate points
+    points = vertices[seg_idx] + seg_vecs[seg_idx] * t[:, None]
+    return points
 
-    if survey.shape[0] > 1:
-        azi_interp = interp1d(
-            survey[DhConfig.depth].to_numpy(),
-            survey[DhConfig.azimuth].to_numpy(),
-            fill_value=azi_fill_value,
-            bounds_error=False,
+
+def straight_path_from_single_survey(collar, survey, newinterval=10):
+    """Compute straight drillhole path from collar and one survey station, resampled at regular intervals."""
+    # Extract collar coordinates
+    depth = survey[DhConfig.depth]
+
+    if not hasattr(newinterval, "__len__"):  # is it an array?
+        newdepth = np.arange(
+            0,
+            collar[DhConfig.total_depth].max(),
+            newinterval,
         )
-
-        incli_interp = interp1d(
-            survey[DhConfig.depth].to_numpy(),
-            incl,
-            fill_value=incl_fill_value,
-            bounds_error=False,
-        )
-        azi = azi_interp(newdepth)
-        incli = incli_interp(newdepth)
     else:
-        azi = np.zeros_like(newdepth) + azi_fill_value
-        incli = np.zeros_like(newdepth) + incl_fill_value
+        newdepth = newinterval
+    new_trend = [survey[DhConfig.azimuth].to_list()[0]] * len(newdepth)
+    new_plunge = [survey[DhConfig.dip].to_list()[0]] * len(newdepth)
+    resampled_survey = pd.DataFrame(
+        np.vstack([newdepth, new_trend, new_plunge]).T,
+        columns=[DhConfig.depth, DhConfig.azimuth, DhConfig.dip],
+    )
+    trend = survey[DhConfig.azimuth].values[0]  # .apply(math.radians)
+    plunge = survey[DhConfig.dip].values[0]  # + #.apply(math.radians)
+    unit_vector = trendandplunge2vector(
+        [trend],[plunge])
+    dx = newdepth*unit_vector[0,0]
+    dy = newdepth*unit_vector[0,1]
+    dz = newdepth*unit_vector[0,2]
+
+    resampled_survey["xm"] = dx
+    resampled_survey["ym"] = dy
+    resampled_survey["zm"] = dz
+    resampled_survey["x_from"] = resampled_survey["xm"] + collar[DhConfig.x].values[0]
+    resampled_survey["y_from"] = resampled_survey["ym"] + collar[DhConfig.y].values[0]
+    resampled_survey["z_from"] = -resampled_survey["zm"] + collar[DhConfig.z].values[0]
+    resampled_survey["x_to"] = resampled_survey["xm"] + collar[DhConfig.x].values[0] + newinterval
+    resampled_survey["y_to"] = resampled_survey["ym"] + collar[DhConfig.y].values[0] + newinterval
+    resampled_survey["z_to"] = -resampled_survey["zm"] + collar[DhConfig.z].values[0] - newinterval
+    resampled_survey["x_mid"] = (
+        resampled_survey["xm"] + collar[DhConfig.x].values[0] + 0.5 * newinterval
+    )
+    resampled_survey["y_mid"] = (
+        resampled_survey["ym"] + collar[DhConfig.y].values[0] + 0.5 * newinterval
+    )
+    resampled_survey["z_mid"] = (
+        -resampled_survey["zm"] + collar[DhConfig.z].values[0] - 0.5 * newinterval
+    )
+    resampled_survey["x"] = resampled_survey["x_mid"]
+    resampled_survey["y"] = resampled_survey["y_mid"]
+    resampled_survey["z"] = resampled_survey["z_mid"]
+    return resampled_survey.drop(columns=["xm", "ym", "zm"])
+
+
+def minimum_curvature(
+    collar: pd.DataFrame, survey: pd.DataFrame, newinterval=10, drop_intermediate=True
+) -> pd.DataFrame:
+    """Compute well path using SLERP-based integration at regular intervals."""
+    # Convert degrees to radians
+    trend = survey[DhConfig.azimuth].values  # .apply(math.radians)
+    plunge = survey[DhConfig.dip].values  # + #.apply(math.radians)
+
+    if not hasattr(newinterval, "__len__"):  # is it an array?
+        newdepth = np.arange(
+            0,
+            collar[DhConfig.total_depth].max(),
+            newinterval,
+        )
+    else:
+        newdepth = newinterval
+    unit_vectors = trendandplunge2vector(trend, plunge)
+    new_vectors = slerp(unit_vectors, survey[DhConfig.depth].values, newdepth)
+    new_trend, new_plunge = vector2trendandplunge(new_vectors)
+    # Convert back to azimuth and plunge
+    new_inclination = np.deg2rad(90) - new_plunge
 
     resampled_survey = pd.DataFrame(
-        np.vstack([newdepth, incli, azi]).T,
-        columns=[DhConfig.depth, DhConfig.dip, DhConfig.azimuth],
+        np.vstack([newdepth, new_trend, new_plunge]).T,
+        columns=[DhConfig.depth, DhConfig.azimuth, DhConfig.dip],
     )
-    if DhConfig.dip_is_inclination:
-        resampled_survey[DhConfig.dip] = resampled_survey[DhConfig.dip]
-    else:
-        if DhConfig.positive_dips_down:
-            resampled_survey[DhConfig.dip] = resampled_survey[DhConfig.dip] - np.deg2rad(90)
-        else:
-            resampled_survey[DhConfig.dip] = np.deg2rad(90) - resampled_survey[DhConfig.dip]
 
     resampled_survey["xm"] = 0.0
     resampled_survey["ym"] = 0.0
     resampled_survey["zm"] = 0.0
-
     mask = np.vstack(
         [
             np.arange(0, resampled_survey.shape[0] - 1),
             np.arange(1, resampled_survey.shape[0]),
         ]
     ).T
-    i1 = resampled_survey.loc[mask[:, 0], DhConfig.dip].to_numpy()
-    i2 = resampled_survey.loc[mask[:, 1], DhConfig.dip].to_numpy()
-    a1 = resampled_survey.loc[mask[:, 0], DhConfig.azimuth].to_numpy()
-    a2 = resampled_survey.loc[mask[:, 1], DhConfig.azimuth].to_numpy()
+    i1 = new_inclination[mask[:, 0]]
+    i2 = new_inclination[mask[:, 1]]
+    a1 = new_trend[mask[:, 0]]
+    a2 = new_trend[mask[:, 1]]
     # distance between the two points
     CL = (
         resampled_survey.loc[mask[:, 1], DhConfig.depth].to_numpy()
@@ -210,7 +222,8 @@ def desurvey(
     resampled_survey["x"] = resampled_survey["x_mid"]
     resampled_survey["y"] = resampled_survey["y_mid"]
     resampled_survey["z"] = resampled_survey["z_mid"]
-
+    resampled_survey[DhConfig.azimuth] = np.rad2deg(new_trend) % 360
+    resampled_survey[DhConfig.dip] = np.rad2deg(new_plunge)
     if drop_intermediate:
         return resampled_survey.drop(columns=["xm", "ym", "zm"])
     else:
