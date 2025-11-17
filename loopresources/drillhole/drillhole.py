@@ -400,8 +400,9 @@ class DrillHole:
             DataFrame of intersection points with columns: depth, x, y, z
         """
         trace = self.trace(step)
-        return trace.find_implicit_function_intersection(function)
-
+        df= trace.find_implicit_function_intersection(function)
+        df[DhConfig.holeid] = self.hole_id
+        return df
     def depth_at(self, x: float, y: float, z: float) -> float:
         """Return depth along hole closest to a given XYZ point.
 
