@@ -1,4 +1,4 @@
-# Loop.Resouces
+# Loop.Resources
 
 A module for resource estimation and associated utility functions
 
