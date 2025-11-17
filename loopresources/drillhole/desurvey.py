@@ -165,9 +165,10 @@ def minimum_curvature(
     unit_vectors = trendandplunge2vector(trend, plunge)
     new_vectors = slerp(unit_vectors, survey[DhConfig.depth].values, newdepth)
     new_trend, new_plunge = vector2trendandplunge(new_vectors)
-    # Convert back to azimuth and plunge
-    new_inclination = np.deg2rad(90) - new_plunge
-
+    # Assume plunge is defined as negative down
+    # Convert to inclination as angle from vertical 0 being down
+    new_inclination = np.deg2rad(90) + new_plunge
+    
     resampled_survey = pd.DataFrame(
         np.vstack([newdepth, new_trend, new_plunge]).T,
         columns=[DhConfig.depth, DhConfig.azimuth, DhConfig.dip],
@@ -212,10 +213,10 @@ def minimum_curvature(
     resampled_survey["zm"] = resampled_survey["zm"].cumsum()
     resampled_survey["x_from"] = resampled_survey["xm"] + collar[DhConfig.x].values[0]
     resampled_survey["y_from"] = resampled_survey["ym"] + collar[DhConfig.y].values[0]
-    resampled_survey["z_from"] = -resampled_survey["zm"] + collar[DhConfig.z].values[0]
+    resampled_survey["z_from"] = resampled_survey["zm"] + collar[DhConfig.z].values[0]
     resampled_survey["x_to"] = resampled_survey["xm"] + collar[DhConfig.x].values[0] + newinterval
     resampled_survey["y_to"] = resampled_survey["ym"] + collar[DhConfig.y].values[0] + newinterval
-    resampled_survey["z_to"] = -resampled_survey["zm"] + collar[DhConfig.z].values[0] - newinterval
+    resampled_survey["z_to"] = resampled_survey["zm"] + collar[DhConfig.z].values[0] - newinterval
     resampled_survey["x_mid"] = (
         resampled_survey["xm"] + collar[DhConfig.x].values[0] + 0.5 * newinterval
     )
