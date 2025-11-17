@@ -604,7 +604,7 @@ class DrillholeDatabase:
         survey_raw = pd.read_csv(survey_file, **kwargs)
         collar_df = collar_raw.rename(columns=collar_columns)
         survey_df = survey_raw.rename(columns=survey_columns)
-        
+
         # Remove rows with missing essential data
         required_collar_cols = [
             DhConfig.holeid,
@@ -647,7 +647,10 @@ class DrillholeDatabase:
         missing_holes = survey_holes - collar_holes
         if missing_holes:
             raise ValueError(f"Survey holes not found in collar: {missing_holes}")
-
+        if DhConfig.positive_dips_down:
+            self.survey.loc[self.survey[DhConfig.dip] < 0, DhConfig.dip] = -self.survey.loc[
+                self.survey[DhConfig.dip] < 0, DhConfig.dip
+            ]
     def _normalize_angles(self):
         """Convert angles to radians if they appear to be in degrees."""
         # Work on a copy of the survey DataFrame and write back via the property
