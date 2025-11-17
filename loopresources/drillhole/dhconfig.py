@@ -22,13 +22,10 @@ class DhConfig(object):
         z (str): Column name for elevation / reduced level. Default "RL".
         azimuth (str): Column name for azimuth. Default "AZIMUTH".
         dip (str): Column name for dip or inclination. Default "DIP".
-        add_ninty (bool): If True, add 90° to azimuth when required. Default True.
-            (Note: the attribute name is kept for backwards compatibility.)
         depth (str): Column name for depth along hole. Default "DEPTH".
         total_depth (str): Column name for reported total depth. Default "DEPTH".
         debug (bool): Debugging flag. Default False.
         positive_dips_down (bool): Interpret positive dip values as pointing downwards.
-        dip_is_inclination (bool): If True, dip values are treated as inclination (0 = horizontal).
     """
 
     holeid = "HOLEID"
@@ -39,12 +36,10 @@ class DhConfig(object):
     z = "RL"
     azimuth = "AZIMUTH"
     dip = "DIP"
-    add_ninty = False
     depth = "DEPTH"
     total_depth = "DEPTH"
     debug = False
     positive_dips_down = True
-    dip_is_inclination = False
     alpha = "ALPHA"
     beta = "BETA"
 
