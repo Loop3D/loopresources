@@ -38,8 +38,7 @@ classifiers = [
   "Topic :: Scientific/Engineering",
   "Topic :: Scientific/Engineering :: GIS",
 ]
-dynamic = [ "version" ]
-
+version = "0.0.1"
 dependencies = [
   "numpy>=1.18",
   "pandas",
@@ -61,8 +60,7 @@ optional-dependencies.dev = [
 optional-dependencies.loop = [ "loopstructural>=1.6.21" ]
 optional-dependencies.vtk = [ "pyvista" ]
 
-[tool.setuptools.dynamic]
-version = "0.0.1"
+
 [tool.setuptools.packages.find]
 include = [ 'loopresources', 'loopresources.*' ]
 
