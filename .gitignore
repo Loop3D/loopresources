@@ -174,3 +174,4 @@ docs/source/_autosummary/*
 # Documentation build artifacts
 docs/source/_build/
 docs/source/modules.rst
+docs/source/_auto_examples/*
