@@ -62,8 +62,7 @@ optional-dependencies.loop = [ "loopstructural>=1.6.21" ]
 optional-dependencies.vtk = [ "pyvista" ]
 
 [tool.setuptools.dynamic]
-version = { attr = 'loopresources.version.__version__' }
-
+version = "0.0.1"
 [tool.setuptools.packages.find]
 include = [ 'loopresources', 'loopresources.*' ]
 
