@@ -45,12 +45,13 @@ class DrillHoleTrace:
         )
 
         def orientation_interpolator(depth):
-            new_vectors = slerp(unit_vectors, trace_points[DhConfig.depth], depth)
+            
+            new_vectors = slerp(unit_vectors, trace_points[DhConfig.depth].values, depth)
             new_azimuth, new_dip = vector2trendandplunge(new_vectors)
             return new_azimuth, new_dip
+
         self.orientation_interpolator = orientation_interpolator
-        
-        
+
     def __call__(self, newinterval: Optional[Union[np.ndarray, float]] = 1.0):
         """Return resampled trace as a DataFrame for given interval or depths."""
         if not hasattr(newinterval, "__len__"):  # is it an array?
@@ -61,7 +62,7 @@ class DrillHoleTrace:
             )
         else:  # if its an array just use the array values
             newdepth = newinterval
-        #avoid duplicate call
+        # avoid duplicate call
         azi, dip = self.orientation_interpolator(newdepth)
         return pd.DataFrame(
             {
@@ -400,9 +401,10 @@ class DrillHole:
             DataFrame of intersection points with columns: depth, x, y, z
         """
         trace = self.trace(step)
-        df= trace.find_implicit_function_intersection(function)
+        df = trace.find_implicit_function_intersection(function)
         df[DhConfig.holeid] = self.hole_id
         return df
+
     def depth_at(self, x: float, y: float, z: float) -> float:
         """Return depth along hole closest to a given XYZ point.
 

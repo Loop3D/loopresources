@@ -1482,6 +1482,8 @@ class DrillholeDatabase:
                     desurveyed_intervals.append(hole_intervals)
             except Exception as e:
                 logger.warning(f"Failed to desurvey intervals for hole {hole_id}: {e}")
+                if DhConfig.debug:
+                    raise e
                 continue
 
         if not desurveyed_intervals:

@@ -18,7 +18,15 @@ def slerp(unit_vectors,  depth, newdepth):
     new_unit_vectors: array-like
         Interpolated unit vectors at new depth values.
     """
+    try:
 
+        depth = np.asarray(depth)
+        newdepth = np.asarray(newdepth)
+        unit_vectors = np.asarray(unit_vectors)
+    except Exception as e:
+        raise ValueError(
+            "Input arrays could not be converted to numpy arrays."
+        ) from e
     # Precompute dot products and dogleg angles
     dot_products = np.einsum('ij,ij->i', unit_vectors[:-1], unit_vectors[1:])
     dot_products = np.clip(dot_products, -1.0, 1.0)  # Clamp for acos
@@ -29,7 +37,6 @@ def slerp(unit_vectors,  depth, newdepth):
     segment_idx = np.clip(
         segment_idx, 0, len(depth) - 2
     )  # ensure valid range
-
     # Fraction along segment
     f = (newdepth - depth[segment_idx]) / (
         depth[segment_idx + 1] - depth[segment_idx]
