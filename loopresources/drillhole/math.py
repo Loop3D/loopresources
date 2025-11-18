@@ -34,10 +34,11 @@ def slerp(unit_vectors,  depth, newdepth):
     f = (newdepth - depth[segment_idx]) / (
         depth[segment_idx + 1] - depth[segment_idx]
     )
-
+    denominator = np.sin(dogleg_angles[segment_idx])
+    denominator[denominator == 0] = 1e-6  # Prevent division by zero
     # SLERP terms
-    term1 = np.sin((1 - f) * dogleg_angles[segment_idx]) / np.sin(dogleg_angles[segment_idx])
-    term2 = np.sin(f * dogleg_angles[segment_idx]) / np.sin(dogleg_angles[segment_idx])
+    term1 = np.sin((1 - f) * dogleg_angles[segment_idx]) / denominator
+    term2 = np.sin(f * dogleg_angles[segment_idx]) / denominator
 
     # Handle zero dogleg (avoid division by zero)
     zero_dl_mask = dogleg_angles[segment_idx] == 0
