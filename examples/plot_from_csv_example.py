@@ -29,17 +29,17 @@ db = DrillholeDatabase.from_csv(
     collar_file=collar_file,
     survey_file=survey_file,
     collar_columns={
-        "holeid": "HOLE_ID",  # Map 'HOLE_ID' column to holeid
-        "x": "X_MGA",  # Map 'X_MGA' column to x
-        "y": "Y_MGA",  # Map 'Y_MGA' column to y
-        "z": "Z_MGA",  # Map 'Z_MGA' column to z
-        "total_depth": "DEPTH",  # Map 'DEPTH' column to total_depth
+        "HOLE_ID": DhConfig.holeid,  # Map 'HOLE_ID' column to holeid
+        "X_MGA": DhConfig.x,  # Map 'X_MGA' column to x
+        "Y_MGA": DhConfig.y,  # Map 'Y_MGA' column to y
+        "Z_MGA": DhConfig.z,  # Map 'Z_MGA' column to z
+        "DEPTH": DhConfig.total_depth,  # Map 'DEPTH' column to total_depth
     },
     survey_columns={
-        "holeid": "Drillhole ID",  # Map 'Drillhole ID' column to holeid
-        "depth": "Depth",  # Map 'Depth' column to depth
-        "azimuth": "Azimuth",  # Map 'Azimuth' column to azimuth
-        "dip": "Dip",  # Map 'Dip' column to dip
+        "Drillhole ID": DhConfig.holeid,  # Map 'Drillhole ID' column to holeid
+        "Depth": DhConfig.depth,  # Map 'Depth' column to depth
+        "Azimuth": DhConfig.azimuth,  # Map 'Azimuth' column to azimuth
+        "Dip": DhConfig.dip,  # Map 'Dip' column to dip
     },
 )
 
@@ -98,9 +98,7 @@ print(f"Total survey records: {len(db.survey)}")
 # Show coordinate ranges
 extent = db.extent()
 print("\nCoordinate Ranges:")
-print(f"X (Easting): {extent[0]:.1f} to {extent[1]:.1f}")
-print(f"Y (Northing): {extent[2]:.1f} to {extent[3]:.1f}")
-print(f"Z (Elevation): {extent[4]:.1f} to {extent[5]:.1f}")
+print(extent)
 
 ###############################################################################
 # Access Individual Drillholes

@@ -109,12 +109,12 @@ try:
     print(f"  Points: {tube.n_points}")
     print(f"  Cells: {tube.n_cells}")
     print(f"  Cell data arrays: {list(tube.cell_data.keys())}")
-    print(f"  Lithology values: {tube.cell_data['lithology_LITHO']}")
+    print(f"  Lithology values: {tube.cell_data['LITHO']}")
     print()
 
     # For visualization (requires display):
     # plotter = pv.Plotter()
-    # plotter.add_mesh(tube, scalars='lithology_LITHO', cmap='viridis')
+    # plotter.add_mesh(tube, scalars='LITHO', cmap='viridis')
     # plotter.show()
 
 except ImportError:
@@ -123,7 +123,7 @@ except ImportError:
     print()
     print("Example usage:")
     print("  tube = hole.vtk(newinterval=1.0, properties=['lithology'])")
-    print("  # Properties attached as cell data: lithology_LITHO")
+    print("  # Properties attached as cell data: LITHO")
 
 ###############################################################################
 # Example 5: Multiple properties
@@ -132,7 +132,7 @@ except ImportError:
 # You can attach multiple properties at once
 print("Multiple properties example:")
 print("  tube = hole.vtk(newinterval=1.0, properties=['lithology', 'assays'])")
-print("  # Creates cell data: lithology_LITHO, assays_AU_ppm, assays_CU_pct")
+print("  # Creates cell data: LITHO, assays_AU_ppm, assays_CU_pct")
 print()
 
 # For entire database:

@@ -175,9 +175,7 @@ plt.show()
 
 extent = db.extent()
 print("\nDatabase extent (xmin, xmax, ymin, ymax, zmin, zmax):")
-print(f"  X: {extent[0]:.1f} to {extent[1]:.1f}")
-print(f"  Y: {extent[2]:.1f} to {extent[3]:.1f}")
-print(f"  Z: {extent[4]:.1f} to {extent[5]:.1f}")
+print(extent)
 
 print(
     f"\nTotal depth range: {collar[DhConfig.total_depth].min():.1f} to {collar[DhConfig.total_depth].max():.1f}m"
