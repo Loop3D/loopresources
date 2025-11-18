@@ -3,6 +3,8 @@
 import numpy as np
 import pandas as pd
 
+from loopresources.drillhole.dhconfig import DhConfig
+
 
 def alphaBetaGamma2vector(
     df: pd.DataFrame,
@@ -63,12 +65,6 @@ def alphaBetaGamma2vector(
 
 def alphaBeta2vector(
     df: pd.DataFrame,
-    column_map={
-        "BETA": "BETA",
-        "ALPHA": "ALPHA",
-        "DIP": "DIP",
-        "AZIMUTH": "AZIMUTH",
-    },
     inplace=False,
 ) -> pd.DataFrame:
     """Calculate the plane vector from core orientation angles.
@@ -92,27 +88,27 @@ def alphaBeta2vector(
     if not inplace:
         df = df.copy()
     plane_local = np.zeros((len(df), 3))
-    plane_local[:, 0] = np.cos(np.deg2rad(df[column_map["BETA"]])) * np.cos(
-        np.deg2rad(df[column_map["ALPHA"]])
+    plane_local[:, 0] = np.cos(np.deg2rad(df[DhConfig.beta])) * np.cos(
+        np.deg2rad(df[DhConfig.alpha])
     )
-    plane_local[:, 1] = np.sin(np.deg2rad(df[column_map["BETA"]])) * np.cos(
-        np.deg2rad(df[column_map["ALPHA"]])
+    plane_local[:, 1] = np.sin(np.deg2rad(df[DhConfig.beta])) * np.cos(
+        np.deg2rad(df[DhConfig.alpha])
     )
-    plane_local[:, 2] = np.sin(np.deg2rad(df[column_map["ALPHA"]]))
+    plane_local[:, 2] = np.sin(np.deg2rad(df[DhConfig.alpha]))
 
     Z_rot = np.zeros((len(df), 3, 3))
     Y_rot = np.zeros((len(df), 3, 3))
 
-    Y_rot[:, 0, 0] = np.cos(np.deg2rad(90 + df[column_map["DIP"]]))
-    Y_rot[:, 2, 0] = -np.sin(np.deg2rad(90 + df[column_map["DIP"]]))
+    Y_rot[:, 0, 0] = np.cos(np.deg2rad(90 + df[DhConfig.dip]))
+    Y_rot[:, 2, 0] = -np.sin(np.deg2rad(90 + df[DhConfig.dip]))
     Y_rot[:, 1, 1] = 1
-    Y_rot[:, 0, 2] = np.sin(np.deg2rad(90 + df[column_map["DIP"]]))
-    Y_rot[:, 2, 2] = np.cos(np.deg2rad(90 + df[column_map["DIP"]]))
+    Y_rot[:, 0, 2] = np.sin(np.deg2rad(90 + df[DhConfig.dip]))
+    Y_rot[:, 2, 2] = np.cos(np.deg2rad(90 + df[DhConfig.dip]))
 
-    Z_rot[:, 0, 0] = np.cos(np.deg2rad(90 - df[column_map["AZIMUTH"]]))
-    Z_rot[:, 0, 1] = -np.sin(np.deg2rad(90 - df[column_map["AZIMUTH"]]))
-    Z_rot[:, 1, 0] = np.sin(np.deg2rad(90 - df[column_map["AZIMUTH"]]))
-    Z_rot[:, 1, 1] = np.cos(np.deg2rad(90 - df[column_map["AZIMUTH"]]))
+    Z_rot[:, 0, 0] = np.cos(np.deg2rad(90 - df[DhConfig.azimuth]))
+    Z_rot[:, 0, 1] = -np.sin(np.deg2rad(90 - df[DhConfig.azimuth]))
+    Z_rot[:, 1, 0] = np.sin(np.deg2rad(90 - df[DhConfig.azimuth]))
+    Z_rot[:, 1, 1] = np.cos(np.deg2rad(90 - df[DhConfig.azimuth]))
     Z_rot[:, 2, 2] = 1
     plane = plane_local[:, :, None]
     vector = Z_rot @ Y_rot @ plane

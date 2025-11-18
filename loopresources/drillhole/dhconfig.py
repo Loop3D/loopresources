@@ -42,7 +42,7 @@ class DhConfig(object):
     positive_dips_down = True
     alpha = "ALPHA"
     beta = "BETA"
-
+    gamma = "GAMMA"
     @classmethod
     def from_config(cls, config):
         """Create a DhConfig from a mapping-like config object.
