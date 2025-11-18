@@ -5,9 +5,9 @@ Tutorials
    :maxdepth: 2
    :caption: Contents:
 
+   00-desurvey
    01-basic-usage
-   02-required-columns
+   02-dhconfig
    03-advanced-options
-   04-complete-example
-   07-numerical-data
-   08-file-database
+   04-filtering
+   05-file-database

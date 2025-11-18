@@ -1,4 +1,4 @@
-# 6 - File Database Backend for `DrillholeDatabase` 
+# 6 - File Database Backend 
 
 This tutorial demonstrates how to use the **file-based (SQLite) backend** for
 `DrillholeDatabase`. It covers two common workflows:
@@ -9,14 +9,7 @@ This tutorial demonstrates how to use the **file-based (SQLite) backend** for
 
 ---
 
-## 📋 Prerequisites
-
-- Python environment with dependencies installed (`requirements.txt`)
-- `loopresources` package available in your environment
-
----
-
-## ⚡ Quick Overview
+## Quick Overview
 
 - **Memory backend** (default): stores tables in RAM using pandas DataFrames
 - **File backend**: stores tables in an SQLite file and fetches data on demand
@@ -25,7 +18,7 @@ This tutorial demonstrates how to use the **file-based (SQLite) backend** for
 
 ---
 
-## 1️⃣ Creating a File-Backed Database
+## Creating a File-Backed Database
 
 ### Option A — Create Directly with File Backend
 
@@ -74,7 +67,7 @@ db_mem.save_to_database("drillholes.db", project_name="Project_A")
 
 ---
 
-## 2️⃣ Loading or Linking to an Existing File Database
+## Loading or Linking to an Existing File Database
 
 ### Load or Link Patterns
 
@@ -95,7 +88,7 @@ db_linked = DrillholeDatabase.link_to_database(
 
 ---
 
-## 🔍 Working with Holes (Optimized Access)
+## Working with Holes (Optimized Access)
 
 ```python
 dh = db_linked["DH001"]
@@ -112,7 +105,7 @@ print(dh.survey)  # Only DH001 survey rows
 
 ---
 
-## 3️⃣ Multiple Projects in One File
+## Multiple Projects in One File
 
 ```python
 db1.save_to_database("multi.db", project_name="Project_A")
@@ -124,7 +117,7 @@ db_b = DrillholeDatabase.from_database("multi.db", project_name="Project_B")
 
 ---
 
-## 🛠️ Practical Tips & Troubleshooting
+## Practical Tips & Troubleshooting
 
 - Run: `python demo_file_database.py` for full examples
 - Run tests: `pytest tests/test_file_database.py -v`
@@ -133,7 +126,7 @@ db_b = DrillholeDatabase.from_database("multi.db", project_name="Project_B")
 
 ---
 
-## 🧬 Schema & Behavior Notes
+## Schema & Behavior Notes
 
 - SQLite file includes:
   - `projects` table
@@ -143,7 +136,7 @@ db_b = DrillholeDatabase.from_database("multi.db", project_name="Project_B")
 
 ---
 
-## ✅ Conclusion
+## Conclusion
 
 The file backend is a drop-in alternative to the in-memory backend when:
 

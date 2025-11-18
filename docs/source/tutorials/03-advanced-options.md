@@ -1,4 +1,4 @@
-# 3 — Advanced Options
+# 4 - Advanced Options
 
 This tutorial covers advanced options and features available via `from_csv()`.
 

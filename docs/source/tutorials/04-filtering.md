@@ -1,4 +1,4 @@
-# 5 – Preprocessing and Filtering Guide for `DrillholeDatabase`
+# 5 – Preprocessing and Filtering
 
 This guide explains how to clean numeric columns and filter rows in a `DrillholeDatabase` to prepare data for analysis. It focuses:
 

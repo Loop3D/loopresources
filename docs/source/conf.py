@@ -43,6 +43,8 @@ extensions = [
     "sphinx_gallery.gen_gallery",
     # citations
     "myst_parser",
+    "pyvista.ext.plot_directive",
+    "pyvista.ext.viewer_directive",
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -95,3 +97,15 @@ html_theme = "pydata_sphinx_theme"
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ["_static"]
+from sphinx_gallery.sorting import ExampleTitleSortKey
+import pyvista
+
+pyvista.BUILDING_GALLERY = True
+
+sphinx_gallery_conf = {
+    "examples_dirs": ["../../examples/"],
+    "gallery_dirs": ["_auto_examples/"],  # path to where to save gallery generated output
+    "image_scrapers": ("matplotlib", "pyvista"),
+    "within_subsection_order": ExampleTitleSortKey,
+    "reference_url": {"loopresources": None},
+}

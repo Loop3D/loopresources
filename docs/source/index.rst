@@ -22,11 +22,13 @@ It provides a database interface for managing drillhole data with a vision for e
 and subsequent resource modelling.
 
 To install LoopResources, use pip:
+
 .. code-block:: bash
 
    pip install loopresources
 
 optional dependencies for VTK support can be installed via:
+
 .. code-block:: bash
 
    pip install loopresources[vtk]
@@ -38,21 +40,36 @@ The library has three main goals:
 
 1. **Provide a Pythonic interface for drillhole databases**
 
-   .. code-block:: python
+.. pyvista-plot::
+   :context:
+   :include-source: true
+   :force_static:
 
-      from loopresources import DrillholeDatabase
-      import pandas as pd
+   import pandas as pd
+   from loopresources import DrillholeDatabase
+   import pyvista as pv
+   import numpy as np
 
-      db = DrillholeDatabase.from_csv(
-          survey_csv="survey.csv",
-          collar_csv="collar.csv",
-          assay_csv="assay.csv",
-      )
-      db.add_table("lithology", pd.read_csv(lithology_df))
-      desurveyed_lithology = db.desurvey_intervals("lithology")
-      vtk_objects = []
-      for h in db:
-          vtk_objects.append(h.to_vtk())
+   collar = pd.DataFrame({
+      "HOLEID": ["DH1"],
+      "EAST": [0],
+      "NORTH": [0],
+      "RL": [0],
+      "DEPTH": [100],
+   })
+   survey = pd.DataFrame({
+      "HOLEID": ["DH1", "DH1", "DH1"],
+      "DEPTH": [0, 50, 100],
+      "AZIMUTH": [0, 0, 0],
+      "DIP": [-10, -12, -50],
+   })
+
+   dhdb = DrillholeDatabase(survey=survey, collar=collar)
+   p = pv.Plotter()
+   p.add_points(np.array([[0,0,0]]), color="red", point_size=10)
+   p.add_mesh(dhdb["DH1"].vtk())
+   p.add_axes()
+   p.show()
 
 
 2. **Integrate with implicit geological modelling via LoopStructural**
