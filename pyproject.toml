@@ -5,6 +5,7 @@ requires = [ "setuptools" ]
 
 [project]
 name = "loopresources"
+version = "0.0.1"
 description = "Open source 3D geological resource modelling"
 readme = "README.md"
 keywords = [
@@ -38,7 +39,6 @@ classifiers = [
   "Topic :: Scientific/Engineering",
   "Topic :: Scientific/Engineering :: GIS",
 ]
-version = "0.0.1"
 dependencies = [
   "numpy>=1.18",
   "pandas",
@@ -59,7 +59,6 @@ optional-dependencies.dev = [
 ]
 optional-dependencies.loop = [ "loopstructural>=1.6.21" ]
 optional-dependencies.vtk = [ "pyvista" ]
-
 
 [tool.setuptools.packages.find]
 include = [ 'loopresources', 'loopresources.*' ]
