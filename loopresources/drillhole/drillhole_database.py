@@ -873,7 +873,7 @@ class DrillholeDatabase:
         self,
         name: str,
         df: Union[pd.DataFrame, str],
-        column_mapping: Optional[Dict[str, str]] = None,
+        column_mapping: Dict[str, str] = {},
     ):
         """Register a new interval table.
 
@@ -885,32 +885,15 @@ class DrillholeDatabase:
             Interval data or path to file with required columns: HOLE_ID, FROM, TO
         column_mapping : dict, optional
             Mapping of CSV column names to required DrillholeDatabase columns.
-            Keys should be DhConfig field names (holeid, sample_from, sample_to).
+            passes to pandas rename.
         """
         if isinstance(df, str):
             # Load from CSV file
             df = pd.read_csv(df)
-        if column_mapping is not None:
-            # Create mapping from config field names to actual column names
-            mapped_df = pd.DataFrame()
-            for config_field, csv_column in column_mapping.items():
-                # Get the actual DhConfig attribute value
-                config_col_name = getattr(DhConfig, config_field, config_field)
-                if csv_column not in df.columns:
-                    raise ValueError(
-                        f"Column '{csv_column}' specified in column_mapping not found in interval data. "
-                        f"Available columns: {list(df.columns)}"
-                    )
-                mapped_df[config_col_name] = df[csv_column]
-
-            # Add any remaining columns that weren't mapped
-            for col in df.columns:
-                if col not in column_mapping.values():
-                    mapped_df[col] = df[col]
-            df = mapped_df
+        
         if type(df) is not pd.DataFrame:
             raise TypeError("df must be a pandas DataFrame, or a path to a CSV file")
-        df = df.copy()
+        df = df.rename(columns=column_mapping)
 
         # Validate required columns
         required_cols = [DhConfig.holeid, DhConfig.sample_from, DhConfig.sample_to]
@@ -931,7 +914,7 @@ class DrillholeDatabase:
         self,
         name: str,
         df: Union[pd.DataFrame, str],
-        column_mapping: Optional[Dict[str, str]] = None,
+        column_mapping: Dict[str, str] = {},
     ):
         """Register a new point table.
 
@@ -943,33 +926,15 @@ class DrillholeDatabase:
             Point data or path to file with required columns: HOLE_ID, DEPTH
         column_mapping : dict, optional
             Mapping of CSV column names to required DrillholeDatabase columns.
-            Keys should be DhConfig field names (holeid, depth).
+            passes to pandas rename.
         """
         if isinstance(df, str):
             # Load from CSV file
             df = pd.read_csv(df)
-        if column_mapping is not None:
-            # Create mapping from config field names to actual column names
-            mapped_df = pd.DataFrame()
-            for config_field, csv_column in column_mapping.items():
-                # Get the actual DhConfig attribute value
-                config_col_name = getattr(DhConfig, config_field, config_field)
-                if csv_column not in df.columns:
-                    raise ValueError(
-                        f"Column '{csv_column}' specified in column_mapping not found in point data. "
-                        f"Available columns: {list(df.columns)}"
-                    )
-                mapped_df[config_col_name] = df[csv_column]
-
-            # Add any remaining columns that weren't mapped
-            for col in df.columns:
-                if col not in column_mapping.values():
-                    mapped_df[col] = df[col]
-            df = mapped_df
         if type(df) is not pd.DataFrame:
             raise TypeError("df must be a pandas DataFrame, or a path to a CSV file")
-        df = df.copy()
-
+        df = df.rename(columns=column_mapping)
+        
         # Validate required columns
         required_cols = [DhConfig.holeid, DhConfig.depth]
         missing_cols = [col for col in required_cols if col not in df.columns]
