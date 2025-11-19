@@ -5,10 +5,6 @@
 
 LoopResources
 =====================================
-.. image:: static/loopresources_logo.png
-   :alt: LoopResources logo
-   :align: center
-   :width: 100%
 
 .. important::
    LoopResources is currently in active development. While the core functionality is stable, some APIs may change in future releases.
@@ -31,7 +27,7 @@ optional dependencies for VTK support can be installed via:
 
 .. code-block:: bash
 
-   pip install loopresources[vtk]
+   pip install loopresources[all]
 
 
 The library has three main goals:
