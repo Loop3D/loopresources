@@ -62,6 +62,8 @@ optional-dependencies.docs = [
   "sphinx",
   "sphinx-rtd-theme",
   "sphinx-gallery",
+  "myst-parser",
+  "pydata-sphinx-theme",
   "pyvista","loopstructuralvisualisation"
 ]
 optional-dependencies.vtk = [ "pyvista" ]
