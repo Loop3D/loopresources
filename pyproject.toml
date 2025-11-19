@@ -58,6 +58,11 @@ optional-dependencies.dev = [
   "sphinx",
   "sphinx-rtd-theme",
 ]
+optional-dependencies.docs = [
+  "sphinx",
+  "sphinx-rtd-theme",
+  "sphinx-gallery",
+]
 optional-dependencies.loop = [ "loopstructural>=1.6.21" ]
 optional-dependencies.vtk = [ "pyvista" ]
 

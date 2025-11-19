@@ -83,7 +83,7 @@ The library has three main goals:
    .. toctree::
       :hidden:
 
-      auto_examples/index
+      _auto_examples/index
       tutorials/index
 
    .. toctree::
