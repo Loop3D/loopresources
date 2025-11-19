@@ -97,12 +97,19 @@ class DrillHoleTrace:
         return self.trace_points.loc[closest_idx, DhConfig.depth]
 
     def find_implicit_function_intersection(
-        self, function: Callable[[ArrayLike], ArrayLike]
+        self, function: Callable[[ArrayLike], ArrayLike], intersection_value : float = 0.0
     ) -> pd.DataFrame:
         """Find intersection of drillhole trace with an implicit function.
 
         The provided function may be vectorised (accepting an Nx3 array and returning N values)
         or accept separate x,y,z arrays. Returns DataFrame with columns: depth, x, y, z.
+
+        Parameters
+        ----------
+        function : Callable[[ArrayLike], ArrayLike]
+            Implicit function defining the surface to intersect with
+        intersection_value : float, default 0.0
+            The value at which to find intersections (default is 0.0)
         """
         pts = self.trace_points
         coords = np.vstack([pts["x"].values, pts["y"].values, pts["z"].values]).T
@@ -125,7 +132,7 @@ class DrillHoleTrace:
         intersections = []
 
         # Handle exact zeros first
-        zero_idxs = np.where(np.isclose(values, 0.0))[0]
+        zero_idxs = np.where(np.isclose(values, intersection_value))[0]
         for idx in zero_idxs:
             d = float(depths[idx])
             intersections.append(
@@ -381,7 +388,7 @@ class DrillHole:
         return DrillHoleTrace(self, interval=step)
 
     def find_implicit_function_intersection(
-        self, function: Callable[[ArrayLike], ArrayLike], step: float = 1.0
+        self, function: Callable[[ArrayLike], ArrayLike], step: float = 1.0, intersection_value : float = 0.0
     ) -> pd.DataFrame:
         """Find intersection of drillhole trace with an implicit function.
 
@@ -401,7 +408,7 @@ class DrillHole:
             DataFrame of intersection points with columns: depth, x, y, z
         """
         trace = self.trace(step)
-        df = trace.find_implicit_function_intersection(function)
+        df = trace.find_implicit_function_intersection(function, intersection_value= intersection_value)
         df[DhConfig.holeid] = self.hole_id
         return df
 
