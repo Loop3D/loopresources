@@ -46,7 +46,7 @@ dependencies = [
   "tqdm",
   "LoopStructural>=1.6.21",
 ]
-optional-dependencies.all = [ "loop", "vtk" ]
+optional-dependencies.all = [ "vtk","docs" ]
 optional-dependencies.dev = [
   "black",
   "codespell",
@@ -62,8 +62,8 @@ optional-dependencies.docs = [
   "sphinx",
   "sphinx-rtd-theme",
   "sphinx-gallery",
+  "vtk"
 ]
-optional-dependencies.loop = [ "loopstructural>=1.6.21" ]
 optional-dependencies.vtk = [ "pyvista" ]
 
 [tool.setuptools.packages.find]
