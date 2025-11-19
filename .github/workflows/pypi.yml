@@ -1,36 +1,43 @@
-name: "📦 PyPI "
+name: Deploy to PYPI
+
 on:
   workflow_dispatch:
-
 jobs:
-  make_sdist:
-    name: Make SDist
+
+  sdist:
+    name: Build sdist
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Build SDist
+      - uses: actions/setup-python@v5
+      - name: Install dependencies
         run: |
+          python -m pip install --upgrade pip
           pip install build
-          python -m build
-
+      - name: Build sdist
+        run: python -m build --sdist
       - uses: actions/upload-artifact@v4
         with:
           name: dist
-          path: dist/
+          path: ./dist/*.tar.gz
 
-  upload_to_pypi:
-    needs: ["make_sdist"]
-    runs-on: "ubuntu-latest"
-
+  publish:
+    name: Publish wheels to pypi
+    runs-on: ubuntu-latest
+    permissions:
+      # IMPORTANT: this permission is mandatory for trusted publishing
+      id-token: write
+    needs: sdist
     steps:
       - uses: actions/download-artifact@v4
         with:
           name: dist
           path: dist
+      - name: copy to wheelhouse
+        run: |
+          # cp -r wheelhouse/*/*.whl dist
       - uses: pypa/gh-action-pypi-publish@release/v1
         with:
-          skip_existing: true
+          skip-existing: true
           verbose: true
-          user: ${{ secrets.PYPI_USERNAME }}
-          password: ${{ secrets.PYPI_PASSWORD }}
+          packages-dir: dist/
