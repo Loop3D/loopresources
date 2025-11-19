@@ -1,0 +1,616 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>2 - Basic Usage &#8212; LoopResources 0.0.1 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery.css?v=d2d258e8" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-binder.css?v=f4aeca0c" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-dataframe.css?v=2082cf3c" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-rendered-html.css?v=1277b6f3" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+    <script src="../_static/documentation_options.js?v=d45e8c67"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'tutorials/01-basic-usage';</script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="3 - DhConfig and required columns" href="02-dhconfig.html" />
+    <link rel="prev" title="1 - Desurveying Drillholes" href="00-desurvey.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="" />
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">LoopResources 0.0.1 documentation</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../_auto_examples/index.html">
+    Examples
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-external" href="https://www.loop3d.org">
+    Loop3d
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/loop3d/loopresources" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/loop3d" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-twitter-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">Twitter</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../_auto_examples/index.html">
+    Examples
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-external" href="https://www.loop3d.org">
+    Loop3d
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/loop3d/loopresources" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/loop3d" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-twitter-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">Twitter</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><p aria-level="2" class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="00-desurvey.html">1 - Desurveying Drillholes</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">2 - Basic Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="02-dhconfig.html">3 - DhConfig and required columns</a></li>
+<li class="toctree-l1"><a class="reference internal" href="03-advanced-options.html">4 - Advanced Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="04-filtering.html">5 – Preprocessing and Filtering</a></li>
+<li class="toctree-l1"><a class="reference internal" href="05-file-database.html">6 - File Database Backend</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="index.html" class="nav-link">Tutorials</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">2 - Basic Usage</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="basic-usage">
+<h1>2 - Basic Usage<a class="headerlink" href="#basic-usage" title="Link to this heading">#</a></h1>
+<p>This tutorial shows how to load collar and survey CSV files into a
+<code class="docutils literal notranslate"><span class="pre">DrillholeDatabase</span></code>.</p>
+<section id="loading-from-csv-files">
+<h2>Loading from CSV files<a class="headerlink" href="#loading-from-csv-files" title="Link to this heading">#</a></h2>
+</section>
+<section id="when-columns-match-dhconfig-names">
+<h2>When columns match DhConfig names<a class="headerlink" href="#when-columns-match-dhconfig-names" title="Link to this heading">#</a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">loopresources.drillhole</span><span class="w"> </span><span class="kn">import</span> <span class="n">DrillholeDatabase</span>
+
+<span class="n">db</span> <span class="o">=</span> <span class="n">DrillholeDatabase</span><span class="o">.</span><span class="n">from_csv</span><span class="p">(</span><span class="n">collar_file</span><span class="o">=</span><span class="s2">&quot;collar.csv&quot;</span><span class="p">,</span> <span class="n">survey_file</span><span class="o">=</span><span class="s2">&quot;survey.csv&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="when-you-need-to-map-columns">
+<h2>When you need to map columns<a class="headerlink" href="#when-you-need-to-map-columns" title="Link to this heading">#</a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">loopresources.drillhole</span><span class="w"> </span><span class="kn">import</span> <span class="n">DrillholeDatabase</span><span class="p">,</span> <span class="n">DhConfig</span>
+
+<span class="n">db</span> <span class="o">=</span> <span class="n">DrillholeDatabase</span><span class="o">.</span><span class="n">from_csv</span><span class="p">(</span>
+    <span class="n">collar_file</span><span class="o">=</span><span class="s2">&quot;path/to/collar.csv&quot;</span><span class="p">,</span>
+    <span class="n">survey_file</span><span class="o">=</span><span class="s2">&quot;path/to/survey.csv&quot;</span><span class="p">,</span>
+    <span class="n">collar_columns</span><span class="o">=</span><span class="p">{</span>
+        <span class="n">DhConfig</span><span class="o">.</span><span class="n">holeid</span><span class="p">:</span> <span class="s2">&quot;HOLE_ID&quot;</span><span class="p">,</span>
+        <span class="n">DhConfig</span><span class="o">.</span><span class="n">x</span><span class="p">:</span> <span class="s2">&quot;X_MGA&quot;</span><span class="p">,</span>
+        <span class="n">DhConfig</span><span class="o">.</span><span class="n">y</span><span class="p">:</span> <span class="s2">&quot;Y_MGA&quot;</span><span class="p">,</span>
+        <span class="n">DhConfig</span><span class="o">.</span><span class="n">z</span><span class="p">:</span> <span class="s2">&quot;Z_MGA&quot;</span><span class="p">,</span>
+        <span class="n">DhConfig</span><span class="o">.</span><span class="n">total_depth</span><span class="p">:</span> <span class="s2">&quot;DEPTH&quot;</span><span class="p">,</span>
+    <span class="p">},</span>
+    <span class="n">survey_columns</span><span class="o">=</span><span class="p">{</span>
+        <span class="n">DhConfig</span><span class="o">.</span><span class="n">holeid</span><span class="p">:</span> <span class="s2">&quot;Drillhole ID&quot;</span><span class="p">,</span>
+        <span class="n">DhConfig</span><span class="o">.</span><span class="n">depth</span><span class="p">:</span> <span class="s2">&quot;Depth&quot;</span><span class="p">,</span>
+        <span class="n">DhConfig</span><span class="o">.</span><span class="n">azimuth</span><span class="p">:</span> <span class="s2">&quot;Azimuth&quot;</span><span class="p">,</span>
+        <span class="n">DhConfig</span><span class="o">.</span><span class="n">dip</span><span class="p">:</span> <span class="s2">&quot;Dip&quot;</span><span class="p">,</span>
+    <span class="p">},</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>Notes:</p>
+<ul class="simple">
+<li><p>Extra columns are preserved.</p></li>
+<li><p>Required columns must be present after mapping.</p></li>
+</ul>
+</section>
+<section id="list-drillholes-in-the-database">
+<h2>List drillholes in the database<a class="headerlink" href="#list-drillholes-in-the-database" title="Link to this heading">#</a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">db</span><span class="o">.</span><span class="n">list_holes</span><span class="p">()</span>
+</pre></div>
+</div>
+</section>
+<section id="access-individual-drillholes">
+<h2>Access individual drillholes<a class="headerlink" href="#access-individual-drillholes" title="Link to this heading">#</a></h2>
+<p>You can access individual drillholes using their hole ID as the key.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">dh</span> <span class="o">=</span> <span class="n">db</span><span class="p">[</span><span class="s2">&quot;Hole_001&quot;</span><span class="p">]</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">dh</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="iterating-over-drillholes">
+<h2>Iterating over drillholes<a class="headerlink" href="#iterating-over-drillholes" title="Link to this heading">#</a></h2>
+<p>You can iterate over all drillholes in the database.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">dh</span> <span class="ow">in</span> <span class="n">db</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">dh</span><span class="o">.</span><span class="n">holeid</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="get-coordinate-extent-of-the-database">
+<h2>Get coordinate extent of the database<a class="headerlink" href="#get-coordinate-extent-of-the-database" title="Link to this heading">#</a></h2>
+<p>The extent of the database is a LoopStructural bounding box</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">extent</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">extent</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">extent</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="attaching-lithology-and-assay-data">
+<h2>Attaching lithology and assay data<a class="headerlink" href="#attaching-lithology-and-assay-data" title="Link to this heading">#</a></h2>
+<p>You can attach lithology and assay data to the drillholes after loading the database.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">db</span><span class="o">.</span><span class="n">add_interval_table</span><span class="p">(</span><span class="s2">&quot;lithology&quot;</span><span class="p">,</span> <span class="s1">&#39;/path/to/lithology.csv&#39;</span><span class="p">,</span><span class="n">column_mapping</span><span class="o">=</span><span class="p">{</span>
+    <span class="n">DhConfig</span><span class="o">.</span><span class="n">holeid</span><span class="p">:</span> <span class="s2">&quot;Drillhole ID&quot;</span><span class="p">,</span>
+    <span class="n">DhConfig</span><span class="o">.</span><span class="n">from_depth</span><span class="p">:</span> <span class="s2">&quot;From&quot;</span><span class="p">,</span>
+    <span class="n">DhConfig</span><span class="o">.</span><span class="n">to_depth</span><span class="p">:</span> <span class="s2">&quot;To&quot;</span><span class="p">,</span>
+<span class="p">})</span>
+</pre></div>
+</div>
+<p>This will add the lithology intervals to each drillhole based on the provided CSV file.</p>
+</section>
+<section id="desurveying-drillholes-to-3d-points">
+<h2>Desurveying drillholes to 3D points<a class="headerlink" href="#desurveying-drillholes-to-3d-points" title="Link to this heading">#</a></h2>
+<p>You can convert drillhole surveys with associated logs to 3D points using the <code class="docutils literal notranslate"><span class="pre">desurvey_intervals</span></code> method, where the table name is the name you provided when adding the interval table.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">desurveyed</span> <span class="o">=</span> <span class="n">dh</span><span class="o">.</span><span class="n">desurvey_intervals</span><span class="p">(</span><span class="n">table_name</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>This will return a table of with the interval logs and associated 3D coordinates as well as the dip and azimuth of the drill hole at those points.</p>
+</section>
+<section id="attaching-point-data">
+<h2>Attaching point data<a class="headerlink" href="#attaching-point-data" title="Link to this heading">#</a></h2>
+<p>You can also attach point data to the drillholes.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">db</span><span class="o">.</span><span class="n">add_point_table</span><span class="p">(</span><span class="s2">&quot;structures&quot;</span><span class="p">,</span> <span class="s1">&#39;/path/to/structures.csv&#39;</span><span class="p">,</span> <span class="n">column_mapping</span><span class="o">=</span><span class="p">{</span>
+    <span class="n">DhConfig</span><span class="o">.</span><span class="n">holeid</span><span class="p">:</span> <span class="s2">&quot;Drillhole ID&quot;</span><span class="p">,</span>
+    <span class="n">DhConfig</span><span class="o">.</span><span class="n">depth</span><span class="p">:</span> <span class="s2">&quot;FROM,</span>
+<span class="p">})</span>
+</pre></div>
+</div>
+<p>This will add the point data to each drillhole based on the provided CSV file.</p>
+<p>You can desurvey these points to get their 3D coordinates:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">desurveyed_points</span> <span class="o">=</span> <span class="n">dh</span><span class="o">.</span><span class="n">desurvey_points</span><span class="p">(</span><span class="s2">&quot;structures&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>This will return a table of the point data with associated 3D coordinates and the orientation of the drill hole.</p>
+</section>
+<section id="converting-from-alpha-beta-and-gamma-to-strike-and-dip">
+<h2>Converting from alpha beta and gamma to strike and dip<a class="headerlink" href="#converting-from-alpha-beta-and-gamma-to-strike-and-dip" title="Link to this heading">#</a></h2>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">orientations</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">alpha_beta_to_orientation</span><span class="p">(</span><span class="s1">&#39;structures&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>This will return a table of the point data with associated strike and dip based on the alpha, beta and gamma angles provided in the point table.</p>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="00-desurvey.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">1 - Desurveying Drillholes</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="02-dhconfig.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">3 - DhConfig and required columns</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#loading-from-csv-files">Loading from CSV files</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#when-columns-match-dhconfig-names">When columns match DhConfig names</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#when-you-need-to-map-columns">When you need to map columns</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#list-drillholes-in-the-database">List drillholes in the database</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#access-individual-drillholes">Access individual drillholes</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#iterating-over-drillholes">Iterating over drillholes</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#get-coordinate-extent-of-the-database">Get coordinate extent of the database</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#attaching-lithology-and-assay-data">Attaching lithology and assay data</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#desurveying-drillholes-to-3d-points">Desurveying drillholes to 3D points</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#attaching-point-data">Attaching point data</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#converting-from-alpha-beta-and-gamma-to-strike-and-dip">Converting from alpha beta and gamma to strike and dip</a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/tutorials/01-basic-usage.md.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+<script type="text/javascript">
+  $(document).ready(function () {
+    // Only target toggle elements inside the main content area to avoid hiding header/menu items
+    $(".bd-content .toggle > *").hide();
+    $(".bd-content .toggle .header").show();
+    $(".bd-content .toggle .header").click(function () {
+      $(this).parent().children().not(".header").toggle(400);
+      $(this).parent().children(".header").toggleClass("open");
+    });
+
+    // Ensure navbar/menu links are visible in case other scripts hid them
+    $("#navbar-main .nav, #navbar-main .nav-item, #navbar-main .nav-link").show();
+  });
+</script>
+
+  </body>
+</html>

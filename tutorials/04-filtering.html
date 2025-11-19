@@ -1,0 +1,607 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>5 – Preprocessing and Filtering &#8212; LoopResources 0.0.1 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery.css?v=d2d258e8" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-binder.css?v=f4aeca0c" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-dataframe.css?v=2082cf3c" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-rendered-html.css?v=1277b6f3" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+    <script src="../_static/documentation_options.js?v=d45e8c67"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'tutorials/04-filtering';</script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="6 - File Database Backend" href="05-file-database.html" />
+    <link rel="prev" title="4 - Advanced Options" href="03-advanced-options.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="" />
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">LoopResources 0.0.1 documentation</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../_auto_examples/index.html">
+    Examples
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-external" href="https://www.loop3d.org">
+    Loop3d
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/loop3d/loopresources" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/loop3d" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-twitter-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">Twitter</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../_auto_examples/index.html">
+    Examples
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-external" href="https://www.loop3d.org">
+    Loop3d
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/loop3d/loopresources" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/loop3d" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-twitter-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">Twitter</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><p aria-level="2" class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="00-desurvey.html">1 - Desurveying Drillholes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="01-basic-usage.html">2 - Basic Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="02-dhconfig.html">3 - DhConfig and required columns</a></li>
+<li class="toctree-l1"><a class="reference internal" href="03-advanced-options.html">4 - Advanced Options</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">5 – Preprocessing and Filtering</a></li>
+<li class="toctree-l1"><a class="reference internal" href="05-file-database.html">6 - File Database Backend</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="index.html" class="nav-link">Tutorials</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">5 – Preprocessing and Filtering</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="preprocessing-and-filtering">
+<h1>5 – Preprocessing and Filtering<a class="headerlink" href="#preprocessing-and-filtering" title="Link to this heading">#</a></h1>
+<p>This guide explains how to clean numeric columns and filter rows in a <code class="docutils literal notranslate"><span class="pre">DrillholeDatabase</span></code> to prepare data for analysis. It focuses:</p>
+<ul class="simple">
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">validate_numerical_columns</span></code></strong>: Convert and clean numeric columns</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">filter_by_nan_threshold</span></code></strong>: Remove rows with too many missing values</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">filter</span></code></strong>: Basic row filtering by hole IDs, depth ranges, bounding box or using a custom expression</p></li>
+</ul>
+<p>All three methods are designed to be chainable for building reproducible preprocessing pipelines.</p>
+<hr class="docutils" />
+<section id="validating-and-cleaning-numeric-columns">
+<h2>1. Validating and Cleaning Numeric Columns<a class="headerlink" href="#validating-and-cleaning-numeric-columns" title="Link to this heading">#</a></h2>
+<p>Make sure selected columns contain numeric data and optionally treat negative/zero values as missing.
+This is intended for assay or xrf data where non-numeric entries can be included and negative/zero values
+indicate below detection limit.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">validate_numerical_columns</span><span class="p">(</span>
+    <span class="n">table_name</span><span class="p">,</span> <span class="n">columns</span><span class="p">,</span> <span class="n">table_type</span><span class="o">=</span><span class="s2">&quot;interval&quot;</span><span class="p">,</span> <span class="n">allow_negative</span><span class="o">=</span><span class="kc">False</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Behavior</strong>:</p>
+<ul class="simple">
+<li><p>Converts values to numeric; non-convertible values become <code class="docutils literal notranslate"><span class="pre">NaN</span></code></p></li>
+<li><p>If <code class="docutils literal notranslate"><span class="pre">allow_negative=False</span></code>, values ≤ 0 become <code class="docutils literal notranslate"><span class="pre">NaN</span></code></p></li>
+<li><p>If <code class="docutils literal notranslate"><span class="pre">allow_negative=True</span></code>, all valid numerical data is kept</p></li>
+<li><p>Missing columns trigger warnings but do not stop execution</p></li>
+<li><p>Returns <code class="docutils literal notranslate"><span class="pre">self</span></code> for method chaining</p></li>
+</ul>
+<p><strong>Example</strong>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">db</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">validate_numerical_columns</span><span class="p">(</span>
+    <span class="s2">&quot;assay&quot;</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;CU_PPM&quot;</span><span class="p">,</span> <span class="s2">&quot;AU_PPM&quot;</span><span class="p">,</span> <span class="s2">&quot;AG_PPM&quot;</span><span class="p">],</span> <span class="n">allow_negative</span><span class="o">=</span><span class="kc">False</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<hr class="docutils" />
+<section id="filtering-by-nan-threshold">
+<h2>2. Filtering by NaN Threshold<a class="headerlink" href="#filtering-by-nan-threshold" title="Link to this heading">#</a></h2>
+<p>Remove rows that lack enough valid (non-NaN) values across key columns.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">filter_by_nan_threshold</span><span class="p">(</span><span class="n">table_name</span><span class="p">,</span> <span class="n">columns</span><span class="p">,</span> <span class="n">threshold</span><span class="p">,</span> <span class="n">table_type</span><span class="o">=</span><span class="s2">&quot;point&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Behavior</strong>:</p>
+<ul class="simple">
+<li><p>Counts non-NaN values per row</p></li>
+<li><p>Computes completeness ratio: <code class="docutils literal notranslate"><span class="pre">valid_count</span> <span class="pre">/</span> <span class="pre">len(columns)</span></code></p></li>
+<li><p>Keeps rows where ratio ≥ <code class="docutils literal notranslate"><span class="pre">threshold</span></code></p></li>
+<li><p>Returns a <strong>new</strong> <code class="docutils literal notranslate"><span class="pre">DrillholeDatabase</span></code> (preserves immutability)</p></li>
+</ul>
+<p><strong>Parameters</strong>:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">columns</span></code>: list of columns to check</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">threshold</span></code>: float between <code class="docutils literal notranslate"><span class="pre">0.0</span></code> and <code class="docutils literal notranslate"><span class="pre">1.0</span></code></p></li>
+</ul>
+<p><strong>Example</strong>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">filtered_db</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">filter_by_nan_threshold</span><span class="p">(</span>
+    <span class="s2">&quot;assay&quot;</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;CU_PPM&quot;</span><span class="p">,</span> <span class="s2">&quot;AU_PPM&quot;</span><span class="p">,</span> <span class="s2">&quot;AG_PPM&quot;</span><span class="p">,</span> <span class="s2">&quot;PB_PPM&quot;</span><span class="p">],</span> <span class="n">threshold</span><span class="o">=</span><span class="mf">0.75</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Edge Cases</strong>:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">threshold</span> <span class="pre">==</span> <span class="pre">1.0</span></code>: keeps only fully complete rows</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">threshold</span> <span class="pre">==</span> <span class="pre">0.0</span></code>: keeps all rows</p></li>
+<li><p>Empty <code class="docutils literal notranslate"><span class="pre">columns</span></code> list raises an error</p></li>
+</ul>
+</section>
+<hr class="docutils" />
+<section id="typical-workflows">
+<h2>3. Typical Workflows<a class="headerlink" href="#typical-workflows" title="Link to this heading">#</a></h2>
+<section id="basic-cleaning-strict-completeness">
+<h3>Basic Cleaning + Strict Completeness<a class="headerlink" href="#basic-cleaning-strict-completeness" title="Link to this heading">#</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">clean_db</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">validate_numerical_columns</span><span class="p">(</span>
+    <span class="s2">&quot;assay&quot;</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;CU_PPM&quot;</span><span class="p">,</span> <span class="s2">&quot;AU_PPM&quot;</span><span class="p">,</span> <span class="s2">&quot;AG_PPM&quot;</span><span class="p">],</span> <span class="n">allow_negative</span><span class="o">=</span><span class="kc">False</span>
+<span class="p">)</span><span class="o">.</span><span class="n">filter_by_nan_threshold</span><span class="p">(</span><span class="s2">&quot;assay&quot;</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;CU_PPM&quot;</span><span class="p">,</span> <span class="s2">&quot;AU_PPM&quot;</span><span class="p">,</span> <span class="s2">&quot;AG_PPM&quot;</span><span class="p">],</span> <span class="n">threshold</span><span class="o">=</span><span class="mf">0.9</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="hole-id-preprocessing-permissive-completeness">
+<h3>Hole ID + Preprocessing + Permissive Completeness<a class="headerlink" href="#hole-id-preprocessing-permissive-completeness" title="Link to this heading">#</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">clean_db</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="n">db</span><span class="o">.</span><span class="n">validate_numerical_columns</span><span class="p">(</span><span class="s2">&quot;assay&quot;</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;CU_PPM&quot;</span><span class="p">,</span> <span class="s2">&quot;AU_PPM&quot;</span><span class="p">],</span> <span class="n">allow_negative</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">holes</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;DH001&quot;</span><span class="p">,</span> <span class="s2">&quot;DH002&quot;</span><span class="p">,</span> <span class="s2">&quot;DH003&quot;</span><span class="p">])</span>
+    <span class="o">.</span><span class="n">filter_by_nan_threshold</span><span class="p">(</span><span class="s2">&quot;assay&quot;</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;CU_PPM&quot;</span><span class="p">,</span> <span class="s2">&quot;AU_PPM&quot;</span><span class="p">,</span> <span class="s2">&quot;AG_PPM&quot;</span><span class="p">],</span> <span class="n">threshold</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="advanced-preprocessing-depth-range-completeness">
+<h3>Advanced: Preprocessing + Depth Range + Completeness<a class="headerlink" href="#advanced-preprocessing-depth-range-completeness" title="Link to this heading">#</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">clean_db</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="n">db</span><span class="o">.</span><span class="n">validate_numerical_columns</span><span class="p">(</span><span class="s2">&quot;assay&quot;</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;CU_PPM&quot;</span><span class="p">,</span> <span class="s2">&quot;AU_PPM&quot;</span><span class="p">],</span> <span class="n">allow_negative</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">depth_range</span><span class="o">=</span><span class="p">(</span><span class="mi">50</span><span class="p">,</span> <span class="mi">200</span><span class="p">))</span>
+    <span class="o">.</span><span class="n">filter_by_nan_threshold</span><span class="p">(</span><span class="s2">&quot;assay&quot;</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;CU_PPM&quot;</span><span class="p">,</span> <span class="s2">&quot;AU_PPM&quot;</span><span class="p">,</span> <span class="s2">&quot;AG_PPM&quot;</span><span class="p">],</span> <span class="n">threshold</span><span class="o">=</span><span class="mf">0.8</span><span class="p">)</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<hr class="docutils" />
+<section id="advanced-map-bounding-box-preprocessing-completeness">
+<h3>Advanced: Map Bounding Box + Preprocessing + Completeness<a class="headerlink" href="#advanced-map-bounding-box-preprocessing-completeness" title="Link to this heading">#</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">clean_db</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="n">db</span><span class="o">.</span><span class="n">validate_numerical_columns</span><span class="p">(</span><span class="s2">&quot;assay&quot;</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;CU_PPM&quot;</span><span class="p">,</span> <span class="s2">&quot;AU_PPM&quot;</span><span class="p">],</span> <span class="n">allow_negative</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">bounding_box</span><span class="o">=</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="mi">200</span><span class="p">,</span> <span class="mi">1000</span><span class="p">,</span> <span class="mi">1100</span><span class="p">))</span>
+    <span class="o">.</span><span class="n">filter_by_nan_threshold</span><span class="p">(</span><span class="s2">&quot;assay&quot;</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;CU_PPM&quot;</span><span class="p">,</span> <span class="s2">&quot;AU_PPM&quot;</span><span class="p">,</span> <span class="s2">&quot;AG_PPM&quot;</span><span class="p">],</span> <span class="n">threshold</span><span class="o">=</span><span class="mf">0.7</span><span class="p">)</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="03-advanced-options.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">4 - Advanced Options</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="05-file-database.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">6 - File Database Backend</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#validating-and-cleaning-numeric-columns">1. Validating and Cleaning Numeric Columns</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#filtering-by-nan-threshold">2. Filtering by NaN Threshold</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#typical-workflows">3. Typical Workflows</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#basic-cleaning-strict-completeness">Basic Cleaning + Strict Completeness</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#hole-id-preprocessing-permissive-completeness">Hole ID + Preprocessing + Permissive Completeness</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#advanced-preprocessing-depth-range-completeness">Advanced: Preprocessing + Depth Range + Completeness</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#advanced-map-bounding-box-preprocessing-completeness">Advanced: Map Bounding Box + Preprocessing + Completeness</a></li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/tutorials/04-filtering.md.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+<script type="text/javascript">
+  $(document).ready(function () {
+    // Only target toggle elements inside the main content area to avoid hiding header/menu items
+    $(".bd-content .toggle > *").hide();
+    $(".bd-content .toggle .header").show();
+    $(".bd-content .toggle .header").click(function () {
+      $(this).parent().children().not(".header").toggle(400);
+      $(this).parent().children(".header").toggleClass("open");
+    });
+
+    // Ensure navbar/menu links are visible in case other scripts hid them
+    $("#navbar-main .nav, #navbar-main .nav-item, #navbar-main .nav-link").show();
+  });
+</script>
+
+  </body>
+</html>

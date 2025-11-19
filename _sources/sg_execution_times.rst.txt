@@ -1,0 +1,58 @@
+
+:orphan:
+
+.. _sphx_glr_sg_execution_times:
+
+
+Computation times
+=================
+**00:50.297** total execution time for 8 files **from all galleries**:
+
+.. container::
+
+  .. raw:: html
+
+    <style scoped>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" rel="stylesheet" />
+    </style>
+    <script src="https://code.jquery.com/jquery-3.7.0.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+    <script type="text/javascript" class="init">
+    $(document).ready( function () {
+        $('table.sg-datatable').DataTable({order: [[1, 'desc']]});
+    } );
+    </script>
+
+  .. list-table::
+   :header-rows: 1
+   :class: table table-striped sg-datatable
+
+   * - Example
+     - Time
+     - Mem (MB)
+   * - :ref:`sphx_glr__auto_examples_plot_from_csv_example.py` (``../../examples/plot_from_csv_example.py``)
+     - 00:45.851
+     - 0.0
+   * - :ref:`sphx_glr__auto_examples_plot_find_intersection_to_function.py` (``../../examples/plot_find_intersection_to_function.py``)
+     - 00:03.570
+     - 0.0
+   * - :ref:`sphx_glr__auto_examples_plot_drillhole.py` (``../../examples/plot_drillhole.py``)
+     - 00:00.476
+     - 0.0
+   * - :ref:`sphx_glr__auto_examples_plot_basic_drillhole_usage.py` (``../../examples/plot_basic_drillhole_usage.py``)
+     - 00:00.259
+     - 0.0
+   * - :ref:`sphx_glr__auto_examples_plot_thalanga_example.py` (``../../examples/plot_thalanga_example.py``)
+     - 00:00.101
+     - 0.0
+   * - :ref:`sphx_glr__auto_examples_plot_interval_resampling.py` (``../../examples/plot_interval_resampling.py``)
+     - 00:00.039
+     - 0.0
+   * - :ref:`sphx_glr__auto_examples_example_preprocessing.py` (``../../examples/example_preprocessing.py``)
+     - 00:00.000
+     - 0.0
+   * - :ref:`sphx_glr__auto_examples_example_string_representations.py` (``../../examples/example_string_representations.py``)
+     - 00:00.000
+     - 0.0

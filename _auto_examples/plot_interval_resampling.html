@@ -1,0 +1,788 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Interval Resampling and VTK Properties &#8212; LoopResources 0.0.1 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery.css?v=d2d258e8" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-binder.css?v=f4aeca0c" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-dataframe.css?v=2082cf3c" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-rendered-html.css?v=1277b6f3" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+    <script src="../_static/documentation_options.js?v=d45e8c67"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_auto_examples/plot_interval_resampling';</script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Single drill hole" href="plot_drillhole.html" />
+    <link rel="prev" title="Find Drillhole intersection" href="plot_find_intersection_to_function.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="" />
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">LoopResources 0.0.1 documentation</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="index.html">
+    Examples
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-external" href="https://www.loop3d.org">
+    Loop3d
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/loop3d/loopresources" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/loop3d" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-twitter-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">Twitter</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="index.html">
+    Examples
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-external" href="https://www.loop3d.org">
+    Loop3d
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/loop3d/loopresources" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/loop3d" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-twitter-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">Twitter</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="plot_basic_drillhole_usage.html">Basic DrillholeDatabase Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_from_csv_example.html">DrillholeDatabase.from_csv() Example</a></li>
+<li class="toctree-l1"><a class="reference internal" href="example_preprocessing.html">Create Sample Data</a></li>
+
+
+
+
+
+<li class="toctree-l1"><a class="reference internal" href="plot_find_intersection_to_function.html">Find Drillhole intersection</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Interval Resampling and VTK Properties</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_drillhole.html">Single drill hole</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_thalanga_example.html">Thalanga Drillhole Database Example</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="index.html" class="nav-link">Examples</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Interval Resampling and VTK Properties</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <div class="sphx-glr-download-link-note admonition note">
+<p class="admonition-title">Note</p>
+<p><a class="reference internal" href="#sphx-glr-download-auto-examples-plot-interval-resampling-py"><span class="std std-ref">Go to the end</span></a>
+to download the full example code.</p>
+</div>
+<section class="sphx-glr-example-title" id="interval-resampling-and-vtk-properties">
+<span id="sphx-glr-auto-examples-plot-interval-resampling-py"></span><h1>Interval Resampling and VTK Properties<a class="headerlink" href="#interval-resampling-and-vtk-properties" title="Link to this heading">#</a></h1>
+<p>This example demonstrates how to:</p>
+<ol class="arabic simple">
+<li><p>Resample irregular interval data (like lithology logs) to regular intervals</p></li>
+<li><p>Handle overlapping intervals by selecting the value with biggest occurrence</p></li>
+<li><p>Attach resampled properties to VTK visualizations as cell data</p></li>
+</ol>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">loopresources.drillhole.drillhole_database</span><span class="w"> </span><span class="kn">import</span> <span class="n">DrillholeDatabase</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">loopresources.drillhole.dhconfig</span><span class="w"> </span><span class="kn">import</span> <span class="n">DhConfig</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+</pre></div>
+</div>
+<section id="setup-create-sample-drillhole-data">
+<h2>Setup: Create sample drillhole data<a class="headerlink" href="#setup-create-sample-drillhole-data" title="Link to this heading">#</a></h2>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Create collar data</span>
+<span class="n">collar</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+    <span class="p">{</span>
+        <span class="n">DhConfig</span><span class="o">.</span><span class="n">holeid</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;DH001&quot;</span><span class="p">],</span>
+        <span class="n">DhConfig</span><span class="o">.</span><span class="n">x</span><span class="p">:</span> <span class="p">[</span><span class="mf">100.0</span><span class="p">],</span>
+        <span class="n">DhConfig</span><span class="o">.</span><span class="n">y</span><span class="p">:</span> <span class="p">[</span><span class="mf">1000.0</span><span class="p">],</span>
+        <span class="n">DhConfig</span><span class="o">.</span><span class="n">z</span><span class="p">:</span> <span class="p">[</span><span class="mf">50.0</span><span class="p">],</span>
+        <span class="n">DhConfig</span><span class="o">.</span><span class="n">total_depth</span><span class="p">:</span> <span class="p">[</span><span class="mf">100.0</span><span class="p">],</span>
+    <span class="p">}</span>
+<span class="p">)</span>
+
+<span class="c1"># Create survey data</span>
+<span class="n">survey</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+    <span class="p">{</span>
+        <span class="n">DhConfig</span><span class="o">.</span><span class="n">holeid</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;DH001&quot;</span><span class="p">,</span> <span class="s2">&quot;DH001&quot;</span><span class="p">],</span>
+        <span class="n">DhConfig</span><span class="o">.</span><span class="n">depth</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">50.0</span><span class="p">],</span>
+        <span class="n">DhConfig</span><span class="o">.</span><span class="n">azimuth</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">],</span>
+        <span class="n">DhConfig</span><span class="o">.</span><span class="n">dip</span><span class="p">:</span> <span class="p">[</span><span class="mf">90.0</span><span class="p">,</span> <span class="mf">90.0</span><span class="p">],</span>
+    <span class="p">}</span>
+<span class="p">)</span>
+
+<span class="c1"># Create irregular lithology data (realistic sampling)</span>
+<span class="n">lithology</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+    <span class="p">{</span>
+        <span class="n">DhConfig</span><span class="o">.</span><span class="n">holeid</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;DH001&quot;</span><span class="p">,</span> <span class="s2">&quot;DH001&quot;</span><span class="p">,</span> <span class="s2">&quot;DH001&quot;</span><span class="p">,</span> <span class="s2">&quot;DH001&quot;</span><span class="p">],</span>
+        <span class="n">DhConfig</span><span class="o">.</span><span class="n">sample_from</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">10.0</span><span class="p">,</span> <span class="mf">25.0</span><span class="p">,</span> <span class="mf">50.0</span><span class="p">],</span>
+        <span class="n">DhConfig</span><span class="o">.</span><span class="n">sample_to</span><span class="p">:</span> <span class="p">[</span><span class="mf">10.0</span><span class="p">,</span> <span class="mf">25.0</span><span class="p">,</span> <span class="mf">50.0</span><span class="p">,</span> <span class="mf">100.0</span><span class="p">],</span>
+        <span class="s2">&quot;LITHO&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;Granite&quot;</span><span class="p">,</span> <span class="s2">&quot;Schist&quot;</span><span class="p">,</span> <span class="s2">&quot;Granite&quot;</span><span class="p">,</span> <span class="s2">&quot;Sandstone&quot;</span><span class="p">],</span>
+    <span class="p">}</span>
+<span class="p">)</span>
+
+<span class="c1"># Create database</span>
+<span class="n">db</span> <span class="o">=</span> <span class="n">DrillholeDatabase</span><span class="p">(</span><span class="n">collar</span><span class="p">,</span> <span class="n">survey</span><span class="p">)</span>
+<span class="n">db</span><span class="o">.</span><span class="n">add_interval_table</span><span class="p">(</span><span class="s2">&quot;lithology&quot;</span><span class="p">,</span> <span class="n">lithology</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="example-1-resample-to-regular-1m-intervals">
+<h2>Example 1: Resample to regular 1m intervals<a class="headerlink" href="#example-1-resample-to-regular-1m-intervals" title="Link to this heading">#</a></h2>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">hole</span> <span class="o">=</span> <span class="n">db</span><span class="p">[</span><span class="s2">&quot;DH001&quot;</span><span class="p">]</span>
+<span class="n">resampled_1m</span> <span class="o">=</span> <span class="n">hole</span><span class="o">.</span><span class="n">resample</span><span class="p">(</span><span class="s2">&quot;lithology&quot;</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;LITHO&quot;</span><span class="p">],</span> <span class="n">new_interval</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Original irregular intervals:&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">lithology</span><span class="p">[[</span><span class="s2">&quot;SAMPFROM&quot;</span><span class="p">,</span> <span class="s2">&quot;SAMPTO&quot;</span><span class="p">,</span> <span class="s2">&quot;LITHO&quot;</span><span class="p">]])</span>
+<span class="nb">print</span><span class="p">()</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Resampled to regular 1m intervals (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">resampled_1m</span><span class="p">)</span><span class="si">}</span><span class="s2"> total):&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">resampled_1m</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="mi">15</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">()</span>
+</pre></div>
+</div>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Original irregular intervals:
+   SAMPFROM  SAMPTO      LITHO
+0       0.0    10.0    Granite
+1      10.0    25.0     Schist
+2      25.0    50.0    Granite
+3      50.0   100.0  Sandstone
+
+Resampled to regular 1m intervals (100 total):
+    SAMPFROM  SAMPTO    LITHO HOLEID
+0        0.0     1.0  Granite  DH001
+1        1.0     2.0  Granite  DH001
+2        2.0     3.0  Granite  DH001
+3        3.0     4.0  Granite  DH001
+4        4.0     5.0  Granite  DH001
+5        5.0     6.0  Granite  DH001
+6        6.0     7.0  Granite  DH001
+7        7.0     8.0  Granite  DH001
+8        8.0     9.0  Granite  DH001
+9        9.0    10.0  Granite  DH001
+10      10.0    11.0   Schist  DH001
+11      11.0    12.0   Schist  DH001
+12      12.0    13.0   Schist  DH001
+13      13.0    14.0   Schist  DH001
+14      14.0    15.0   Schist  DH001
+</pre></div>
+</div>
+</section>
+<section id="example-2-resample-to-5m-intervals">
+<h2>Example 2: Resample to 5m intervals<a class="headerlink" href="#example-2-resample-to-5m-intervals" title="Link to this heading">#</a></h2>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">resampled_5m</span> <span class="o">=</span> <span class="n">hole</span><span class="o">.</span><span class="n">resample</span><span class="p">(</span><span class="s2">&quot;lithology&quot;</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;LITHO&quot;</span><span class="p">],</span> <span class="n">new_interval</span><span class="o">=</span><span class="mf">5.0</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Resampled to regular 5m intervals (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">resampled_5m</span><span class="p">)</span><span class="si">}</span><span class="s2"> total):&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">resampled_5m</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">()</span>
+</pre></div>
+</div>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Resampled to regular 5m intervals (20 total):
+    SAMPFROM  SAMPTO      LITHO HOLEID
+0        0.0     5.0    Granite  DH001
+1        5.0    10.0    Granite  DH001
+2       10.0    15.0     Schist  DH001
+3       15.0    20.0     Schist  DH001
+4       20.0    25.0    Granite  DH001
+5       25.0    30.0    Granite  DH001
+6       30.0    35.0    Granite  DH001
+7       35.0    40.0    Granite  DH001
+8       40.0    45.0    Granite  DH001
+9       45.0    50.0    Granite  DH001
+10      50.0    55.0  Sandstone  DH001
+11      55.0    60.0  Sandstone  DH001
+12      60.0    65.0  Sandstone  DH001
+13      65.0    70.0  Sandstone  DH001
+14      70.0    75.0  Sandstone  DH001
+15      75.0    80.0  Sandstone  DH001
+16      80.0    85.0  Sandstone  DH001
+17      85.0    90.0  Sandstone  DH001
+18      90.0    95.0  Sandstone  DH001
+19      95.0   100.0    Granite  DH001
+</pre></div>
+</div>
+</section>
+<section id="example-3-mode-selection-with-overlapping-intervals">
+<h2>Example 3: Mode selection with overlapping intervals<a class="headerlink" href="#example-3-mode-selection-with-overlapping-intervals" title="Link to this heading">#</a></h2>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="c1"># The 25-30m interval demonstrates mode selection</span>
+<span class="c1"># It overlaps with:</span>
+<span class="c1">#   - Schist (10-25m): 0m overlap at boundary</span>
+<span class="c1">#   - Granite (25-50m): 5m overlap (full interval)</span>
+<span class="c1"># Result: Granite is selected (bigger occurrence)</span>
+
+<span class="n">interval_25_30</span> <span class="o">=</span> <span class="n">resampled_5m</span><span class="p">[</span><span class="n">resampled_5m</span><span class="p">[</span><span class="n">DhConfig</span><span class="o">.</span><span class="n">sample_from</span><span class="p">]</span> <span class="o">==</span> <span class="mf">25.0</span><span class="p">]</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Mode selection example (25-30m interval):&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;  Original intervals: Schist (10-25m) and Granite (25-50m)&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Selected value: </span><span class="si">{</span><span class="n">interval_25_30</span><span class="p">[</span><span class="s1">&#39;LITHO&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2"> (5m vs 0m)&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">()</span>
+</pre></div>
+</div>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Mode selection example (25-30m interval):
+  Original intervals: Schist (10-25m) and Granite (25-50m)
+  Selected value: Granite (5m vs 0m)
+</pre></div>
+</div>
+</section>
+<section id="example-4-vtk-visualization-with-properties">
+<h2>Example 4: VTK visualization with properties<a class="headerlink" href="#example-4-vtk-visualization-with-properties" title="Link to this heading">#</a></h2>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="k">try</span><span class="p">:</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">pyvista</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pv</span>  <span class="c1"># noqa: F401</span>
+
+    <span class="c1"># Create VTK tube with lithology as cell property</span>
+    <span class="n">tube</span> <span class="o">=</span> <span class="n">hole</span><span class="o">.</span><span class="n">vtk</span><span class="p">(</span><span class="n">newinterval</span><span class="o">=</span><span class="mf">5.0</span><span class="p">,</span> <span class="n">properties</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;lithology&quot;</span><span class="p">])</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;VTK tube created with lithology property:&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Points: </span><span class="si">{</span><span class="n">tube</span><span class="o">.</span><span class="n">n_points</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Cells: </span><span class="si">{</span><span class="n">tube</span><span class="o">.</span><span class="n">n_cells</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Cell data arrays: </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">tube</span><span class="o">.</span><span class="n">cell_data</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Lithology values: </span><span class="si">{</span><span class="n">tube</span><span class="o">.</span><span class="n">cell_data</span><span class="p">[</span><span class="s1">&#39;LITHO&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">()</span>
+
+    <span class="c1"># For visualization (requires display):</span>
+    <span class="c1"># plotter = pv.Plotter()</span>
+    <span class="c1"># plotter.add_mesh(tube, scalars=&#39;LITHO&#39;, cmap=&#39;viridis&#39;)</span>
+    <span class="c1"># plotter.show()</span>
+
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;PyVista not installed - VTK creation skipped&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Install with: pip install pyvista&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">()</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Example usage:&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;  tube = hole.vtk(newinterval=1.0, properties=[&#39;lithology&#39;])&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;  # Properties attached as cell data: LITHO&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>VTK tube created with lithology property:
+  Points: 1520
+  Cells: 418
+  Cell data arrays: [&#39;LITHO&#39;]
+  Lithology values: [&#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39;
+ &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39;
+ &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39;
+ &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39;
+ &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39;
+ &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39;
+ &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39;
+ &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39;
+ &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39;
+ &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39; &#39;Schist&#39; &#39;Schist&#39; &#39;Schist&#39; &#39;Schist&#39;
+ &#39;Schist&#39; &#39;Schist&#39; &#39;Schist&#39; &#39;Schist&#39; &#39;Schist&#39; &#39;Schist&#39; &#39;Schist&#39; &#39;Schist&#39;
+ &#39;Schist&#39; &#39;Schist&#39; &#39;Schist&#39; &#39;Schist&#39; &#39;Schist&#39; &#39;Schist&#39; &#39;Schist&#39; &#39;Schist&#39;
+ &#39;Schist&#39; &#39;Schist&#39; &#39;Schist&#39; &#39;Schist&#39; &#39;Schist&#39; &#39;Schist&#39; &#39;Schist&#39; &#39;Schist&#39;
+ &#39;Schist&#39; &#39;Schist&#39; &#39;Schist&#39; &#39;Schist&#39; &#39;Schist&#39; &#39;Schist&#39; &#39;Schist&#39; &#39;Schist&#39;
+ &#39;Schist&#39; &#39;Schist&#39; &#39;Schist&#39; &#39;Schist&#39; &#39;Schist&#39; &#39;Schist&#39; &#39;Schist&#39; &#39;Schist&#39;
+ &#39;Schist&#39; &#39;Schist&#39; &#39;Schist&#39; &#39;Schist&#39; &#39;Schist&#39; &#39;Schist&#39; &#39;Schist&#39; &#39;Schist&#39;
+ &#39;Schist&#39; &#39;Schist&#39; &#39;Schist&#39; &#39;Schist&#39; &#39;Schist&#39; &#39;Schist&#39; &#39;Schist&#39; &#39;Schist&#39;
+ &#39;Schist&#39; &#39;Schist&#39; &#39;Schist&#39; &#39;Schist&#39; &#39;Schist&#39; &#39;Schist&#39; &#39;Granite&#39; &#39;Granite&#39;
+ &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39;
+ &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39;
+ &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39;
+ &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39;
+ &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39;
+ &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39;
+ &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39;
+ &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39;
+ &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39;
+ &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39;
+ &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39;
+ &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39;
+ &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39;
+ &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39;
+ &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39;
+ &#39;Granite&#39; &#39;Granite&#39; &#39;Granite&#39; &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39;
+ &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39;
+ &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39;
+ &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39;
+ &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39;
+ &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39;
+ &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39;
+ &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39;
+ &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39;
+ &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39;
+ &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39;
+ &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39;
+ &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39;
+ &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39;
+ &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39;
+ &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39;
+ &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39;
+ &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39;
+ &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39;
+ &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39;
+ &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39;
+ &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39;
+ &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39;
+ &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39;
+ &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39;
+ &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39;
+ &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39;
+ &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39;
+ &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39;
+ &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39; &#39;Sandstone&#39;]
+</pre></div>
+</div>
+</section>
+<section id="example-5-multiple-properties">
+<h2>Example 5: Multiple properties<a class="headerlink" href="#example-5-multiple-properties" title="Link to this heading">#</a></h2>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="c1"># You can attach multiple properties at once</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Multiple properties example:&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;  tube = hole.vtk(newinterval=1.0, properties=[&#39;lithology&#39;, &#39;assays&#39;])&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;  # Creates cell data: LITHO, assays_AU_ppm, assays_CU_pct&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">()</span>
+
+<span class="c1"># For entire database:</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Database-level VTK:&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;  multiblock = db.vtk(newinterval=1.0, properties=[&#39;lithology&#39;])&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;  # Creates multiblock with all drillholes&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Multiple properties example:
+  tube = hole.vtk(newinterval=1.0, properties=[&#39;lithology&#39;, &#39;assays&#39;])
+  # Creates cell data: LITHO, assays_AU_ppm, assays_CU_pct
+
+Database-level VTK:
+  multiblock = db.vtk(newinterval=1.0, properties=[&#39;lithology&#39;])
+  # Creates multiblock with all drillholes
+</pre></div>
+</div>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 0.039 seconds)</p>
+<div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-auto-examples-plot-interval-resampling-py">
+<div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
+<p><a class="reference download internal" download="" href="../_downloads/f431e9103a31257e72f34ef48c498ff3/plot_interval_resampling.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">plot_interval_resampling.ipynb</span></code></a></p>
+</div>
+<div class="sphx-glr-download sphx-glr-download-python docutils container">
+<p><a class="reference download internal" download="" href="../_downloads/56ca6d2c0548698fea833fb903281fc6/plot_interval_resampling.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">plot_interval_resampling.py</span></code></a></p>
+</div>
+<div class="sphx-glr-download sphx-glr-download-zip docutils container">
+<p><a class="reference download internal" download="" href="../_downloads/fd4b8624b84dfd2501020543f5b2c2a7/plot_interval_resampling.zip"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">zipped:</span> <span class="pre">plot_interval_resampling.zip</span></code></a></p>
+</div>
+</div>
+<p class="sphx-glr-signature"><a class="reference external" href="https://sphinx-gallery.github.io">Gallery generated by Sphinx-Gallery</a></p>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="plot_find_intersection_to_function.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Find Drillhole intersection</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="plot_drillhole.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Single drill hole</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#setup-create-sample-drillhole-data">Setup: Create sample drillhole data</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#example-1-resample-to-regular-1m-intervals">Example 1: Resample to regular 1m intervals</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#example-2-resample-to-5m-intervals">Example 2: Resample to 5m intervals</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#example-3-mode-selection-with-overlapping-intervals">Example 3: Mode selection with overlapping intervals</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#example-4-vtk-visualization-with-properties">Example 4: VTK visualization with properties</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#example-5-multiple-properties">Example 5: Multiple properties</a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/_auto_examples/plot_interval_resampling.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+<script type="text/javascript">
+  $(document).ready(function () {
+    // Only target toggle elements inside the main content area to avoid hiding header/menu items
+    $(".bd-content .toggle > *").hide();
+    $(".bd-content .toggle .header").show();
+    $(".bd-content .toggle .header").click(function () {
+      $(this).parent().children().not(".header").toggle(400);
+      $(this).parent().children(".header").toggleClass("open");
+    });
+
+    // Ensure navbar/menu links are visible in case other scripts hid them
+    $("#navbar-main .nav, #navbar-main .nav-item, #navbar-main .nav-link").show();
+  });
+</script>
+
+  </body>
+</html>

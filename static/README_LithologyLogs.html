@@ -1,0 +1,751 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>LithologyLogs - Lithological Data Preprocessing &#8212; LoopResources 0.0.1 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery.css?v=d2d258e8" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-binder.css?v=f4aeca0c" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-dataframe.css?v=2082cf3c" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-rendered-html.css?v=1277b6f3" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+    <script src="../_static/documentation_options.js?v=d45e8c67"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'static/README_LithologyLogs';</script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="" />
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">LoopResources 0.0.1 documentation</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../_auto_examples/index.html">
+    Examples
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-external" href="https://www.loop3d.org">
+    Loop3d
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/loop3d/loopresources" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/loop3d" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-twitter-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">Twitter</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar hide-on-wide">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../_auto_examples/index.html">
+    Examples
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-external" href="https://www.loop3d.org">
+    Loop3d
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/loop3d/loopresources" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/loop3d" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-twitter-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">Twitter</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">LithologyLogs - Lithological Data Preprocessing</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="lithologylogs-lithological-data-preprocessing">
+<h1>LithologyLogs - Lithological Data Preprocessing<a class="headerlink" href="#lithologylogs-lithological-data-preprocessing" title="Link to this heading">#</a></h1>
+<p>The <code class="docutils literal notranslate"><span class="pre">LithologyLogs</span></code> class provides preprocessing tools for lithological
+drillhole data, enabling extraction of contacts, smoothing of intervals, and
+identification of lithological pairs.</p>
+<section id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Link to this heading">#</a></h2>
+<p>When using drillhole data for geological modelling, lithological logs need
+preprocessing to identify key geological features such as:</p>
+<ul class="simple">
+<li><p>Contacts between different rock types</p></li>
+<li><p>Basal contacts following stratigraphic sequences</p></li>
+<li><p>Statistical patterns in lithological transitions</p></li>
+<li><p>Smoothed representations of noisy data</p></li>
+</ul>
+<p>The <code class="docutils literal notranslate"><span class="pre">LithologyLogs</span></code> class provides methods for these operations and can store
+processed results as new tables in the drillhole database.</p>
+</section>
+<section id="installation">
+<h2>Installation<a class="headerlink" href="#installation" title="Link to this heading">#</a></h2>
+<p>The class is part of the <code class="docutils literal notranslate"><span class="pre">loopresources.analysis</span></code> module:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">loopresources.analysis</span><span class="w"> </span><span class="kn">import</span> <span class="n">LithologyLogs</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">loopresources.drillhole</span><span class="w"> </span><span class="kn">import</span> <span class="n">DrillholeDatabase</span>
+</pre></div>
+</div>
+</section>
+<section id="quick-start">
+<h2>Quick Start<a class="headerlink" href="#quick-start" title="Link to this heading">#</a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">loopresources.drillhole</span><span class="w"> </span><span class="kn">import</span> <span class="n">DrillholeDatabase</span><span class="p">,</span> <span class="n">DhConfig</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">loopresources.analysis</span><span class="w"> </span><span class="kn">import</span> <span class="n">LithologyLogs</span>
+
+<span class="c1"># Create or load a drillhole database</span>
+<span class="n">db</span> <span class="o">=</span> <span class="n">DrillholeDatabase</span><span class="p">(</span><span class="n">collar_data</span><span class="p">,</span> <span class="n">survey_data</span><span class="p">)</span>
+<span class="n">db</span><span class="o">.</span><span class="n">add_interval_table</span><span class="p">(</span><span class="s2">&quot;geology&quot;</span><span class="p">,</span> <span class="n">geology_data</span><span class="p">)</span>
+
+<span class="c1"># Initialize LithologyLogs</span>
+<span class="n">litho_logs</span> <span class="o">=</span> <span class="n">LithologyLogs</span><span class="p">(</span><span class="n">db</span><span class="p">,</span> <span class="s2">&quot;geology&quot;</span><span class="p">)</span>
+
+<span class="c1"># Extract contacts between lithologies</span>
+<span class="n">contacts</span> <span class="o">=</span> <span class="n">litho_logs</span><span class="o">.</span><span class="n">extract_contacts</span><span class="p">(</span><span class="n">store_as</span><span class="o">=</span><span class="s2">&quot;contacts&quot;</span><span class="p">)</span>
+
+<span class="c1"># Extract basal contacts following stratigraphic order</span>
+<span class="n">lithology_order</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;sandstone&quot;</span><span class="p">,</span> <span class="s2">&quot;granite&quot;</span><span class="p">,</span> <span class="s2">&quot;schist&quot;</span><span class="p">]</span>
+<span class="n">basal_contacts</span> <span class="o">=</span> <span class="n">litho_logs</span><span class="o">.</span><span class="n">extract_basal_contacts</span><span class="p">(</span>
+    <span class="n">lithology_order</span><span class="p">,</span> <span class="n">store_as</span><span class="o">=</span><span class="s2">&quot;basal_contacts&quot;</span>
+<span class="p">)</span>
+
+<span class="c1"># Apply smoothing filter</span>
+<span class="n">smoothed</span> <span class="o">=</span> <span class="n">litho_logs</span><span class="o">.</span><span class="n">apply_smoothing_filter</span><span class="p">(</span><span class="n">window_size</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">store_as</span><span class="o">=</span><span class="s2">&quot;geology_smoothed&quot;</span><span class="p">)</span>
+
+<span class="c1"># Identify lithological pairs</span>
+<span class="n">pairs</span> <span class="o">=</span> <span class="n">litho_logs</span><span class="o">.</span><span class="n">identify_lithological_pairs</span><span class="p">()</span>
+
+<span class="c1"># Calculate contact orientations</span>
+<span class="n">orientations</span> <span class="o">=</span> <span class="n">litho_logs</span><span class="o">.</span><span class="n">calculate_contact_orientations</span><span class="p">(</span>
+    <span class="n">store_as</span><span class="o">=</span><span class="s2">&quot;contact_orientations&quot;</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="methods">
+<h2>Methods<a class="headerlink" href="#methods" title="Link to this heading">#</a></h2>
+<section id="constructor">
+<h3>Constructor<a class="headerlink" href="#constructor" title="Link to this heading">#</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">LithologyLogs</span><span class="p">(</span><span class="n">database</span><span class="p">,</span> <span class="n">interval_table_name</span><span class="p">,</span> <span class="n">lithology_column</span><span class="o">=</span><span class="s2">&quot;LITHO&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Parameters:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">database</span></code>: DrillholeDatabase instance containing the lithology data</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">interval_table_name</span></code>: Name of the interval table with lithology data</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">lithology_column</span></code>: Name of the column containing lithology labels (default:
+‘LITHO’)</p></li>
+</ul>
+</section>
+<section id="extract-contacts">
+<h3>extract_contacts()<a class="headerlink" href="#extract-contacts" title="Link to this heading">#</a></h3>
+<p>Extract all contacts between different lithologies within each drillhole.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">contacts</span> <span class="o">=</span> <span class="n">litho_logs</span><span class="o">.</span><span class="n">extract_contacts</span><span class="p">(</span><span class="n">store_as</span><span class="o">=</span><span class="s2">&quot;contacts&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Parameters:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">store_as</span></code>: Optional name to store result as a point table</p></li>
+</ul>
+<p><strong>Returns:</strong> DataFrame with columns:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">HOLEID</span></code>: Drillhole identifier</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">DEPTH</span></code>: Depth of the contact</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">LITHO_ABOVE</span></code>: Lithology above the contact</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">LITHO_BELOW</span></code>: Lithology below the contact</p></li>
+</ul>
+<p><strong>Example:</strong></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">HOLEID</span>  <span class="n">DEPTH</span>  <span class="n">LITHO_ABOVE</span>  <span class="n">LITHO_BELOW</span>
+<span class="n">DH001</span>   <span class="mf">30.0</span>   <span class="n">granite</span>      <span class="n">schist</span>
+<span class="n">DH001</span>   <span class="mf">80.0</span>   <span class="n">schist</span>       <span class="n">granite</span>
+</pre></div>
+</div>
+</section>
+<section id="extract-basal-contacts">
+<h3>extract_basal_contacts()<a class="headerlink" href="#extract-basal-contacts" title="Link to this heading">#</a></h3>
+<p>Extract basal contacts (bottom boundaries) for lithologies following a specified
+stratigraphic order.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">basal_contacts</span> <span class="o">=</span> <span class="n">litho_logs</span><span class="o">.</span><span class="n">extract_basal_contacts</span><span class="p">(</span>
+    <span class="n">lithology_order</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;sandstone&quot;</span><span class="p">,</span> <span class="s2">&quot;granite&quot;</span><span class="p">,</span> <span class="s2">&quot;schist&quot;</span><span class="p">],</span> <span class="n">store_as</span><span class="o">=</span><span class="s2">&quot;basal_contacts&quot;</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Parameters:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">lithology_order</span></code>: Ordered list of lithology names from top to bottom</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">store_as</span></code>: Optional name to store result as a point table</p></li>
+</ul>
+<p><strong>Returns:</strong> DataFrame with columns:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">HOLEID</span></code>: Drillhole identifier</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">DEPTH</span></code>: Depth of the basal contact</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">LITHO</span></code>: Lithology unit</p></li>
+</ul>
+<p><strong>Use Case:</strong> When modelling stratigraphic sequences, basal contacts define the
+lower boundaries of geological units. This method extracts these boundaries
+while respecting the expected stratigraphic order.</p>
+</section>
+<section id="apply-smoothing-filter">
+<h3>apply_smoothing_filter()<a class="headerlink" href="#apply-smoothing-filter" title="Link to this heading">#</a></h3>
+<p>Apply a moving average smoothing filter to lithology intervals.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">smoothed</span> <span class="o">=</span> <span class="n">litho_logs</span><span class="o">.</span><span class="n">apply_smoothing_filter</span><span class="p">(</span><span class="n">window_size</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">store_as</span><span class="o">=</span><span class="s2">&quot;geology_smoothed&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Parameters:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">window_size</span></code>: Size of the smoothing window (number of intervals)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">store_as</span></code>: Optional name to store result as an interval table</p></li>
+</ul>
+<p><strong>Returns:</strong> DataFrame with smoothed interval boundaries</p>
+<p><strong>Use Case:</strong> Geological logging can be noisy, with small intervals that may not
+be geologically significant. Smoothing can help identify major trends while
+reducing noise.</p>
+</section>
+<section id="identify-lithological-pairs">
+<h3>identify_lithological_pairs()<a class="headerlink" href="#identify-lithological-pairs" title="Link to this heading">#</a></h3>
+<p>Identify and count all unique pairs of adjacent lithologies across all
+drillholes.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">pairs</span> <span class="o">=</span> <span class="n">litho_logs</span><span class="o">.</span><span class="n">identify_lithological_pairs</span><span class="p">(</span><span class="n">store_as</span><span class="o">=</span><span class="s2">&quot;litho_pairs&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Parameters:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">store_as</span></code>: Optional name to store individual contacts as a point table</p></li>
+</ul>
+<p><strong>Returns:</strong> DataFrame with columns:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">LITHO_ABOVE</span></code>: Upper lithology in the pair</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">LITHO_BELOW</span></code>: Lower lithology in the pair</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">COUNT</span></code>: Number of times this pair occurs</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">HOLES</span></code>: Comma-separated list of hole IDs where pair occurs</p></li>
+</ul>
+<p><strong>Example:</strong></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">LITHO_ABOVE</span>  <span class="n">LITHO_BELOW</span>  <span class="n">COUNT</span>  <span class="n">HOLES</span>
+<span class="n">granite</span>      <span class="n">schist</span>       <span class="mi">5</span>      <span class="n">DH001</span><span class="p">,</span><span class="n">DH002</span><span class="p">,</span><span class="n">DH003</span>
+<span class="n">schist</span>       <span class="n">granite</span>      <span class="mi">3</span>      <span class="n">DH001</span><span class="p">,</span><span class="n">DH002</span>
+</pre></div>
+</div>
+<p><strong>Use Case:</strong> Understanding which lithological transitions are common helps
+validate geological models and identify important contacts for structural
+modelling.</p>
+</section>
+<section id="calculate-contact-orientations">
+<h3>calculate_contact_orientations()<a class="headerlink" href="#calculate-contact-orientations" title="Link to this heading">#</a></h3>
+<p>Calculate the orientation of lithological contacts using nearest neighbor
+analysis.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">orientations</span> <span class="o">=</span> <span class="n">litho_logs</span><span class="o">.</span><span class="n">calculate_contact_orientations</span><span class="p">(</span>
+    <span class="n">radius</span><span class="o">=</span><span class="mf">500.0</span><span class="p">,</span> <span class="n">min_neighbors</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">store_as</span><span class="o">=</span><span class="s2">&quot;contact_orientations&quot;</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Parameters:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">radius</span></code>: Search radius for nearest neighbors in 3D space (optional). If None,
+uses 2x the average spacing between drillhole collars.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">min_neighbors</span></code>: Minimum number of neighbors required to fit a plane
+(default: 3)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">store_as</span></code>: Optional name to store result as a point table</p></li>
+</ul>
+<p><strong>Returns:</strong> DataFrame with columns:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">HOLEID</span></code>: Drillhole identifier</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">DEPTH</span></code>: Depth of the contact</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">LITHO_ABOVE</span></code>, <code class="docutils literal notranslate"><span class="pre">LITHO_BELOW</span></code>: Lithologies on either side</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">x</span></code>, <code class="docutils literal notranslate"><span class="pre">y</span></code>, <code class="docutils literal notranslate"><span class="pre">z</span></code>: 3D coordinates of the contact (desurveyed)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">nx</span></code>, <code class="docutils literal notranslate"><span class="pre">ny</span></code>, <code class="docutils literal notranslate"><span class="pre">nz</span></code>: Normal vector components (unit vector)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">dip</span></code>: Dip angle from horizontal in degrees (0-90)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">azimuth</span></code>: Strike azimuth in degrees (0-360, North = 0)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">n_neighbors</span></code>: Number of neighbors used for plane fitting</p></li>
+</ul>
+<p><strong>Algorithm:</strong></p>
+<ol class="arabic simple">
+<li><p>Extracts all lithology contacts</p></li>
+<li><p>Desurveys contacts to 3D coordinates</p></li>
+<li><p>Uses BallTree to find nearest neighbor contacts within radius</p></li>
+<li><p>Fits a plane to neighbor points using Principal Component Analysis (PCA)</p></li>
+<li><p>Extracts normal vector (perpendicular to contact surface)</p></li>
+<li><p>Converts to geological dip and azimuth conventions</p></li>
+</ol>
+<p><strong>Use Case:</strong> Contact orientations are essential for 3D geological modelling. By
+analyzing multiple contact points from different drillholes, this method
+estimates the spatial orientation of lithological boundaries. The normal vector
+points perpendicular to the contact surface and can be used as structural data
+for implicit modelling methods.</p>
+<p><strong>Example:</strong></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">HOLEID</span>  <span class="n">DEPTH</span>  <span class="n">dip</span>    <span class="n">azimuth</span>  <span class="n">n_neighbors</span>
+<span class="n">DH001</span>   <span class="mf">30.0</span>   <span class="mf">45.2</span>   <span class="mf">125.3</span>    <span class="mi">5</span>
+<span class="n">DH002</span>   <span class="mf">40.0</span>   <span class="mf">43.8</span>   <span class="mf">128.7</span>    <span class="mi">7</span>
+</pre></div>
+</div>
+<p>In this example, both contacts dip at approximately 45° with a strike azimuth
+around 125-130°, suggesting a consistent geological structure.</p>
+</section>
+</section>
+<section id="storage-of-results">
+<h2>Storage of Results<a class="headerlink" href="#storage-of-results" title="Link to this heading">#</a></h2>
+<p>All methods support an optional <code class="docutils literal notranslate"><span class="pre">store_as</span></code> parameter. When provided:</p>
+<ul class="simple">
+<li><p>Contact-based results are stored as <strong>point tables</strong> in the database</p></li>
+<li><p>Smoothed intervals are stored as <strong>interval tables</strong> in the database</p></li>
+</ul>
+<p>Stored tables can be accessed later:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Access stored contacts</span>
+<span class="n">contacts</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">points</span><span class="p">[</span><span class="s2">&quot;contacts&quot;</span><span class="p">]</span>
+
+<span class="c1"># Access smoothed geology</span>
+<span class="n">smoothed</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">intervals</span><span class="p">[</span><span class="s2">&quot;geology_smoothed&quot;</span><span class="p">]</span>
+
+<span class="c1"># Export for use in LoopStructural</span>
+<span class="n">db</span><span class="o">.</span><span class="n">to_loopstructural_contacts</span><span class="p">(</span><span class="s2">&quot;contacts&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="example-workflow">
+<h2>Example Workflow<a class="headerlink" href="#example-workflow" title="Link to this heading">#</a></h2>
+<p>See <code class="docutils literal notranslate"><span class="pre">demo_lithology_logs.py</span></code> for a complete example showing:</p>
+<ol class="arabic simple">
+<li><p>Creating a drillhole database with lithology data</p></li>
+<li><p>Extracting all types of contacts</p></li>
+<li><p>Applying smoothing filters</p></li>
+<li><p>Identifying lithological patterns</p></li>
+<li><p>Calculating contact orientations</p></li>
+<li><p>Storing and accessing results</p></li>
+</ol>
+</section>
+<section id="integration-with-drillhole-database">
+<h2>Integration with Drillhole Database<a class="headerlink" href="#integration-with-drillhole-database" title="Link to this heading">#</a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">LithologyLogs</span></code> class is designed to work seamlessly with the
+<code class="docutils literal notranslate"><span class="pre">DrillholeDatabase</span></code> class:</p>
+<ul class="simple">
+<li><p><strong>Non-destructive</strong>: Original data is never modified</p></li>
+<li><p><strong>Flexible storage</strong>: Results can be stored as new tables or used directly</p></li>
+<li><p><strong>Database integration</strong>: Stored tables follow the same conventions as other
+drillhole data</p></li>
+<li><p><strong>Export ready</strong>: Processed results can be exported to LoopStructural or other
+formats</p></li>
+</ul>
+</section>
+<section id="notes">
+<h2>Notes<a class="headerlink" href="#notes" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p>All methods process each drillhole independently to maintain data integrity</p></li>
+<li><p>Intervals are automatically sorted by depth within each hole</p></li>
+<li><p>Contact extraction only identifies boundaries between different lithologies</p></li>
+<li><p>Smoothing preserves lithology labels while adjusting interval boundaries</p></li>
+<li><p>Pair identification handles both directions of transitions (A→B and B→A as
+separate pairs)</p></li>
+</ul>
+</section>
+<section id="requirements">
+<h2>Requirements<a class="headerlink" href="#requirements" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p>pandas</p></li>
+<li><p>numpy</p></li>
+<li><p>scipy (for smoothing filters)</p></li>
+<li><p>scikit-learn (for BallTree nearest neighbor search)</p></li>
+<li><p>loopresources (drillhole module)</p></li>
+</ul>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#overview">Overview</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#installation">Installation</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#quick-start">Quick Start</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#methods">Methods</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#constructor">Constructor</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#extract-contacts">extract_contacts()</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#extract-basal-contacts">extract_basal_contacts()</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#apply-smoothing-filter">apply_smoothing_filter()</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#identify-lithological-pairs">identify_lithological_pairs()</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#calculate-contact-orientations">calculate_contact_orientations()</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#storage-of-results">Storage of Results</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#example-workflow">Example Workflow</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#integration-with-drillhole-database">Integration with Drillhole Database</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#notes">Notes</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#requirements">Requirements</a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/static/README_LithologyLogs.md.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+<script type="text/javascript">
+  $(document).ready(function () {
+    // Only target toggle elements inside the main content area to avoid hiding header/menu items
+    $(".bd-content .toggle > *").hide();
+    $(".bd-content .toggle .header").show();
+    $(".bd-content .toggle .header").click(function () {
+      $(this).parent().children().not(".header").toggle(400);
+      $(this).parent().children(".header").toggleClass("open");
+    });
+
+    // Ensure navbar/menu links are visible in case other scripts hid them
+    $("#navbar-main .nav, #navbar-main .nav-item, #navbar-main .nav-link").show();
+  });
+</script>
+
+  </body>
+</html>
