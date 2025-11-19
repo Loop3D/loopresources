@@ -44,6 +44,7 @@ dependencies = [
   "pandas",
   "scipy",
   "tqdm",
+  "LoopStructural>=1.6.21",
 ]
 optional-dependencies.all = [ "loop", "vtk" ]
 optional-dependencies.dev = [
