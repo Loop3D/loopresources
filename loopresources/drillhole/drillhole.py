@@ -99,7 +99,7 @@ class DrillHoleTrace:
     def find_implicit_function_intersection(
         self, function: Callable[[ArrayLike], ArrayLike], intersection_value : float = 0.0
     ) -> pd.DataFrame:
-        """Find intersection of drillhole trace with an implicit function.
+        """Find intersection of drillhole trace with an impliit function.
 
         The provided function may be vectorised (accepting an Nx3 array and returning N values)
         or accept separate x,y,z arrays. Returns DataFrame with columns: depth, x, y, z.
