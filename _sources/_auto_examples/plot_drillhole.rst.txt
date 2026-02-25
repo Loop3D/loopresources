@@ -39,8 +39,8 @@ using pyvista.
 
  .. code-block:: none
 
-    /opt/hostedtoolcache/Python/3.12.12/x64/lib/python3.12/site-packages/pyvista/core/utilities/points.py:79: UserWarning: Points is not a float type. This can cause issues when transforming or applying filters. Casting to ``np.float32``. Disable this by passing ``force_float=False``.
-      warnings.warn(
+    /home/runner/work/loopresources/loopresources/examples/plot_drillhole.py:31: UserWarning: Points is not a float type. This can cause issues when transforming or applying filters. Casting to ``np.float32``. Disable this by passing ``force_float=False``.
+      p.add_points(np.array([[0,0,0]]), color="red", point_size=10)
         DEPTH  AZIMUTH    DIP  x_from  ...      z_mid    x          y          z
     0     0.0      0.0 -10.00     0.0  ...  -0.500000  0.5   0.500000  -0.500000
     1     1.0      0.0 -10.04     0.0  ...  -0.673992  0.5   1.484747  -0.673992
@@ -95,7 +95,7 @@ using pyvista.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 0.483 seconds)
+   **Total running time of the script:** (0 minutes 0.384 seconds)
 
 
 .. _sphx_glr_download__auto_examples_plot_drillhole.py:

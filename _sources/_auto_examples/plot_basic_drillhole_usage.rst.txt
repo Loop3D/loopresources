@@ -431,9 +431,11 @@ Show some summary statistics.
 
  .. code-block:: none
 
+    /opt/hostedtoolcache/Python/3.12.12/x64/lib/python3.12/site-packages/LoopStructural/datatypes/_bounding_box.py:277: RuntimeWarning: invalid value encountered in cast
+      nsteps = np.ceil((self.maximum - self.origin) / step_vector).astype(int)
 
     Database extent (xmin, xmax, ymin, ymax, zmin, zmax):
-    BoundingBox(origin:[0. 0. 0.], maximum:[ 300.         3000.          434.74561581], nsteps:[50 50 25])
+    BoundingBox(origin:[0. 0. 0.], maximum:[ 300.         3000.          434.74561581], nsteps:[-9223372036854775808 -9223372036854775808 -9223372036854775808])
 
     Total depth range: 150.0 to 220.0m
 
@@ -447,7 +449,7 @@ Show some summary statistics.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 0.269 seconds)
+   **Total running time of the script:** (0 minutes 0.226 seconds)
 
 
 .. _sphx_glr_download__auto_examples_plot_basic_drillhole_usage.py:

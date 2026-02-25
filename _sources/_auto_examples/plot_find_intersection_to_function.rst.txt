@@ -195,7 +195,7 @@ We can also calculate the orientation of the implicit function at the intersecti
 
 
     Intersection normals: 
-     [[ 0.00189416 -0.13495161 -0.13495099]]
+     [[-0.00219425  0.13552001  0.13551867]]
 
 
 
@@ -203,7 +203,7 @@ We can also calculate the orientation of the implicit function at the intersecti
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 3.629 seconds)
+   **Total running time of the script:** (0 minutes 2.984 seconds)
 
 
 .. _sphx_glr_download__auto_examples_plot_find_intersection_to_function.py:

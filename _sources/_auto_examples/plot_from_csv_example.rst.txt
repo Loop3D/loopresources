@@ -183,9 +183,11 @@ Database Statistics
     Total holes: 5275
     Total collar records: 5277
     Total survey records: 18855
+    /opt/hostedtoolcache/Python/3.12.12/x64/lib/python3.12/site-packages/LoopStructural/datatypes/_bounding_box.py:277: RuntimeWarning: invalid value encountered in cast
+      nsteps = np.ceil((self.maximum - self.origin) / step_vector).astype(int)
 
     Coordinate Ranges:
-    BoundingBox(origin:[0. 0. 0.], maximum:[5460.98164532 2901.77029147 1977.93461876], nsteps:[50 50 25])
+    BoundingBox(origin:[0. 0. 0.], maximum:[5460.98164532 2901.77029147 1977.93461876], nsteps:[-9223372036854775808 -9223372036854775808 -9223372036854775808])
 
 
 
@@ -263,7 +265,7 @@ Summary
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 47.244 seconds)
+   **Total running time of the script:** (0 minutes 42.043 seconds)
 
 
 .. _sphx_glr_download__auto_examples_plot_from_csv_example.py:

@@ -43,8 +43,8 @@
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
     <script src="../_static/documentation_options.js?v=d45e8c67"></script>
-    <script src="../_static/doctools.js?v=9bcbadda"></script>
-    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_auto_examples/plot_basic_drillhole_usage';</script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
@@ -636,8 +636,11 @@ Filtered by AU &gt; 1.0 ppm: 4 holes with data
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Copper (CU): </span><span class="si">{</span><span class="n">assay_data</span><span class="p">[</span><span class="s1">&#39;CU_pct&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">min</span><span class="p">()</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> to </span><span class="si">{</span><span class="n">assay_data</span><span class="p">[</span><span class="s1">&#39;CU_pct&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> %&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Database extent (xmin, xmax, ymin, ymax, zmin, zmax):
-BoundingBox(origin:[0. 0. 0.], maximum:[ 300.         3000.          434.74561581], nsteps:[50 50 25])
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>/opt/hostedtoolcache/Python/3.12.12/x64/lib/python3.12/site-packages/LoopStructural/datatypes/_bounding_box.py:277: RuntimeWarning: invalid value encountered in cast
+  nsteps = np.ceil((self.maximum - self.origin) / step_vector).astype(int)
+
+Database extent (xmin, xmax, ymin, ymax, zmin, zmax):
+BoundingBox(origin:[0. 0. 0.], maximum:[ 300.         3000.          434.74561581], nsteps:[-9223372036854775808 -9223372036854775808 -9223372036854775808])
 
 Total depth range: 150.0 to 220.0m
 
@@ -646,7 +649,7 @@ Assay statistics:
   Copper (CU): 0.02 to 0.30 %
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 0.269 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 0.226 seconds)</p>
 <div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-auto-examples-plot-basic-drillhole-usage-py">
 <div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/e84726b8d10356fa0ff475a67457c08f/plot_basic_drillhole_usage.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">plot_basic_drillhole_usage.ipynb</span></code></a></p>
