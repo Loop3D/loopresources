@@ -364,7 +364,9 @@ class DrillholeDatabase:
             hole_ax.set_xlabel("Hole")
             hole_ax.set_ylabel("Depth")
             hole_ax.set_title(hole_id)
-
+        legend_loc = legend_loc.lower()
+        if legend_loc not in {"right", "bottom", "none"}:
+            raise ValueError("legend_loc must be 'right', 'bottom', or 'none'")
         if show_legend and legend_loc != "none":
             handles = [
                 mpatches.Patch(color=cmap_obj(i), label=str(cat))
