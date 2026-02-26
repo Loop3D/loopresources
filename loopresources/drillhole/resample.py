@@ -65,12 +65,6 @@ def resample_point(
                 > r[DhConfig.depth].to_numpy()[:, None],
             )
         )
-        _exact_from = np.where(
-            table[DhConfig.sample_from].to_numpy()[None, :] == r[DhConfig.depth].to_numpy()[:, None]
-        )
-        _exact_to = np.where(
-            table[DhConfig.sample_to].to_numpy()[None, :] == r[DhConfig.depth].to_numpy()[:, None]
-        )
         cols_in = [col for col in cols if col in table.columns]
         r[cols_in] = np.nan
         r.loc[r.index[i], cols_in] = table.loc[table.index[j], cols_in].to_numpy()
@@ -170,9 +164,9 @@ def resample_interval(
 
             # Initialize column with appropriate type
             if table[col].dtype == "object" or pd.api.types.is_string_dtype(table[col]):
-                new_columns[col] = np.array([None] * len(r), dtype=object)
+                new_columns[col] = np.full(len(r), None, dtype=object)
             else:
-                new_columns[col] = np.array([np.nan] * len(r))
+                new_columns[col] = np.full(len(r), np.nan)
 
             # find values in the intervals and assign them to the survey
             new_columns[col][r.index[i]] = table.loc[table.index[j], col].to_numpy()
@@ -326,49 +320,98 @@ def merge_interval_tables(tables: List[pd.DataFrame]) -> pd.DataFrame:
     for t in processed_tables:
         hole_ids.update(t[DhConfig.holeid].unique())
 
+    # Pre-group tables by hole_id to avoid repeated filtering
+    tables_by_hole = {}
+    for hole in hole_ids:
+        tables_by_hole[hole] = []
+        for t in processed_tables:
+            sub = t[t[DhConfig.holeid] == hole]
+            if not sub.empty:
+                tables_by_hole[hole].append(sub)
+
     merged_rows = []
 
     # Process each hole independently
     for hole in sorted(hole_ids):
+        hole_tables = tables_by_hole[hole]
+        if not hole_tables:
+            continue
+            
         # collect all unique boundaries for this hole
         boundaries = set()
-        for t in processed_tables:
-            sub = t[t[DhConfig.holeid] == hole]
-            if sub.empty:
-                continue
-            boundaries.update(sub[DhConfig.sample_from].tolist())
-            boundaries.update(sub[DhConfig.sample_to].tolist())
+        for sub in hole_tables:
+            boundaries.update(sub[DhConfig.sample_from].to_numpy())
+            boundaries.update(sub[DhConfig.sample_to].to_numpy())
+        
         if not boundaries:
             continue
         sorted_bounds = sorted(boundaries)
 
-        # build atomic segments between consecutive boundaries
-        for a, b in zip(sorted_bounds[:-1], sorted_bounds[1:]):
-            if b <= a:
-                continue
-            row = {
-                DhConfig.holeid: hole,
-                DhConfig.sample_from: a,
-                DhConfig.sample_to: b,
-            }
+        # Pre-convert tables to numpy arrays for faster access
+        table_arrays = []
+        for sub in hole_tables:
+            from_arr = sub[DhConfig.sample_from].to_numpy()
+            to_arr = sub[DhConfig.sample_to].to_numpy()
+            data_cols = [c for c in sub.columns if c not in required]
+            table_arrays.append((from_arr, to_arr, sub, data_cols))
 
-            # For each processed table, find the interval that covers [a,b]
-            for t in processed_tables:
-                sub = t[t[DhConfig.holeid] == hole]
-                if sub.empty:
-                    continue
-                cover = sub[(sub[DhConfig.sample_from] <= a) & (sub[DhConfig.sample_to] >= b)]
-                if cover.empty:
-                    # no covering interval -> leave values as NaN
-                    continue
-                # If multiple matches take the first (shouldn't happen if inputs valid)
-                cover_row = cover.iloc[0]
-                for c in cover_row.index:
-                    if c in {DhConfig.holeid, DhConfig.sample_from, DhConfig.sample_to}:
-                        continue
-                    # only set value if not already present (earlier table wins for same-named column)
-                    if c not in row:
-                        row[c] = cover_row[c]
+        # build atomic segments between consecutive boundaries
+        n_segments = len(sorted_bounds) - 1
+        if n_segments <= 0:
+            continue
+            
+        # Create base arrays for the segments
+        segment_from = np.array(sorted_bounds[:-1])
+        segment_to = np.array(sorted_bounds[1:])
+        
+        # Filter out zero-length segments
+        valid_mask = segment_to > segment_from
+        segment_from = segment_from[valid_mask]
+        segment_to = segment_to[valid_mask]
+        n_valid = len(segment_from)
+        
+        if n_valid == 0:
+            continue
+
+        # Initialize rows array
+        rows_data = {
+            DhConfig.holeid: np.full(n_valid, hole),
+            DhConfig.sample_from: segment_from,
+            DhConfig.sample_to: segment_to,
+        }
+
+        # For each table, vectorize the interval matching using full broadcasting
+        for from_arr, to_arr, sub, data_cols in table_arrays:
+            # Broadcast segment boundaries and interval boundaries for vectorized comparison
+            # segment [a,b] is covered by interval [from,to] if from <= a AND to >= b
+            segment_from_2d = segment_from[:, None]  # Shape: (n_valid, 1)
+            segment_to_2d = segment_to[:, None]      # Shape: (n_valid, 1)
+            from_arr_2d = from_arr[None, :]         # Shape: (1, n_intervals)
+            to_arr_2d = to_arr[None, :]             # Shape: (1, n_intervals)
+            
+            # Check coverage for all segment-interval combinations at once
+            # Shape: (n_valid, n_intervals) - True where interval covers segment
+            covering = (from_arr_2d <= segment_from_2d) & (to_arr_2d >= segment_to_2d)
+            
+            # For each segment, find first covering interval
+            # Use argmax to find first True (returns 0 if all False)
+            cover_indices = np.argmax(covering, axis=1)
+            # Verify that coverage actually exists (argmax returns 0 even if no True)
+            has_cover = covering[np.arange(n_valid), cover_indices]
+            
+            # Vectorized data copying for all segments at once
+            for c in data_cols:
+                if c not in rows_data:
+                    # Initialize column with NaN
+                    rows_data[c] = np.full(n_valid, np.nan, dtype=object)
+                # Only copy where coverage exists and cell is still NaN
+                mask = has_cover & pd.isna(rows_data[c])
+                if mask.any():
+                    rows_data[c][mask] = sub[c].iloc[cover_indices[mask]].values
+
+        # Convert to list of dicts for DataFrame construction
+        for idx in range(n_valid):
+            row = {k: v[idx] if isinstance(v, np.ndarray) else v for k, v in rows_data.items()}
             merged_rows.append(row)
 
     if not merged_rows:
