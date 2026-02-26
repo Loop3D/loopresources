@@ -387,6 +387,192 @@ class DrillHole:
         """
         return DrillHoleTrace(self, interval=step)
 
+    def _downhole_depth_grid(
+        self, step: float, max_depth: Optional[float] = None
+    ) -> np.ndarray:
+        if step <= 0:
+            raise ValueError("step must be > 0")
+        if max_depth is None:
+            max_depth = float(self.collar[DhConfig.total_depth].values[0])
+        if max_depth <= 0:
+            return np.array([], dtype=float)
+        return np.arange(0.0, max_depth + step, step)
+
+    def _sample_downhole_values(
+        self,
+        table_name: str,
+        column: str,
+        step: float,
+        kind: str,
+        depth_grid: Optional[np.ndarray] = None,
+    ):
+        if table_name in self.database.intervals:
+            table = self[table_name]
+            if table.empty:
+                return np.array([], dtype=float), np.array([], dtype=float)
+            if column not in table.columns:
+                raise KeyError(f"Column '{column}' not found in interval table '{table_name}'")
+            grid = depth_grid if depth_grid is not None else self._downhole_depth_grid(step)
+            from .resample import resample_interval
+
+            sampled = resample_interval(
+                pd.DataFrame({DhConfig.depth: grid}), table, [column], method="direct"
+            )
+            return sampled[DhConfig.depth].to_numpy(), sampled[column].to_numpy()
+
+        if table_name in self.database.points:
+            table = self[table_name]
+            if table.empty:
+                return np.array([], dtype=float), np.array([], dtype=float)
+            if column not in table.columns:
+                raise KeyError(f"Column '{column}' not found in point table '{table_name}'")
+            if kind == "line":
+                return table[DhConfig.depth].to_numpy(), table[column].to_numpy()
+
+            grid = depth_grid if depth_grid is not None else self._downhole_depth_grid(step)
+            values = np.array([None] * len(grid), dtype=object)
+            depths = table[DhConfig.depth].to_numpy()
+            for depth, value in zip(depths, table[column].to_numpy()):
+                if step <= 0:
+                    continue
+                idx = int(np.round(depth / step))
+                if 0 <= idx < len(values):
+                    values[idx] = value
+            return grid, values
+
+        raise KeyError(f"Table '{table_name}' not found in intervals or points")
+
+    def plot_downhole(
+        self,
+        table_name: str,
+        column: str,
+        kind: str = "line",
+        step: float = 1.0,
+        ax=None,
+        cmap: str = "tab20",
+        show_legend: bool = True,
+        **kwargs,
+    ):
+        """Plot a downhole variable as a line or categorical image.
+
+        Parameters
+        ----------
+        table_name : str
+            Interval or point table name.
+        column : str
+            Column to plot.
+        kind : {"line", "categorical", "image"}
+            Plot style. Use "categorical" for discrete values and "image" for numeric heatmaps.
+        step : float, default 1.0
+            Sampling step (meters) for interval or categorical plots.
+        ax : matplotlib.axes.Axes, optional
+            Axes to plot on.
+        cmap : str, default "tab20"
+            Colormap name for categorical plots.
+        show_legend : bool, default True
+            Whether to show a legend.
+        **kwargs
+            Passed through to matplotlib plot functions.
+        """
+        import matplotlib.pyplot as plt
+        import matplotlib.patches as mpatches
+
+        kind = kind.lower()
+        if kind not in {"line", "categorical", "image"}:
+            raise ValueError("kind must be 'line', 'categorical', or 'image'")
+
+        if ax is None:
+            _, ax = plt.subplots(figsize=(4, 8))
+
+        depths, values = self._sample_downhole_values(table_name, column, step, kind)
+        if len(depths) == 0:
+            return ax
+
+        if kind == "line":
+            series = pd.to_numeric(pd.Series(values), errors="coerce")
+            mask = ~np.isnan(series.to_numpy())
+            if not mask.any():
+                return ax
+            ax.plot(series[mask], np.asarray(depths)[mask], label=self.hole_id, **kwargs)
+            ax.set_xlabel(column)
+            ax.set_ylabel("Depth")
+            ax.set_title(f"{self.hole_id} {column}")
+            ax.invert_yaxis()
+            if show_legend:
+                ax.legend()
+            return ax
+
+        if kind == "image":
+            series = pd.to_numeric(pd.Series(values), errors="coerce")
+            if series.isna().all():
+                return ax
+            data = np.ma.masked_invalid(series.to_numpy())[:, None]
+            max_depth = float(np.nanmax(depths)) if len(depths) else 0.0
+            im = ax.imshow(
+                data,
+                aspect="auto",
+                interpolation="nearest",
+                origin="upper",
+                extent=(0.0, 1.0, max_depth, 0.0),
+                cmap=cmap,
+            )
+            ax.set_xticks([0.5])
+            ax.set_xticklabels([self.hole_id])
+            ax.set_xlabel("Hole")
+            ax.set_ylabel("Depth")
+            ax.set_title(f"{column}")
+            if show_legend:
+                ax.figure.colorbar(im, ax=ax, label=column)
+            return ax
+
+        depth_values = np.asarray(values, dtype=object)
+        category_values = pd.Series(depth_values)
+        categories = [c for c in category_values.unique() if pd.notna(c)]
+        if not categories:
+            return ax
+        category_to_code = {cat: idx for idx, cat in enumerate(categories)}
+
+        codes = np.full(len(depth_values), -1.0)
+        for idx, value in enumerate(depth_values):
+            if pd.notna(value):
+                codes[idx] = category_to_code[value]
+
+        masked = np.ma.masked_where(codes < 0, codes)
+        cmap_obj = plt.get_cmap(cmap, len(categories))
+        try:
+            cmap_obj = cmap_obj.copy()
+        except Exception:
+            pass
+        try:
+            cmap_obj.set_bad(color="lightgray")
+        except Exception:
+            pass
+
+        max_depth = float(np.nanmax(depths)) if len(depths) else 0.0
+        ax.imshow(
+            masked[:, None],
+            aspect="auto",
+            interpolation="nearest",
+            origin="upper",
+            extent=(0.0, 1.0, max_depth, 0.0),
+            cmap=cmap_obj,
+            vmin=0,
+            vmax=max(0, len(categories) - 1),
+        )
+        ax.set_xticks([0.5])
+        ax.set_xticklabels([self.hole_id])
+        ax.set_xlabel("Hole")
+        ax.set_ylabel("Depth")
+        ax.set_title(f"{column}")
+
+        if show_legend:
+            handles = [
+                mpatches.Patch(color=cmap_obj(i), label=str(cat))
+                for i, cat in enumerate(categories)
+            ]
+            ax.legend(handles=handles, title=column, bbox_to_anchor=(1.02, 1), loc="upper left")
+        return ax
+
     def find_implicit_function_intersection(
         self, function: Callable[[ArrayLike], ArrayLike], step: float = 1.0, intersection_value : float = 0.0
     ) -> pd.DataFrame:

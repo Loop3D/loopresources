@@ -142,6 +142,234 @@ class DrillholeDatabase:
             ax.text(x, y, hole_id, fontsize=9, ha="right", va="bottom")
         return ax
 
+    def plot_downhole(
+        self,
+        table_name: str,
+        column: str,
+        holes: Optional[List[str]] = None,
+        kind: str = "line",
+        step: float = 1.0,
+        ax=None,
+        layout: str = "grid",
+        ncols: int = 3,
+        cmap: str = "tab20",
+        show_legend: bool = True,
+        **kwargs,
+    ):
+        """Plot a downhole variable for one or more drillholes.
+
+        Parameters
+        ----------
+        table_name : str
+            Interval or point table name.
+        column : str
+            Column to plot.
+        holes : list of str, optional
+            Hole IDs to include. Defaults to all holes in the collar table.
+        kind : {"line", "categorical", "image"}
+            Plot style. Use "categorical" for discrete values and "image" for numeric heatmaps.
+        step : float, default 1.0
+            Sampling step (meters) for interval or categorical plots.
+        ax : matplotlib.axes.Axes, optional
+            Axes to plot on.
+        layout : {"grid", "column"}, default "grid"
+            Layout for multiple holes when ax is None.
+        ncols : int, default 3
+            Number of columns when layout is "grid".
+        cmap : str, default "tab20"
+            Colormap name for categorical plots.
+        show_legend : bool, default True
+            Whether to show a legend.
+        **kwargs
+            Passed through to matplotlib plot functions.
+        """
+        import matplotlib.pyplot as plt
+        import matplotlib.patches as mpatches
+
+        kind = kind.lower()
+        if kind not in {"line", "categorical", "image"}:
+            raise ValueError("kind must be 'line', 'categorical', or 'image'")
+        if holes is None:
+            holes = list(self.collar[DhConfig.holeid].unique())
+        else:
+            holes = list(holes)
+
+        valid_holes = [
+            hole_id
+            for hole_id in holes
+            if hole_id in set(self.collar[DhConfig.holeid].unique())
+        ]
+        if not valid_holes:
+            return ax
+
+        layout = layout.lower()
+        if layout not in {"grid", "column"}:
+            raise ValueError("layout must be 'grid' or 'column'")
+
+        axes = None
+        if ax is None:
+            if len(valid_holes) == 1:
+                fig, axes = plt.subplots(figsize=(6, 4))
+                ax = axes
+            elif layout == "column":
+                fig, axes = plt.subplots(
+                    nrows=len(valid_holes), ncols=1, figsize=(6, 3 * len(valid_holes)), sharex=True
+                )
+                ax = axes
+            else:
+                ncols = max(1, int(ncols))
+                nrows = int(np.ceil(len(valid_holes) / ncols))
+                fig, axes = plt.subplots(
+                    nrows=nrows,
+                    ncols=ncols,
+                    figsize=(4 * ncols, 3 * nrows),
+                    sharex=True,
+                    sharey=True,
+                )
+                ax = axes
+        elif isinstance(ax, (list, tuple, np.ndarray)):
+            ax = np.array(ax)
+            if ax.size < len(valid_holes):
+                raise ValueError("ax must have at least one axis per hole")
+            axes = ax
+        else:
+            if len(valid_holes) > 1:
+                raise ValueError(
+                    "Multiple holes require one axis per hole. Pass ax as a list/array or omit ax."
+                )
+
+        axes_array = np.array(ax).ravel() if isinstance(ax, np.ndarray) else np.array([ax])
+        axes_list = axes_array[: len(valid_holes)]
+        if axes is not None and isinstance(axes, np.ndarray) and axes_array.size > len(valid_holes):
+            for extra_ax in axes_array[len(valid_holes) :]:
+                extra_ax.set_visible(False)
+
+        if kind == "line":
+            for hole_id, hole_ax in zip(valid_holes, axes_list):
+                hole = DrillHole(self, hole_id)
+                depths, values = hole._sample_downhole_values(
+                    table_name, column, step, kind
+                )
+                if len(depths) == 0:
+                    continue
+                series = pd.to_numeric(pd.Series(values), errors="coerce")
+                mask = ~np.isnan(series.to_numpy())
+                if not mask.any():
+                    continue
+                hole_ax.plot(series[mask], np.asarray(depths)[mask], label=hole_id, **kwargs)
+                hole_ax.set_xlabel(column)
+                hole_ax.set_ylabel("Depth")
+                hole_ax.set_title(hole_id)
+                hole_ax.invert_yaxis()
+                if show_legend:
+                    hole_ax.legend()
+            return axes if axes is not None else ax
+
+        if kind == "image":
+            if step <= 0:
+                raise ValueError("step must be > 0")
+            for hole_id, hole_ax in zip(valid_holes, axes_list):
+                hole = DrillHole(self, hole_id)
+                max_depth = float(hole.collar[DhConfig.total_depth].values[0])
+                if max_depth <= 0:
+                    continue
+                depth_grid = np.arange(0.0, max_depth + step, step)
+                _, values = hole._sample_downhole_values(
+                    table_name, column, step, kind, depth_grid=depth_grid
+                )
+                if len(values) == 0:
+                    continue
+                series = pd.to_numeric(pd.Series(values), errors="coerce")
+                if series.isna().all():
+                    continue
+                data = np.ma.masked_invalid(series.to_numpy())[:, None]
+                im = hole_ax.imshow(
+                    data,
+                    aspect="auto",
+                    interpolation="nearest",
+                    origin="upper",
+                    extent=(0.0, 1.0, max_depth, 0.0),
+                    cmap=cmap,
+                )
+                hole_ax.set_xticks([0.5])
+                hole_ax.set_xticklabels([hole_id])
+                hole_ax.set_xlabel("Hole")
+                hole_ax.set_ylabel("Depth")
+                hole_ax.set_title(hole_id)
+                if show_legend:
+                    hole_ax.figure.colorbar(im, ax=hole_ax, label=column)
+            return axes if axes is not None else ax
+
+        if step <= 0:
+            raise ValueError("step must be > 0")
+
+        sampled_values = []
+        all_values = []
+        for hole_id in valid_holes:
+            hole = DrillHole(self, hole_id)
+            max_depth = float(hole.collar[DhConfig.total_depth].values[0])
+            if max_depth <= 0:
+                sampled_values.append((hole_id, max_depth, np.array([])))
+                continue
+            depth_grid = np.arange(0.0, max_depth + step, step)
+            _, values = hole._sample_downhole_values(
+                table_name, column, step, kind, depth_grid=depth_grid
+            )
+            sampled_values.append((hole_id, max_depth, values))
+            if len(values) > 0:
+                all_values.extend([v for v in values if pd.notna(v)])
+
+        categories = [c for c in pd.Series(all_values).unique() if pd.notna(c)]
+        if not categories:
+            return axes if axes is not None else ax
+        category_to_code = {cat: idx for idx, cat in enumerate(categories)}
+
+        cmap_obj = plt.get_cmap(cmap, len(categories))
+        try:
+            cmap_obj = cmap_obj.copy()
+        except Exception:
+            pass
+        try:
+            cmap_obj.set_bad(color="lightgray")
+        except Exception:
+            pass
+
+        for (hole_id, max_depth, values), hole_ax in zip(sampled_values, axes_list):
+            if len(values) == 0:
+                continue
+
+            codes = np.full(len(values), -1.0)
+            for row_idx, value in enumerate(values):
+                if pd.notna(value):
+                    codes[row_idx] = category_to_code[value]
+
+            masked = np.ma.masked_where(codes < 0, codes)
+            hole_ax.imshow(
+                masked[:, None],
+                aspect="auto",
+                interpolation="nearest",
+                origin="upper",
+                extent=(0.0, 1.0, max_depth, 0.0),
+                cmap=cmap_obj,
+                vmin=0,
+                vmax=max(0, len(categories) - 1),
+            )
+            hole_ax.set_xticks([0.5])
+            hole_ax.set_xticklabels([hole_id])
+            hole_ax.set_xlabel("Hole")
+            hole_ax.set_ylabel("Depth")
+            hole_ax.set_title(hole_id)
+
+            if show_legend:
+                handles = [
+                    mpatches.Patch(color=cmap_obj(i), label=str(cat))
+                    for i, cat in enumerate(categories)
+                ]
+                hole_ax.legend(
+                    handles=handles, title=column, bbox_to_anchor=(1.02, 1), loc="upper left"
+                )
+        return axes if axes is not None else ax
+
     def get_collar_for_hole(self, hole_id: str) -> pd.DataFrame:
         """Get collar data for a specific hole.
 
