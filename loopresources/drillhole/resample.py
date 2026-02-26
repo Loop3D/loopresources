@@ -355,13 +355,11 @@ def merge_interval_tables(tables: List[pd.DataFrame]) -> pd.DataFrame:
 
         # Pre-convert tables to numpy arrays for faster access
         table_arrays = []
-        table_cols = []
         for sub in hole_tables:
             from_arr = sub[DhConfig.sample_from].to_numpy()
             to_arr = sub[DhConfig.sample_to].to_numpy()
             data_cols = [c for c in sub.columns if c not in required]
             table_arrays.append((from_arr, to_arr, sub, data_cols))
-            table_cols.append(data_cols)
 
         # build atomic segments between consecutive boundaries
         n_segments = len(sorted_bounds) - 1
@@ -404,9 +402,8 @@ def merge_interval_tables(tables: List[pd.DataFrame]) -> pd.DataFrame:
                 for c in data_cols:
                     if c not in rows_data:
                         # Initialize column with NaN
-                        if c not in rows_data:
-                            rows_data[c] = np.empty(n_valid, dtype=object)
-                            rows_data[c][:] = np.nan
+                        rows_data[c] = np.empty(n_valid, dtype=object)
+                        rows_data[c][:] = np.nan
                     if pd.isna(rows_data[c][idx]):
                         rows_data[c][idx] = sub[c].iloc[cover_idx]
 
