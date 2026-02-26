@@ -198,13 +198,14 @@ class DrillholeDatabase:
             holes = list(holes)
 
         collar_holes = set(self.collar[DhConfig.holeid].unique())
-        valid_holes = [
-            hole_id
-            for hole_id in holes
-            if hole_id in collar_holes
-        ]
+        collar_holes = set(self.collar[DhConfig.holeid].unique())
+        valid_holes = [hole_id for hole_id in holes if hole_id in collar_holes]
         if not valid_holes:
-            return ax
+            unknown_holes = sorted({hole_id for hole_id in holes if hole_id not in collar_holes})
+            raise ValueError(
+                "None of the requested holes are present in the collar table. "
+                f"Unknown hole IDs: {unknown_holes}"
+            )
 
         layout = layout.lower()
         if layout not in {"grid", "column"}:
