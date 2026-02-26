@@ -65,12 +65,6 @@ def resample_point(
                 > r[DhConfig.depth].to_numpy()[:, None],
             )
         )
-        _exact_from = np.where(
-            table[DhConfig.sample_from].to_numpy()[None, :] == r[DhConfig.depth].to_numpy()[:, None]
-        )
-        _exact_to = np.where(
-            table[DhConfig.sample_to].to_numpy()[None, :] == r[DhConfig.depth].to_numpy()[:, None]
-        )
         cols_in = [col for col in cols if col in table.columns]
         r[cols_in] = np.nan
         r.loc[r.index[i], cols_in] = table.loc[table.index[j], cols_in].to_numpy()
@@ -170,9 +164,9 @@ def resample_interval(
 
             # Initialize column with appropriate type
             if table[col].dtype == "object" or pd.api.types.is_string_dtype(table[col]):
-                new_columns[col] = np.array([None] * len(r), dtype=object)
+                new_columns[col] = np.full(len(r), None, dtype=object)
             else:
-                new_columns[col] = np.array([np.nan] * len(r))
+                new_columns[col] = np.full(len(r), np.nan)
 
             # find values in the intervals and assign them to the survey
             new_columns[col][r.index[i]] = table.loc[table.index[j], col].to_numpy()
@@ -386,26 +380,34 @@ def merge_interval_tables(tables: List[pd.DataFrame]) -> pd.DataFrame:
             DhConfig.sample_to: segment_to,
         }
 
-        # For each table, vectorize the interval matching
+        # For each table, vectorize the interval matching using full broadcasting
         for from_arr, to_arr, sub, data_cols in table_arrays:
-            # Vectorized interval matching: check which original intervals cover each segment
+            # Broadcast segment boundaries and interval boundaries for vectorized comparison
             # segment [a,b] is covered by interval [from,to] if from <= a AND to >= b
-            for idx in range(n_valid):
-                a, b = segment_from[idx], segment_to[idx]
-                # Find covering interval
-                covering = (from_arr <= a) & (to_arr >= b)
-                if not covering.any():
-                    continue
-                # Take first match
-                cover_idx = np.where(covering)[0][0]
-                # Copy data columns
-                for c in data_cols:
-                    if c not in rows_data:
-                        # Initialize column with NaN
-                        rows_data[c] = np.empty(n_valid, dtype=object)
-                        rows_data[c][:] = np.nan
-                    if pd.isna(rows_data[c][idx]):
-                        rows_data[c][idx] = sub[c].iloc[cover_idx]
+            segment_from_2d = segment_from[:, None]  # Shape: (n_valid, 1)
+            segment_to_2d = segment_to[:, None]      # Shape: (n_valid, 1)
+            from_arr_2d = from_arr[None, :]         # Shape: (1, n_intervals)
+            to_arr_2d = to_arr[None, :]             # Shape: (1, n_intervals)
+            
+            # Check coverage for all segment-interval combinations at once
+            # Shape: (n_valid, n_intervals) - True where interval covers segment
+            covering = (from_arr_2d <= segment_from_2d) & (to_arr_2d >= segment_to_2d)
+            
+            # For each segment, find first covering interval
+            # Use argmax to find first True (returns 0 if all False)
+            cover_indices = np.argmax(covering, axis=1)
+            # Verify that coverage actually exists (argmax returns 0 even if no True)
+            has_cover = covering[np.arange(n_valid), cover_indices]
+            
+            # Vectorized data copying for all segments at once
+            for c in data_cols:
+                if c not in rows_data:
+                    # Initialize column with NaN
+                    rows_data[c] = np.full(n_valid, np.nan, dtype=object)
+                # Only copy where coverage exists and cell is still NaN
+                mask = has_cover & pd.isna(rows_data[c])
+                if mask.any():
+                    rows_data[c][mask] = sub[c].iloc[cover_indices[mask]].values
 
         # Convert to list of dicts for DataFrame construction
         for idx in range(n_valid):
