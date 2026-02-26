@@ -197,10 +197,11 @@ class DrillholeDatabase:
         else:
             holes = list(holes)
 
+        collar_holes = set(self.collar[DhConfig.holeid].unique())
         valid_holes = [
             hole_id
             for hole_id in holes
-            if hole_id in set(self.collar[DhConfig.holeid].unique())
+            if hole_id in collar_holes
         ]
         if not valid_holes:
             return ax
