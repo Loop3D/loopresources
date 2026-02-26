@@ -58,8 +58,24 @@ db.plot_downhole("assays", "AU_ppm", kind="line", layout="grid", ncols=2)
 plt.tight_layout()
 plt.show()
 
-# Categorical plot
+# Categorical plot with shared legend on the right
 db.plot_downhole("lithology", "LITHO", kind="categorical", step=2.0, layout="grid", ncols=2)
+plt.tight_layout()
+plt.show()
+
+# Categorical plot with legend at bottom
+db.plot_downhole("lithology", "LITHO", kind="categorical", step=2.0, layout="grid", ncols=2, legend_loc="bottom")
+plt.tight_layout()
+plt.show()
+
+# Categorical plot without legend
+db.plot_downhole("lithology", "LITHO", kind="categorical", step=2.0, layout="grid", ncols=2, show_legend=False)
+plt.tight_layout()
+plt.show()
+
+# Create standalone legend
+categories = lithology["LITHO"].unique()
+DrillholeDatabase.create_categorical_legend(categories, cmap="tab20", title="Lithology")
 plt.tight_layout()
 plt.show()
 

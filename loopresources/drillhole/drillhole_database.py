@@ -154,6 +154,7 @@ class DrillholeDatabase:
         ncols: int = 3,
         cmap: str = "tab20",
         show_legend: bool = True,
+        legend_loc: str = "right",
         **kwargs,
     ):
         """Plot a downhole variable for one or more drillholes.
@@ -180,6 +181,8 @@ class DrillholeDatabase:
             Colormap name for categorical plots.
         show_legend : bool, default True
             Whether to show a legend.
+        legend_loc : {"right", "bottom", "none"}, default "right"
+            Location for the shared categorical legend. Use "none" for no legend.
         **kwargs
             Passed through to matplotlib plot functions.
         """
@@ -360,15 +363,62 @@ class DrillholeDatabase:
             hole_ax.set_ylabel("Depth")
             hole_ax.set_title(hole_id)
 
-            if show_legend:
-                handles = [
-                    mpatches.Patch(color=cmap_obj(i), label=str(cat))
-                    for i, cat in enumerate(categories)
-                ]
-                hole_ax.legend(
-                    handles=handles, title=column, bbox_to_anchor=(1.02, 1), loc="upper left"
-                )
+        if show_legend and legend_loc != "none":
+            handles = [
+                mpatches.Patch(color=cmap_obj(i), label=str(cat))
+                for i, cat in enumerate(categories)
+            ]
+            if axes is not None and hasattr(axes_list[0], 'figure'):
+                fig = axes_list[0].figure
+                if legend_loc == "right":
+                    fig.legend(handles=handles, title=column, loc="center left", bbox_to_anchor=(1.0, 0.5))
+                elif legend_loc == "bottom":
+                    fig.legend(handles=handles, title=column, loc="upper center", bbox_to_anchor=(0.5, -0.05), ncol=min(len(categories), 5))
         return axes if axes is not None else ax
+
+    @staticmethod
+    def create_categorical_legend(
+        categories: List[str],
+        cmap: str = "tab20",
+        title: str = "Categories",
+        ax=None,
+        **kwargs,
+    ):
+        """Create a standalone categorical legend.
+
+        Parameters
+        ----------
+        categories : list of str
+            List of category names.
+        cmap : str, default "tab20"
+            Colormap name.
+        title : str, default "Categories"
+            Legend title.
+        ax : matplotlib.axes.Axes, optional
+            Axes to add legend to. If None, creates a new figure.
+        **kwargs
+            Additional keyword arguments passed to ax.legend().
+
+        Returns
+        -------
+        matplotlib.legend.Legend
+            The legend object.
+        """
+        import matplotlib.pyplot as plt
+        import matplotlib.patches as mpatches
+
+        cmap_obj = plt.get_cmap(cmap, len(categories))
+        handles = [
+            mpatches.Patch(color=cmap_obj(i), label=str(cat))
+            for i, cat in enumerate(categories)
+        ]
+
+        if ax is None:
+            fig, ax = plt.subplots(figsize=(3, max(2, len(categories) * 0.3)))
+            ax.axis("off")
+
+        legend = ax.legend(handles=handles, title=title, loc="center", **kwargs)
+        return legend
 
     def get_collar_for_hole(self, hole_id: str) -> pd.DataFrame:
         """Get collar data for a specific hole.
