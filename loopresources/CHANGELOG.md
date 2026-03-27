@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.0.3](https://github.com/Loop3D/loopresources/compare/v0.0.2...v0.0.3) (2026-03-27)
+
+
+### Bug Fixes
+
+* adding downhole plots for drillhole/dbs ([4f96b60](https://github.com/Loop3D/loopresources/commit/4f96b60e35db97d018be504a21d5de5fd11b6988))
+* allow missing depth and infer from survey. ([6455a65](https://github.com/Loop3D/loopresources/commit/6455a65184c327314e841bc480618753a53b835f))
+* enhance downhole plotting with additional categorical legend options ([1dbb223](https://github.com/Loop3D/loopresources/commit/1dbb223fb2b1103f7ff30c2e27a815fc3c58a37f))
+* improve table merge speed by pre-grouping and vectorizing operat… ([b3a909d](https://github.com/Loop3D/loopresources/commit/b3a909def32829fbd2ce4518847dc8507f94312b))
+* improve table merge speed by pre-grouping and vectorizing operations ([e2589a3](https://github.com/Loop3D/loopresources/commit/e2589a36d0558fbe758ef3b889745be38d753e03))
+* optimize resampling functions and add vectorized interval matching ([2678370](https://github.com/Loop3D/loopresources/commit/2678370c2063b8e418ec98cb0a8ec25137997f8b))
+* updating legend location ([368bfcb](https://github.com/Loop3D/loopresources/commit/368bfcb7b9794a42b6e6712c225222063de6ad86))
+
 ## [0.0.2](https://github.com/Loop3D/loopresources/compare/v0.0.1...v0.0.2) (2025-11-19)
 
 
