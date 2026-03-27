@@ -54,17 +54,23 @@ def desurvey(
         raise ValueError(f"Unknown method: {method}")
 
 
+def _infer_max_depth(collar: pd.DataFrame, survey: pd.DataFrame) -> float:
+    """Infer total depth from collar or survey if collar total depth missing."""
+    if DhConfig.total_depth in collar.columns and collar[DhConfig.total_depth].notna().any():
+        return float(collar[DhConfig.total_depth].max())
+    if DhConfig.depth in survey.columns and survey[DhConfig.depth].notna().any():
+        return float(survey[DhConfig.depth].max())
+    raise ValueError("Cannot determine total depth from collar or survey")
+
+
 def tangent_method(
         collar: pd.DataFrame, survey: pd.DataFrame, newinterval=10, drop_intermediate=True
 ) -> pd.DataFrame:
     """Compute well path using tangent method at regular intervals."""
     # Implementation goes here
     if not hasattr(newinterval, "__len__"):  # is it an array?
-        newdepth = np.arange(
-            0,
-            collar[DhConfig.total_depth].max(),
-            newinterval,
-        )
+        max_depth = _infer_max_depth(collar, survey)
+        newdepth = np.arange(0, max_depth, newinterval)
     else:
         newdepth = newinterval
     depth = survey[DhConfig.depth].values
@@ -101,11 +107,8 @@ def straight_path_from_single_survey(collar, survey, newinterval=10):
     depth = survey[DhConfig.depth]
 
     if not hasattr(newinterval, "__len__"):  # is it an array?
-        newdepth = np.arange(
-            0,
-            collar[DhConfig.total_depth].max(),
-            newinterval,
-        )
+        max_depth = _infer_max_depth(collar, survey)
+        newdepth = np.arange(0, max_depth, newinterval)
     else:
         newdepth = newinterval
     new_trend = [survey[DhConfig.azimuth].to_list()[0]] * len(newdepth)
@@ -155,11 +158,8 @@ def minimum_curvature(
     plunge = survey[DhConfig.dip].values  # + #.apply(math.radians)
 
     if not hasattr(newinterval, "__len__"):  # is it an array?
-        newdepth = np.arange(
-            0,
-            collar[DhConfig.total_depth].max(),
-            newinterval,
-        )
+        max_depth = _infer_max_depth(collar, survey)
+        newdepth = np.arange(0, max_depth, newinterval)
     else:
         newdepth = newinterval
     unit_vectors = trendandplunge2vector(trend, plunge)

@@ -31,7 +31,7 @@ class DrillholeDatabase:
     """
 
     def __init__(
-        self, collar: pd.DataFrame, survey: pd.DataFrame, db_config: Optional[DbConfig] = None
+        self, collar: pd.DataFrame, survey: pd.DataFrame, db_config: Optional[DbConfig] = None, force_uppercase_holeid: bool = False
     ):
         """Initialize DrillholeDatabase.
 
@@ -39,7 +39,9 @@ class DrillholeDatabase:
         ----------
         collar : pd.DataFrame
             Collar data with one row per drillhole
-            Required columns: HOLE_ID, X, Y, Z, TOTAL_DEPTH
+            Required columns: HOLE_ID, X, Y, Z. `TOTAL_DEPTH` is optional —
+            when absent the DB will attempt to infer a hole's total depth
+            from survey/interval/point data.
         survey : pd.DataFrame
             Survey data with one row per survey station
             Required columns: HOLE_ID, DEPTH, AZIMUTH, DIP
@@ -48,7 +50,10 @@ class DrillholeDatabase:
         """
         self.db_config = db_config if db_config is not None else DbConfig(backend="memory")
         self._conn = None
-
+        self.force_uppercase_holeid = force_uppercase_holeid
+        if force_uppercase_holeid:
+            collar[DhConfig.holeid] = collar[DhConfig.holeid].str.upper()
+            survey[DhConfig.holeid] = survey[DhConfig.holeid].str.upper()
         # Store data based on backend configuration
         if self.db_config.backend == "memory":
             self.collar = collar.copy()
@@ -275,7 +280,11 @@ class DrillholeDatabase:
                 raise ValueError("step must be > 0")
             for hole_id, hole_ax in zip(valid_holes, axes_list):
                 hole = DrillHole(self, hole_id)
-                max_depth = float(hole.collar[DhConfig.total_depth].values[0])
+                try:
+                    max_depth = float(self.get_hole_total_depth(hole_id))
+                except Exception:
+                    logger.warning("Could not determine total depth for hole %s; skipping", hole_id)
+                    continue
                 if max_depth <= 0:
                     continue
                 depth_grid = np.arange(0.0, max_depth + step, step)
@@ -312,7 +321,12 @@ class DrillholeDatabase:
         all_values = []
         for hole_id in valid_holes:
             hole = DrillHole(self, hole_id)
-            max_depth = float(hole.collar[DhConfig.total_depth].values[0])
+            try:
+                max_depth = float(self.get_hole_total_depth(hole_id))
+            except Exception:
+                logger.warning("Could not determine total depth for hole %s; treating as empty", hole_id)
+                sampled_values.append((hole_id, 0.0, np.array([])))
+                continue
             if max_depth <= 0:
                 sampled_values.append((hole_id, max_depth, np.array([])))
                 continue
@@ -446,6 +460,50 @@ class DrillholeDatabase:
             return collar_data[mask].copy()
         else:
             return self._load_table_from_db("collar", hole_id=hole_id)
+
+    def get_hole_total_depth(self, hole_id: str) -> float:
+        """Return reported or inferred total depth for a hole.
+
+        Strategy:
+        - Use `TOTAL_DEPTH` from the collar if present and not NaN.
+        - Otherwise infer the max depth from survey, interval `TO` columns, or point depths.
+        - If nothing is available, raise `ValueError`.
+        """
+        # Try collar first
+        collar_row = self.get_collar_for_hole(hole_id)
+        if not collar_row.empty and DhConfig.total_depth in collar_row.columns:
+            val = collar_row[DhConfig.total_depth].values[0]
+            if pd.notna(val):
+                return float(val)
+
+        # Infer from survey
+        survey_df = self.get_survey_for_hole(hole_id)
+        survey_max = None
+        if not survey_df.empty and DhConfig.depth in survey_df.columns:
+            if survey_df[DhConfig.depth].notna().any():
+                survey_max = float(survey_df[DhConfig.depth].max())
+
+        # Infer from intervals
+        interval_maxes = []
+        for tbl in self.intervals.values():
+            if DhConfig.sample_to in tbl.columns and DhConfig.holeid in tbl.columns:
+                hole_rows = tbl[tbl[DhConfig.holeid] == hole_id]
+                if not hole_rows.empty and hole_rows[DhConfig.sample_to].notna().any():
+                    interval_maxes.append(float(hole_rows[DhConfig.sample_to].max()))
+
+        # Infer from points
+        point_maxes = []
+        for tbl in self.points.values():
+            if DhConfig.depth in tbl.columns and DhConfig.holeid in tbl.columns:
+                hole_rows = tbl[tbl[DhConfig.holeid] == hole_id]
+                if not hole_rows.empty and hole_rows[DhConfig.depth].notna().any():
+                    point_maxes.append(float(hole_rows[DhConfig.depth].max()))
+
+        candidates = [v for v in [survey_max] + interval_maxes + point_maxes if v is not None]
+        if candidates:
+            return float(max(candidates))
+
+        raise ValueError(f"Unable to determine total depth for hole '{hole_id}': no reported or inferable depth values")
 
     def get_survey_for_hole(self, hole_id: str) -> pd.DataFrame:
         """Get survey data for a specific hole.
@@ -811,6 +869,8 @@ class DrillholeDatabase:
         survey_file: str,
         collar_columns: Dict[str, str] = {},
         survey_columns: Dict[str, str] = {},
+        *,
+        force_uppercase_holeid: bool = False,
         **kwargs,
     ) -> "DrillholeDatabase":
         """Create a DrillholeDatabase from CSV files with column mapping.
@@ -893,18 +953,19 @@ class DrillholeDatabase:
             DhConfig.x,
             DhConfig.y,
             DhConfig.z,
-            DhConfig.total_depth,
         ]
         for col in required_collar_cols:
             if col not in collar_df.columns:
                 raise KeyError(f"Required collar column '{col}' not found in CSV file")
+        # total_depth is optional during CSV import; only drop rows missing
+        # strictly required columns here
         collar_df = collar_df.dropna(subset=required_collar_cols)
 
         required_survey_cols = [DhConfig.holeid, DhConfig.depth, DhConfig.azimuth, DhConfig.dip]
         survey_df = survey_df.dropna(subset=required_survey_cols)
-
+       
         # Create and return DrillholeDatabase instance
-        return cls(collar=collar_df, survey=survey_df)
+        return cls(collar=collar_df, survey=survey_df, force_uppercase_holeid=force_uppercase_holeid)
 
     def _validate_collar(self):
         """Validate collar DataFrame structure."""
@@ -920,6 +981,7 @@ class DrillholeDatabase:
         """Validate survey DataFrame structure."""
         required_cols = [DhConfig.holeid, DhConfig.depth, DhConfig.azimuth, DhConfig.dip]
         missing_cols = [col for col in required_cols if col not in self.survey.columns]
+
         if missing_cols:
             raise ValueError(f"Missing required survey columns: {missing_cols}")
 
@@ -1176,7 +1238,8 @@ class DrillholeDatabase:
         if type(df) is not pd.DataFrame:
             raise TypeError("df must be a pandas DataFrame, or a path to a CSV file")
         df = df.rename(columns=column_mapping)
-
+        if self.force_uppercase_holeid:
+            df[DhConfig.holeid] = df[DhConfig.holeid].str.upper()
         # Validate required columns
         required_cols = [DhConfig.holeid, DhConfig.sample_from, DhConfig.sample_to]
         missing_cols = [col for col in required_cols if col not in df.columns]
@@ -1216,7 +1279,8 @@ class DrillholeDatabase:
         if type(df) is not pd.DataFrame:
             raise TypeError("df must be a pandas DataFrame, or a path to a CSV file")
         df = df.rename(columns=column_mapping)
-        
+        if self.force_uppercase_holeid:
+            df[DhConfig.holeid] = df[DhConfig.holeid].str.upper()
         # Validate required columns
         required_cols = [DhConfig.holeid, DhConfig.depth]
         missing_cols = [col for col in required_cols if col not in df.columns]
@@ -1615,10 +1679,14 @@ class DrillholeDatabase:
                     f"Interval table '{name}' has holes not in collar: {missing_holes}"
                 )
 
-            # Check depths don't exceed total depth
+            # Check depths don't exceed total depth (reported or inferred)
             for hole_id in interval_holes:
-                collar_row = self.collar[self.collar[DhConfig.holeid] == hole_id].iloc[0]
-                total_depth = collar_row[DhConfig.total_depth]
+                try:
+                    total_depth = self.get_hole_total_depth(hole_id)
+                except Exception:
+                    raise ValueError(
+                        f"Unable to determine total depth for hole '{hole_id}' when validating intervals"
+                    )
 
                 hole_intervals = table[table[DhConfig.holeid] == hole_id]
                 max_to = hole_intervals[DhConfig.sample_to].max()
@@ -1633,14 +1701,19 @@ class DrillholeDatabase:
             # Check holes exist
             point_holes = set(table[DhConfig.holeid])
             collar_holes = set(self.collar[DhConfig.holeid])
+
             missing_holes = point_holes - collar_holes
             if missing_holes:
                 raise ValueError(f"Point table '{name}' has holes not in collar: {missing_holes}")
 
-            # Check depths don't exceed total depth
+            # Check depths don't exceed total depth (reported or inferred)
             for hole_id in point_holes:
-                collar_row = self.collar[self.collar[DhConfig.holeid] == hole_id].iloc[0]
-                total_depth = collar_row[DhConfig.total_depth]
+                try:
+                    total_depth = self.get_hole_total_depth(hole_id)
+                except Exception:
+                    raise ValueError(
+                        f"Unable to determine total depth for hole '{hole_id}' when validating points"
+                    )
 
                 hole_points = table[table[DhConfig.holeid] == hole_id]
                 max_depth = hole_points[DhConfig.depth].max()

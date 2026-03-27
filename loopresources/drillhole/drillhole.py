@@ -216,13 +216,19 @@ class DrillHole:
 
     def __repr__(self) -> str:
         """Return a concise representation of the DrillHole."""
-        total_depth = self.collar[DhConfig.total_depth].values[0]
+        try:
+            total_depth = self.database.get_hole_total_depth(self.hole_id)
+        except Exception:
+            total_depth = float("nan")
         return f"DrillHole(hole_id='{self.hole_id}', depth={total_depth:.2f}m)"
 
     def __str__(self) -> str:
         """Return a detailed string representation of the DrillHole."""
         # Get basic hole information
-        total_depth = self.collar[DhConfig.total_depth].values[0]
+        try:
+            total_depth = self.database.get_hole_total_depth(self.hole_id)
+        except Exception:
+            total_depth = float("nan")
         collar_x = self.collar[DhConfig.x].values[0]
         collar_y = self.collar[DhConfig.y].values[0]
         collar_z = self.collar[DhConfig.z].values[0]
@@ -393,7 +399,10 @@ class DrillHole:
         if step <= 0:
             raise ValueError("step must be > 0")
         if max_depth is None:
-            max_depth = float(self.collar[DhConfig.total_depth].values[0])
+            try:
+                max_depth = float(self.database.get_hole_total_depth(self.hole_id))
+            except Exception:
+                return np.array([], dtype=float)
         if max_depth <= 0:
             return np.array([], dtype=float)
         return np.arange(0.0, max_depth + step, step)
